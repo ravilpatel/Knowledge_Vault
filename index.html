@@ -559,6 +559,71 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 }
 
 .hidden { display: none !important; }
+
+/* ─── Chat Widget ─── */
+#chatWidget { position: fixed; bottom: 24px; right: 24px; z-index: 400; }
+#chatToggle {
+  width: 56px; height: 56px; border-radius: var(--radius-full);
+  background: var(--primary); color: var(--on-primary);
+  font-size: 24px; box-shadow: var(--shadow-elevated);
+  border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+}
+#chatToggle:hover { transform: scale(1.05); }
+#chatWindow {
+  position: absolute; bottom: 70px; right: 0; width: 380px; height: 550px;
+  background: var(--surface); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated); display: none; flex-direction: column;
+  overflow: hidden; border: 1px solid var(--hairline); animation: slideUp 200ms ease;
+}
+#chatWindow.open { display: flex; }
+.chat-header {
+  padding: 14px 18px; background: var(--canvas-soft); border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chat-header h3 { font-size: 16px; font-weight: 600; color: var(--ink); display: flex; gap: 8px; align-items: center; }
+.chat-header button { background: transparent; color: var(--ink-muted); font-size: 16px; cursor: pointer; }
+.chat-messages {
+  flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  background: var(--canvas-soft);
+}
+.chat-message { max-width: 85%; padding: 10px 14px; border-radius: var(--radius-lg); font-size: 14px; line-height: 1.4; }
+.chat-message.user { background: var(--primary); color: var(--on-primary); align-self: flex-end; }
+.chat-message.ai { background: var(--surface); border: 1px solid var(--hairline); color: var(--ink-secondary); align-self: flex-start; }
+.chat-action { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.chat-action-btn {
+  padding: 8px 12px; font-size: 13px; background: rgba(0,117,222,0.08); color: var(--primary);
+  border: 1px solid rgba(0,117,222,0.2); border-radius: var(--radius-md); cursor: pointer;
+  text-align: left; transition: background 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.chat-action-btn:hover { background: rgba(0,117,222,0.15); }
+.chat-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.chat-input-area {
+  padding: 12px; border-top: 1px solid var(--hairline); display: flex; gap: 8px; align-items: flex-end;
+  background: var(--surface);
+}
+.chat-input-area textarea {
+  flex: 1; resize: none; border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  padding: 10px; font-size: 14px; max-height: 100px; min-height: 42px; font-family: var(--font);
+}
+.chat-input-area textarea:focus { border-color: var(--primary); box-shadow: none; outline: none; }
+.chat-action-icon {
+  width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--canvas-soft);
+  border: 1px solid var(--hairline); cursor: pointer; color: var(--ink-muted); font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.chat-action-icon:hover { background: rgba(0,0,0,0.04); }
+.chat-send-btn {
+  width: 38px; height: 38px; border-radius: var(--radius-md); background: var(--primary);
+  color: var(--on-primary); cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; border: none;
+}
+.image-preview { position: relative; margin-top: 8px; }
+.image-preview img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--hairline); }
+.image-preview .remove-img { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; }
+
+@media (max-width: 600px) {
+  #chatWindow { width: calc(100vw - 32px); right: 16px; height: 70vh; }
+}
 </style>
 </head>
 <body>
@@ -767,6 +832,26 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Chat Widget -->
+<div id="chatWidget">
+  <div id="chatWindow">
+    <div class="chat-header">
+      <h3><i class="fas fa-robot"></i> Vault Assistant</h3>
+      <button onclick="toggleChat()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="chat-message ai">Hello! I can help you capture notes, contacts, or projects. Try typing a message or uploading a visiting card.</div>
+    </div>
+    <div class="chat-input-area">
+      <input type="file" id="chatImageInput" accept="image/*" style="display:none" onchange="handleImageSelect(this)">
+      <button class="chat-action-icon" onclick="document.getElementById('chatImageInput').click()" title="Upload Image/Visiting Card"><i class="fas fa-image"></i></button>
+      <textarea id="chatInput" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMessage();}" oninput="autoResize(this)"></textarea>
+      <button class="chat-send-btn" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+  <button id="chatToggle" onclick="toggleChat()"><i class="fas fa-comment-dots"></i></button>
+</div>
+  
 <script>
 /* ═══════════════════════════════════════════════════════════════
    Knowledge Vault — Supabase Cloud Sync Edition
@@ -1900,6 +1985,156 @@ document.addEventListener('click',(e)=>{
   if(dd&&!e.target.closest('#noteTagsWrap'))dd.classList.remove('open');
 });
 
+
+// ─── Chat Widget Logic ───
+function toggleChat() {
+  const win = document.getElementById('chatWindow');
+  win.classList.toggle('open');
+  if (win.classList.contains('open')) {
+    document.getElementById('chatInput').focus();
+  }
+}
+
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = textarea.scrollHeight + 'px';
+}
+
+let currentImageBase64 = null;
+
+function handleImageSelect(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      currentImageBase64 = e.target.result.split(',')[1];
+      const msgs = document.getElementById('chatMessages');
+      const previewDiv = document.createElement('div');
+      previewDiv.className = 'chat-message user';
+      previewDiv.style.padding = '5px';
+      previewDiv.innerHTML = `<div class="image-preview"><img src="${e.target.result}" style="max-width:200px"><div class="remove-img" onclick="this.parentElement.parentElement.remove(); currentImageBase64=null;"><i class="fas fa-times"></i></div></div>`;
+      msgs.appendChild(previewDiv);
+      msgs.scrollTop = msgs.scrollHeight;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function addChatMessage(sender, text, id = null, actions = []) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-message ' + sender;
+  if (id) div.id = id;
+  div.textContent = text;
+  
+  if (actions && actions.length > 0) {
+    const actionsDiv = document.createElement('div');
+    actionsDiv.className = 'chat-action';
+    actions.forEach((action) => {
+      const btn = document.createElement('button');
+      btn.className = 'chat-action-btn';
+      let label = '', icon = '';
+      if (action.type === 'add_note') { label = `Add Note: ${action.data.title}`; icon = 'fa-sticky-note'; }
+      else if (action.type === 'add_person') { label = `Add Contact: ${action.data.name}`; icon = 'fa-user'; }
+      else if (action.type === 'add_company') { label = `Add Company: ${action.data.name}`; icon = 'fa-building'; }
+      else if (action.type === 'add_project') { label = `Add Project: ${action.data.name}`; icon = 'fa-project-diagram'; }
+      else if (action.type === 'add_technology') { label = `Add Tech: ${action.data.name}`; icon = 'fa-microchip'; }
+      
+      btn.innerHTML = `<i class="fas ${icon}"></i> ${escHtml(label)}`;
+      btn.onclick = () => executeChatAction(action, btn);
+      actionsDiv.appendChild(btn);
+    });
+    div.appendChild(actionsDiv);
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text && !currentImageBase64) return;
+
+  if (text) addChatMessage('user', text);
+  
+  const payload = { message: text, image: currentImageBase64 };
+  input.value = '';
+  input.style.height = 'auto';
+  currentImageBase64 = null;
+
+  const loadingId = 'load-' + Date.now();
+  addChatMessage('ai', 'Analyzing your input...', loadingId);
+
+  try {
+    // Call the secure Supabase Edge Function
+    const { data, error } = await sb.functions.invoke('gemini-chat', {
+      body: payload
+    });
+
+    document.getElementById(loadingId)?.remove();
+
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+
+    addChatMessage('ai', data.reply || 'Done.', null, data.actions || []);
+    
+  } catch (err) {
+    document.getElementById(loadingId)?.remove();
+    addChatMessage('ai', '⚠️ Error: ' + err.message);
+  }
+}
+
+async function executeChatAction(action, btn) {
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+  
+  try {
+    let type = action.type.replace('add_', '');
+    if (type === 'person') type = 'people';
+    if (type === 'technology') type = 'technologies';
+    
+    if (action.type === 'add_note') {
+      // Ensure tags exist
+      for (const t of (action.data.tags || [])) {
+        if(!state.tags.find(x=>x.name===t)) {
+           const tagObj={id:uuid(),name:t,user_id:currentUser.id};
+           state.tags.push(tagObj); 
+           await sbUpsert('tags',tagObj);
+        }
+      }
+      const note = {
+        id: uuid(), user_id: currentUser.id,
+        title: action.data.title || 'Untitled',
+        description: action.data.description || '',
+        tags: action.data.tags || [],
+        categories: action.data.categories || [],
+        priority: 'medium',
+        status: 'active',
+        related_people: [], related_companies: [], related_technologies: [], related_projects: [],
+        attachments: [], favourite: false, archived: false
+      };
+      const result = await sbUpsert('notes', note);
+      state.notes.unshift(normItem(result || note));
+    } else {
+       const entity = { id: uuid(), user_id: currentUser.id, ...action.data };
+       // Ensure required array fields exist to prevent DB null errors
+       if(type === 'people') {
+         entity.related_companies = entity.related_companies || [];
+         entity.related_technologies = entity.related_technologies || [];
+         entity.related_projects = entity.related_projects || [];
+       }
+       const result = await sbUpsert(type, entity);
+       state[type].unshift(normItem(result || entity));
+    }
+    
+    btn.innerHTML = '<i class="fas fa-check"></i> Added!';
+    toast('Item added to Vault', 'success');
+    render(); // Refresh main UI to show the new item
+  } catch (e) {
+    btn.innerHTML = '<i class="fas fa-times"></i> Failed';
+    toast(e.message, 'error');
+  }
+}
 // ─── Initialization ───
 checkSession();
 
