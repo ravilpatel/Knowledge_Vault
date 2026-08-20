@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 /* ─── Design Tokens (Notion-inspired) ─── */
 :root {
@@ -631,6 +632,131 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 .image-preview img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--hairline); }
 .image-preview .remove-img { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; }
 
+/* ─── Home Dashboard ─── */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.dash-widget { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 20px; }
+.dash-widget-title { font-size: 12px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+
+/* ─── Stat Cards ─── */
+.stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 16px; transition: box-shadow var(--transition); }
+.stat-card:hover { box-shadow: var(--shadow-soft); }
+.stat-card .sc-label { font-size: 11px; color: var(--ink-faint); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.stat-card .sc-value { font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.5px; line-height: 1; }
+.stat-card .sc-sub { font-size: 11px; color: var(--ink-muted); margin-top: 4px; }
+.stat-card.c-green { border-left: 3px solid var(--accent-green); }
+.stat-card.c-orange { border-left: 3px solid var(--accent-orange); }
+.stat-card.c-blue { border-left: 3px solid var(--primary); }
+.stat-card.c-teal { border-left: 3px solid var(--accent-teal); }
+.stat-card.c-red { border-left: 3px solid #dc2626; }
+
+/* ─── Finance ─── */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-header h2 { font-size: 16px; font-weight: 700; color: var(--ink); }
+.exp-table-wrap { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; overflow-x: auto; }
+.exp-table { width: 100%; border-collapse: collapse; min-width: 480px; }
+.exp-table th { font-size: 11px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 14px; border-bottom: 1px solid var(--hairline); text-align: left; background: var(--canvas-soft); white-space: nowrap; }
+.exp-table td { padding: 10px 14px; border-bottom: 1px solid var(--hairline); font-size: 14px; color: var(--ink-secondary); }
+.exp-table tr:last-child td { border-bottom: none; }
+.exp-table tr:hover td { background: var(--canvas-soft); }
+.exp-table .exp-del { color: var(--ink-faint); cursor: pointer; padding: 4px 6px; border-radius: var(--radius-xs); transition: all var(--transition); }
+.exp-table .exp-del:hover { color: #c00; background: #fee; }
+.cat-chip { display: inline-flex; padding: 2px 8px; font-size: 11px; font-weight: 500; border-radius: var(--radius-full); white-space: nowrap; }
+.reimb-badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: var(--radius-full); background: rgba(26,174,57,0.1); color: var(--accent-green); }
+.chart-wrap { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; }
+.chart-wrap canvas { max-height: 220px; }
+/* Finance inline chat */
+.fin-chat { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 20px; }
+.fin-chat-header { padding: 12px 16px; background: var(--canvas-soft); border-bottom: 1px solid var(--hairline); font-size: 13px; font-weight: 600; color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.fin-chat-msgs { padding: 12px 16px; min-height: 80px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.fin-chat-msg { max-width: 88%; padding: 8px 12px; border-radius: var(--radius-lg); font-size: 13px; line-height: 1.4; }
+.fin-chat-msg.user { background: var(--primary); color: var(--on-primary); align-self: flex-end; }
+.fin-chat-msg.ai { background: var(--canvas-soft); border: 1px solid var(--hairline); color: var(--ink-secondary); align-self: flex-start; }
+.fin-chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--hairline); }
+.fin-chat-input-row textarea { flex: 1; resize: none; border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 8px 10px; font-size: 14px; min-height: 38px; max-height: 80px; font-family: var(--font); background: var(--canvas); }
+.fin-send-btn { width: 38px; height: 38px; background: var(--primary); color: var(--on-primary); border-radius: var(--radius-md); border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.fin-send-btn:hover { background: var(--primary-active); }
+.fin-entry-modal-btn { padding: 8px 16px; background: var(--primary); color: var(--on-primary); border-radius: var(--radius-full); font-size: 13px; font-weight: 500; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+
+/* ─── Eisenhower Matrix ─── */
+.matrix-axis-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
+.matrix-axis-label { text-align: center; font-size: 11px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: calc(100vh - 220px); min-height: 420px; }
+.matrix-quadrant { border-radius: var(--radius-lg); padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; }
+.matrix-quadrant.q1 { background: rgba(220,38,38,0.04); border-color: rgba(220,38,38,0.18); }
+.matrix-quadrant.q2 { background: rgba(0,117,222,0.04); border-color: rgba(0,117,222,0.18); }
+.matrix-quadrant.q3 { background: rgba(202,138,4,0.04); border-color: rgba(202,138,4,0.18); }
+.matrix-quadrant.q4 { background: rgba(0,0,0,0.015); border-color: var(--hairline); }
+.mq-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-shrink: 0; }
+.mq-label { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.mq-label.q1 { color: #dc2626; } .mq-label.q2 { color: var(--primary); } .mq-label.q3 { color: #ca8a04; } .mq-label.q4 { color: var(--ink-muted); }
+.mq-add { width: 22px; height: 22px; border-radius: var(--radius-full); background: rgba(0,0,0,0.06); color: var(--ink-muted); font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; transition: background var(--transition); }
+.mq-add:hover { background: rgba(0,0,0,0.12); }
+.todo-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 10px 12px; cursor: default; transition: box-shadow var(--transition); position: relative; }
+.todo-card:hover { box-shadow: var(--shadow-soft); }
+.todo-card.done { opacity: 0.45; }
+.todo-card.done .tc-title { text-decoration: line-through; }
+.tc-title { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.35; padding-right: 22px; }
+.tc-due { font-size: 11px; color: var(--ink-faint); margin-top: 4px; }
+.tc-due.overdue { color: #dc2626; font-weight: 600; }
+.tc-actions { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
+.tc-btn { padding: 2px 6px; font-size: 11px; border-radius: var(--radius-xs); cursor: pointer; color: var(--ink-faint); background: transparent; border: 1px solid transparent; transition: all var(--transition); }
+.tc-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-muted); border-color: var(--hairline); }
+.tc-btn.done-btn.done { color: var(--accent-green); }
+.tc-btn.del-btn:hover { color: #c00; background: #fee; }
+.tc-tg-btn { color: var(--primary); } .tc-tg-btn:hover { background: rgba(0,117,222,0.08); color: var(--primary); }
+.todo-chat-section { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; margin-top: 16px; }
+@media (max-width: 600px) {
+  .matrix-grid { grid-template-columns: 1fr; height: auto; }
+  .matrix-quadrant { min-height: 180px; }
+}
+
+/* ─── News Feed ─── */
+.news-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.news-tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.news-tab { padding: 5px 12px; border-radius: var(--radius-full); font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--hairline); background: var(--canvas); color: var(--ink-muted); transition: all var(--transition); }
+.news-tab.active { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.fetch-now-btn { padding: 6px 14px; border-radius: var(--radius-md); font-size: 12px; font-weight: 500; background: var(--canvas); border: 1px solid var(--hairline); color: var(--ink-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background var(--transition); white-space: nowrap; }
+.fetch-now-btn:hover { background: var(--canvas-soft); }
+.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.news-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 16px; cursor: pointer; transition: box-shadow var(--transition); position: relative; }
+.news-card:hover { box-shadow: var(--shadow-soft); }
+.news-card.unread { border-left: 3px solid var(--primary); }
+.nc-src { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.nc-src.pib { color: var(--primary); } .nc-src.gazette { color: var(--accent-teal); } .nc-src.startup { color: var(--accent-green); } .nc-src.market { color: var(--accent-orange); }
+.nc-headline { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nc-summary { font-size: 12px; color: var(--ink-muted); line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.nc-footer { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--ink-faint); }
+.nc-read-link { color: var(--primary); font-size: 11px; font-weight: 500; }
+@media (max-width: 600px) { .news-grid { grid-template-columns: 1fr; } }
+
+/* ─── Settings Modal ─── */
+.settings-tabs { display: flex; border-bottom: 1px solid var(--hairline); margin-bottom: 20px; overflow-x: auto; gap: 0; -webkit-overflow-scrolling: touch; }
+.s-tab { padding: 10px 16px; font-size: 13px; font-weight: 500; color: var(--ink-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all var(--transition); white-space: nowrap; background: transparent; }
+.s-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.s-panel { display: none; }
+.s-panel.active { display: block; }
+.s-group { margin-bottom: 18px; }
+.s-group-label { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 10px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+.s-help { font-size: 12px; color: var(--ink-faint); margin-top: 4px; line-height: 1.4; }
+.s-row { display: flex; gap: 10px; }
+.s-row .form-group { flex: 1; }
+.test-btn { padding: 8px 16px; background: var(--canvas-soft); border: 1px solid var(--hairline); border-radius: var(--radius-md); font-size: 13px; font-weight: 500; color: var(--ink-secondary); cursor: pointer; transition: background var(--transition); margin-top: 4px; }
+.test-btn:hover { background: rgba(0,0,0,0.06); }
+.save-settings-btn { padding: 10px 24px; background: var(--primary); color: var(--on-primary); border-radius: var(--radius-full); font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: background var(--transition); }
+.save-settings-btn:hover { background: var(--primary-active); }
+
+/* ─── Quick Capture FAB ─── */
+#quickCapture { position: fixed; bottom: 100px; right: 24px; z-index: 399; }
+#quickCaptureBtn { width: 44px; height: 44px; border-radius: var(--radius-full); background: var(--canvas); border: 1px solid var(--hairline); color: var(--ink-muted); font-size: 18px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow-soft); transition: all var(--transition); }
+#quickCaptureBtn:hover { background: var(--canvas-soft); transform: scale(1.05); }
+@media (max-width: 600px) { #quickCapture { bottom: 80px; right: 16px; } }
+
+/* ─── Section Nav (sub-tabs above content) ─── */
+.view-subnav { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 1px solid var(--hairline); padding-bottom: 12px; flex-wrap: wrap; }
+.subnav-btn { padding: 5px 14px; border-radius: var(--radius-full); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--hairline); background: var(--canvas); color: var(--ink-muted); transition: all var(--transition); }
+.subnav-btn.active { background: rgba(0,117,222,0.08); color: var(--primary); border-color: rgba(0,117,222,0.2); }
+
 </style>
 </head>
 <body>
@@ -663,6 +789,108 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <a href="#" onclick="handleForgotPassword()">Forgot your password?</a>
     </div>
   </div>
+
+  <!-- ─── Settings Modal ─── -->
+  <div class="modal-card hidden" id="settingsModal" style="max-width:640px">
+    <div class="modal-header"><h2><i class="fas fa-cog" style="color:var(--primary);margin-right:6px"></i>Settings</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <div class="settings-tabs">
+        <button class="s-tab active" onclick="switchSettingsTab('email',this)"><i class="fas fa-envelope"></i> Email</button>
+        <button class="s-tab" onclick="switchSettingsTab('telegram',this)"><i class="fab fa-telegram"></i> Telegram</button>
+        <button class="s-tab" onclick="switchSettingsTab('finance',this)"><i class="fas fa-rupee-sign"></i> Finance</button>
+        <button class="s-tab" onclick="switchSettingsTab('news',this)"><i class="fas fa-newspaper"></i> News</button>
+      </div>
+      <!-- Email Panel -->
+      <div class="s-panel active" id="sp-email">
+        <div class="s-group">
+          <span class="s-group-label">SMTP Configuration</span>
+          <div class="s-row">
+            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="s-smtp-host" placeholder="smtp.gmail.com"></div>
+            <div class="form-group" style="max-width:120px"><label class="form-label">Port</label><input type="number" class="form-input" id="s-smtp-port" placeholder="587" value="587"></div>
+          </div>
+          <div class="s-row">
+            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="s-smtp-user" placeholder="you@gmail.com"></div>
+            <div class="form-group"><label class="form-label">Password / App Key</label><input type="password" class="form-input" id="s-smtp-pass" placeholder="App password"></div>
+          </div>
+          <div class="form-group"><label class="form-label">From Address</label><input type="text" class="form-input" id="s-smtp-from" placeholder="Knowledge Vault <you@gmail.com>"></div>
+          <div class="form-group"><label class="form-label">Send Reports To (email)</label><input type="email" class="form-input" id="s-notify-email" placeholder="you@gmail.com"></div>
+          <p class="s-help">💡 For Gmail: enable 2FA and use an <a href="https://myaccount.google.com/apppasswords" target="_blank">App Password</a>. For best results use Resend.com or SendGrid.</p>
+          <button class="test-btn" onclick="testEmailSettings()"><i class="fas fa-paper-plane"></i> Send Test Email</button>
+        </div>
+      </div>
+      <!-- Telegram Panel -->
+      <div class="s-panel" id="sp-telegram">
+        <div class="s-group">
+          <span class="s-group-label">Telegram Bot</span>
+          <div class="form-group"><label class="form-label">Bot Token</label><input type="text" class="form-input" id="s-tg-token" placeholder="123456:ABCdef..."></div>
+          <div class="form-group"><label class="form-label">Chat ID (your personal chat ID)</label><input type="text" class="form-input" id="s-tg-chatid" placeholder="123456789"></div>
+          <p class="s-help">💡 Create a bot via <a href="https://t.me/BotFather" target="_blank">@BotFather</a>. Get your Chat ID by messaging <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>.</p>
+          <button class="test-btn" onclick="testTelegramSettings()"><i class="fab fa-telegram"></i> Send Test Message</button>
+        </div>
+      </div>
+      <!-- Finance Panel -->
+      <div class="s-panel" id="sp-finance">
+        <div class="s-group">
+          <span class="s-group-label">Finance Settings</span>
+          <div class="form-group"><label class="form-label">Currency</label>
+            <select class="form-select" id="s-currency">
+              <option value="INR">₹ Indian Rupee (INR)</option>
+              <option value="USD">$ US Dollar (USD)</option>
+              <option value="EUR">€ Euro (EUR)</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Monthly Report Day (1-28)</label><input type="number" class="form-input" id="s-report-day" min="1" max="28" value="1"></div>
+          <p class="s-help">Monthly finance reports are emailed on the specified day of each month. You can also trigger one manually from the Monthly Report view.</p>
+        </div>
+      </div>
+      <!-- News Panel -->
+      <div class="s-panel" id="sp-news">
+        <div class="s-group">
+          <span class="s-group-label">News & Intel Settings</span>
+          <div class="form-group"><div class="toggle-switch" onclick="toggleNewsSetting()"><div class="ts-track" id="newsEnabledTrack"></div><span class="ts-label">Enable news fetching</span></div></div>
+          <div class="form-group"><label class="form-label">News Topics (comma separated)</label><input type="text" class="form-input" id="s-news-topics" placeholder="Indian policy, startups, technology"></div>
+          <p class="s-help">News is fetched from Google News using these topics every alternate day at 8 AM IST. A daily email digest is sent if SMTP is configured.</p>
+          <button class="test-btn" onclick="testNewsSettings()" style="margin-top:12px"><i class="fas fa-sync"></i> Fetch News Now</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
+      <button class="save-settings-btn" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+  </div>
+
+  <!-- ─── Todo Modal ─── -->
+  <div class="modal-card hidden" id="todoModal" style="max-width:500px">
+    <div class="modal-header"><h2 id="todoModalTitle">New Task</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="todoId">
+      <div class="form-group"><label class="form-label">Task Title</label><input type="text" class="form-input" id="todoTitle" placeholder="What needs to be done?"></div>
+      <div class="form-group"><label class="form-label">Description (optional)</label><textarea class="form-textarea" id="todoDesc" placeholder="Additional details..." style="min-height:70px"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Due Date (optional)</label><input type="date" class="form-input" id="todoDueDate"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+        <div style="padding:12px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-md)">
+          <div class="toggle-switch" onclick="toggleTodoUrgent()"><div class="ts-track" id="todoUrgentTrack"></div><span class="ts-label" style="color:#dc2626;font-weight:600">⚡ Urgent</span></div>
+          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Needs attention now or very soon</p>
+        </div>
+        <div style="padding:12px;background:rgba(0,117,222,0.05);border:1px solid rgba(0,117,222,0.2);border-radius:var(--radius-md)">
+          <div class="toggle-switch" onclick="toggleTodoImportant()"><div class="ts-track" id="todoImportantTrack"></div><span class="ts-label" style="color:var(--primary);font-weight:600">🎯 Important</span></div>
+          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Significant impact on goals</p>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:var(--canvas-soft);border-radius:var(--radius-md);font-size:13px;color:var(--ink-muted)" id="quadrantPreview">Select urgency and importance to see your quadrant.</div>
+      <div class="form-group" style="margin-top:12px">
+        <div class="toggle-switch" onclick="toggleTodoTelegram()"><div class="ts-track" id="todoTelegramTrack"></div><span class="ts-label">Send Telegram reminder for this task</span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
+      <button onclick="saveTodo()" style="padding:8px 20px;background:var(--primary);color:var(--on-primary);border-radius:var(--radius-full);font-size:14px;font-weight:500">Save Task</button>
+    </div>
+  </div>
+
 </div>
 
 <!-- Sidebar backdrop (mobile) -->
@@ -718,6 +946,35 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <div class="sb-item" onclick="openExportModal()"><span class="icon"><i class="fas fa-file-export"></i></span><span class="label">Export Data</span></div>
       <div class="sb-item" onclick="doBackup()"><span class="icon"><i class="fas fa-download"></i></span><span class="label">Backup</span></div>
       <div class="sb-item" onclick="openRestoreModal()"><span class="icon"><i class="fas fa-upload"></i></span><span class="label">Restore Backup</span></div>
+    </div>
+    <div class="sb-divider"></div>
+
+    <!-- ─── Finance ─── -->
+    <div class="sb-section">
+      <div class="sb-section-title">Finance</div>
+      <div class="sb-item" data-view="finance" onclick="switchView('finance')"><span class="icon"><i class="fas fa-rupee-sign"></i></span><span class="label">Expenses</span><span class="count" id="count-exp">0</span></div>
+      <div class="sb-item" data-view="finance-report" onclick="switchView('finance-report')"><span class="icon"><i class="fas fa-chart-pie"></i></span><span class="label">Monthly Report</span></div>
+    </div>
+    <div class="sb-divider"></div>
+
+    <!-- ─── To-Do ─── -->
+    <div class="sb-section">
+      <div class="sb-section-title">To-Do</div>
+      <div class="sb-item" data-view="matrix" onclick="switchView('matrix')"><span class="icon"><i class="fas fa-th-large"></i></span><span class="label">Eisenhower Matrix</span></div>
+      <div class="sb-item" data-view="todos" onclick="switchView('todos')"><span class="icon"><i class="fas fa-tasks"></i></span><span class="label">All Tasks</span><span class="count" id="count-todos">0</span></div>
+    </div>
+    <div class="sb-divider"></div>
+
+    <!-- ─── News ─── -->
+    <div class="sb-section">
+      <div class="sb-section-title">News & Intel</div>
+      <div class="sb-item" data-view="news" onclick="switchView('news')"><span class="icon"><i class="fas fa-newspaper"></i></span><span class="label">News Feed</span><span class="count" id="count-news">0</span></div>
+    </div>
+    <div class="sb-divider"></div>
+
+    <!-- ─── Settings ─── -->
+    <div class="sb-section">
+      <div class="sb-item" onclick="openSettings()"><span class="icon"><i class="fas fa-cog"></i></span><span class="label">Settings</span></div>
     </div>
   </aside>
 
@@ -831,9 +1088,106 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <button onclick="doRestore()" style="padding:8px 20px;background:var(--primary);color:var(--on-primary);border-radius:var(--radius-full);font-size:14px;font-weight:500">Restore</button>
     </div>
   </div>
+
+  <!-- ─── Settings Modal ─── -->
+  <div class="modal-card hidden" id="settingsModal" style="max-width:640px">
+    <div class="modal-header"><h2><i class="fas fa-cog" style="color:var(--primary);margin-right:6px"></i>Settings</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <div class="settings-tabs">
+        <button class="s-tab active" onclick="switchSettingsTab('email',this)"><i class="fas fa-envelope"></i> Email</button>
+        <button class="s-tab" onclick="switchSettingsTab('telegram',this)"><i class="fab fa-telegram"></i> Telegram</button>
+        <button class="s-tab" onclick="switchSettingsTab('finance',this)"><i class="fas fa-rupee-sign"></i> Finance</button>
+        <button class="s-tab" onclick="switchSettingsTab('news',this)"><i class="fas fa-newspaper"></i> News</button>
+      </div>
+      <div class="s-panel active" id="sp-email">
+        <div class="s-group">
+          <span class="s-group-label">SMTP Configuration</span>
+          <div class="s-row">
+            <div class="form-group"><label class="form-label">Host</label><input type="text" class="form-input" id="s-smtp-host" placeholder="smtp.gmail.com"></div>
+            <div class="form-group" style="max-width:120px"><label class="form-label">Port</label><input type="number" class="form-input" id="s-smtp-port" placeholder="587" value="587"></div>
+          </div>
+          <div class="s-row">
+            <div class="form-group"><label class="form-label">Username</label><input type="text" class="form-input" id="s-smtp-user" placeholder="you@gmail.com"></div>
+            <div class="form-group"><label class="form-label">Password / App Key</label><input type="password" class="form-input" id="s-smtp-pass" placeholder="App password"></div>
+          </div>
+          <div class="form-group"><label class="form-label">From Address</label><input type="text" class="form-input" id="s-smtp-from" placeholder="Knowledge Vault &lt;you@gmail.com&gt;"></div>
+          <div class="form-group"><label class="form-label">Send Reports To (email)</label><input type="email" class="form-input" id="s-notify-email" placeholder="you@gmail.com"></div>
+          <p class="s-help">For Gmail: enable 2FA and use an App Password. Recommended: <strong>Resend.com</strong> (free, 100 emails/day).</p>
+          <button class="test-btn" onclick="testEmailSettings()"><i class="fas fa-paper-plane"></i> Send Test Email</button>
+        </div>
+      </div>
+      <div class="s-panel" id="sp-telegram">
+        <div class="s-group">
+          <span class="s-group-label">Telegram Bot</span>
+          <div class="form-group"><label class="form-label">Bot Token</label><input type="text" class="form-input" id="s-tg-token" placeholder="123456:ABCdef..."></div>
+          <div class="form-group"><label class="form-label">Your Chat ID</label><input type="text" class="form-input" id="s-tg-chatid" placeholder="123456789"></div>
+          <p class="s-help">Create a bot via @BotFather on Telegram. Get your Chat ID by messaging @userinfobot.</p>
+          <button class="test-btn" onclick="testTelegramSettings()"><i class="fab fa-telegram"></i> Send Test Message</button>
+        </div>
+      </div>
+      <div class="s-panel" id="sp-finance">
+        <div class="s-group">
+          <span class="s-group-label">Finance Settings</span>
+          <div class="form-group"><label class="form-label">Currency</label>
+            <select class="form-select" id="s-currency">
+              <option value="INR">&#8377; Indian Rupee (INR)</option>
+              <option value="USD">$ US Dollar (USD)</option>
+              <option value="EUR">&#8364; Euro (EUR)</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Monthly Report Day (1-28)</label><input type="number" class="form-input" id="s-report-day" min="1" max="28" value="1"></div>
+          <p class="s-help">Monthly reports are emailed on this day each month. You can also trigger one manually.</p>
+        </div>
+      </div>
+      <div class="s-panel" id="sp-news">
+        <div class="s-group">
+          <span class="s-group-label">News Settings</span>
+          <div class="form-group"><div class="toggle-switch" onclick="toggleNewsSetting()"><div class="ts-track" id="newsEnabledTrack"></div><span class="ts-label">Enable news fetching</span></div></div>
+          <p class="s-help">News is fetched from PIB India, eGazette, Startup India, and Google News every alternate day at 8 AM IST. An email digest is sent if SMTP is configured.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
+      <button class="save-settings-btn" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+  </div>
+
+  <!-- ─── Todo Modal ─── -->
+  <div class="modal-card hidden" id="todoModal" style="max-width:500px">
+    <div class="modal-header"><h2 id="todoModalTitle">New Task</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="todoId">
+      <div class="form-group"><label class="form-label">Task Title</label><input type="text" class="form-input" id="todoTitle" placeholder="What needs to be done?"></div>
+      <div class="form-group"><label class="form-label">Description (optional)</label><textarea class="form-textarea" id="todoDesc" placeholder="Additional details..." style="min-height:70px"></textarea></div>
+      <div class="form-group"><label class="form-label">Due Date (optional)</label><input type="date" class="form-input" id="todoDueDate"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+        <div style="padding:12px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-md)">
+          <div class="toggle-switch" onclick="toggleTodoUrgent()"><div class="ts-track" id="todoUrgentTrack"></div><span class="ts-label" style="color:#dc2626;font-weight:600">&#9889; Urgent</span></div>
+          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Needs attention now</p>
+        </div>
+        <div style="padding:12px;background:rgba(0,117,222,0.05);border:1px solid rgba(0,117,222,0.2);border-radius:var(--radius-md)">
+          <div class="toggle-switch" onclick="toggleTodoImportant()"><div class="ts-track" id="todoImportantTrack"></div><span class="ts-label" style="color:var(--primary);font-weight:600">&#127919; Important</span></div>
+          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Significant impact on goals</p>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding:10px 14px;background:var(--canvas-soft);border-radius:var(--radius-md);font-size:13px;color:var(--ink-muted)" id="quadrantPreview">Select urgency/importance to see quadrant.</div>
+      <div class="form-group" style="margin-top:12px"><div class="toggle-switch" onclick="toggleTodoTelegram()"><div class="ts-track" id="todoTelegramTrack"></div><span class="ts-label">Send Telegram reminder for this task</span></div></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
+      <button onclick="saveTodo()" style="padding:8px 20px;background:var(--primary);color:var(--on-primary);border-radius:var(--radius-full);font-size:14px;font-weight:500">Save Task</button>
+    </div>
+  </div>
+
 </div>
 
 <div class="toast-container" id="toastContainer"></div>
+
+<!-- Quick Capture FAB -->
+<div id="quickCapture">
+  <button id="quickCaptureBtn" onclick="openNoteModal()" title="New Note"><i class="fas fa-plus"></i></button>
+</div>
 
 <!-- Chat Widget -->
 <div id="chatWidget">
@@ -884,7 +1238,10 @@ const CATEGORY_COLORS = {
   'Research':'accent-purple','Networking':'accent-teal','Learning':'accent-sky',
   'Finance':'accent-green','Books':'accent-brown','Companies':'accent-teal',
   'People':'accent-pink','Government':'accent-purple-deep','Manufacturing':'accent-orange-deep',
-  'Software':'accent-purple','Hardware':'accent-orange','Miscellaneous':'ink-muted'
+  'Software':'accent-purple','Hardware':'accent-orange','Miscellaneous':'ink-muted',
+  'Food':'accent-orange','Transport':'accent-sky','Investment':'accent-green',
+  'Health':'accent-pink','Entertainment':'accent-purple','Shopping':'accent-teal',
+  'Utilities':'accent-orange-deep','Education':'accent-sky','Other':'ink-muted'
 };
 const COLOR_MAP = {
   'accent-sky':'#62aef0','accent-purple':'#d6b6f6','accent-purple-deep':'#391c57',
@@ -896,7 +1253,7 @@ const ENTITY_ICONS = { people:'fa-user', companies:'fa-building', technologies:'
 const ENTITY_COLORS = { people:'#ff64c8', companies:'#2a9d99', technologies:'#dd5b00', projects:'#62aef0' };
 const ENTITY_LABELS = { people:'People', companies:'Companies', technologies:'Technologies', projects:'Projects' };
 const PAGE_SIZE = 40;
-const TABLES = ['notes','people','companies','technologies','projects','categories','tags'];
+const TABLES = ['notes','people','companies','technologies','projects','categories','tags','expenses','todos','news_items'];
 
 // ─── Supabase Client ───
 let sb = null;
@@ -941,6 +1298,7 @@ function showBanner(msg,cls='') {
 // ─── State ───
 let state = {
   notes:[], people:[], companies:[], technologies:[], projects:[], categories:[], tags:[],
+  expenses:[], todos:[], news_items:[], userSettings:null,
   currentView:'all', currentDetail:null, currentDetailType:null,
   searchQuery:'',
   filters:{categories:[],tags:[],priority:[],people:[],companies:[],technologies:[],projects:[],favouriteOnly:false,archivedOnly:false,deletedOnly:false},
@@ -961,6 +1319,13 @@ async function sbFetchAll() {
     state.projects = normalizeArrays(results[4].data||[]);
     state.categories = normalizeArrays(results[5].data||[]);
     state.tags = normalizeArrays(results[6].data||[]);
+    state.expenses = results[7].data||[];
+    state.todos = results[8].data||[];
+    state.news_items = results[9].data||[];
+
+    const { data: setts } = await sb.from('user_settings').select('*').maybeSingle();
+    state.userSettings = setts || { finance_currency: 'INR', news_enabled: true, finance_report_day: 1 };
+
     showBanner('Data loaded','success');
   } catch(e) {
     showBanner('Failed to load data: '+e.message,'error');
@@ -1230,7 +1595,9 @@ function getCatColor(catName) { const key=CATEGORY_COLORS[catName]||'ink-muted';
 const VIEW_TITLES = {
   all:'All Notes',favourites:'Favourites',archived:'Archived',recent:'Recent Notes',
   highpriority:'High Priority',notags:'No Tags',nocategories:'No Categories',recycle:'Recycle Bin',
-  people:'People',companies:'Companies',technologies:'Technologies',projects:'Projects'
+  people:'People',companies:'Companies',technologies:'Technologies',projects:'Projects',
+  finance:'Expenses', 'finance-report':'Monthly Finance Report',
+  matrix:'Eisenhower Matrix', todos:'All Tasks', news:'News & Intel'
 };
 
 // ─── Render ───
@@ -1253,6 +1620,10 @@ function updateSidebarCounts() {
   document.getElementById('count-companies').textContent=state.companies.length;
   document.getElementById('count-tech').textContent=state.technologies.length;
   document.getElementById('count-proj').textContent=state.projects.length;
+  
+  if(document.getElementById('count-exp')) document.getElementById('count-exp').textContent=state.expenses.length;
+  if(document.getElementById('count-todos')) document.getElementById('count-todos').textContent=state.todos.filter(t=>!t.completed).length;
+  if(document.getElementById('count-news')) document.getElementById('count-news').textContent=state.news_items.filter(n=>!n.is_read).length;
 }
 
 function renderSidebarCategories() {
@@ -1281,6 +1652,8 @@ function renderMainHeader() {
     vc.textContent=list.length+' records';
     sc.classList.add('hidden'); af.innerHTML='';
     va.innerHTML=`<button onclick="openEntityModal('${state.currentView}')"><i class="fas fa-plus"></i> New</button>`;
+  } else if(['finance','finance-report','matrix','todos','news'].includes(state.currentView)) {
+    vc.textContent=''; sc.classList.add('hidden'); af.innerHTML=''; va.innerHTML='';
   } else if(state.currentDetail) {
     vc.textContent=''; sc.classList.add('hidden'); af.innerHTML=''; va.innerHTML='';
   } else {
@@ -1310,6 +1683,12 @@ function renderMainContent() {
   if(state.currentDetail&&state.currentDetailType!=='note') { mc.innerHTML=renderEntityDetail(state.currentDetailType,state.currentDetail); return; }
   const isEntityView=['people','companies','technologies','projects'].includes(state.currentView);
   if(isEntityView) { mc.innerHTML=renderEntityList(state.currentView); return; }
+  
+  if(state.currentView === 'finance') { mc.innerHTML=renderFinanceDashboard(); return; }
+  if(state.currentView === 'finance-report') { mc.innerHTML=renderFinanceReport(); return; }
+  if(state.currentView === 'matrix') { mc.innerHTML=renderEisenhowerMatrix(); return; }
+  if(state.currentView === 'todos') { mc.innerHTML=renderTodoList(); return; }
+  if(state.currentView === 'news') { mc.innerHTML=renderNewsFeed(); return; }
 
   const filtered=getFilteredNotes();
   const totalPages=Math.ceil(filtered.length/PAGE_SIZE)||1;
@@ -2048,6 +2427,9 @@ async function sendChatMessage() {
   const payload = { 
     message: text, 
     image: currentImageBase64,
+    userId: currentUser.id,
+    telegramBotToken: state.userSettings?.telegram_bot_token,
+    telegramChatId: state.userSettings?.telegram_chat_id,
     vaultData: {
       notes: state.notes.map(n => ({ id: n.id, title: n.title, description: n.description, priority: n.priority, status: n.status, created_at: n.created_at, updated_at: n.updated_at, tags: n.tags, categories: n.categories })),
       people: state.people,
@@ -2074,6 +2456,17 @@ async function sendChatMessage() {
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
+    if (data.expenses) {
+      const { data: newExp } = await sb.from('expenses').select('*').order('date',{ascending:false});
+      if (newExp) state.expenses = newExp;
+      setTimeout(() => { if(state.currentView==='finance') renderMainContent(); updateSidebarCounts(); }, 500);
+    }
+    if (data.todos) {
+      const { data: newTodos } = await sb.from('todos').select('*').order('created_at',{ascending:false});
+      if (newTodos) state.todos = newTodos;
+      setTimeout(() => { if(['matrix','todos'].includes(state.currentView)) renderMainContent(); updateSidebarCounts(); }, 500);
+    }
+
     addChatMessage('ai', data.reply || 'Done.', null, data.actions || []);
     
   } catch (err) {
@@ -2091,6 +2484,10 @@ async function executeChatAction(action, btn) {
     let type = action.type.replace('add_', '').replace('update_', '');
     if (type === 'person') type = 'people';
     if (type === 'technology') type = 'technologies';
+    if (type === 'company') type = 'companies';
+    if (type === 'project') type = 'projects';
+    if (type === 'expense') type = 'expenses';
+    if (type === 'todo') type = 'todos';
     const isUpdate = action.type.startsWith('update_');
     
     if (type === 'note') {
@@ -2152,6 +2549,615 @@ async function executeChatAction(action, btn) {
     toast(e.message, 'error');
   }
 }
+
+// ==========================================
+// ─── NEW FEATURES (Finance, Todo, News) ───
+// ==========================================
+
+// ─── Settings & Toggles ───
+function toggleNewsSetting() { document.getElementById('newsEnabledTrack').classList.toggle('active'); }
+function toggleTodoUrgent() { const cb=document.getElementById('todoUrgent'); cb.checked=!cb.checked; updateQuadrantPreview(); }
+function toggleTodoImportant() { const cb=document.getElementById('todoImportant'); cb.checked=!cb.checked; updateQuadrantPreview(); }
+function toggleTodoTelegram() { const cb=document.getElementById('todoNotifyTelegram'); cb.checked=!cb.checked; }
+async function testEmailSettings() { toast('Please save settings and test via Finance Report instead','info'); }
+
+function openSettings() {
+  if(state.userSettings) {
+    document.getElementById('s-smtp-host').value = state.userSettings.smtp_host || '';
+    document.getElementById('s-smtp-port').value = state.userSettings.smtp_port || 587;
+    document.getElementById('s-smtp-user').value = state.userSettings.smtp_user || '';
+    document.getElementById('s-smtp-pass').value = state.userSettings.smtp_pass || '';
+    document.getElementById('s-smtp-from').value = state.userSettings.smtp_from || '';
+    document.getElementById('s-notify-email').value = state.userSettings.notify_email || '';
+    document.getElementById('s-tg-token').value = state.userSettings.telegram_bot_token || '';
+    document.getElementById('s-tg-chatid').value = state.userSettings.telegram_chat_id || '';
+    document.getElementById('s-currency').value = state.userSettings.finance_currency || 'INR';
+    document.getElementById('s-report-day').value = state.userSettings.finance_report_day || 1;
+    document.getElementById('s-news-topics').value = state.userSettings.news_topics || 'Indian policy, startups, technology';
+    if(state.userSettings.news_enabled === false) document.getElementById('newsEnabledTrack').classList.remove('active');
+    else document.getElementById('newsEnabledTrack').classList.add('active');
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('settingsModal').classList.remove('hidden');
+}
+
+function switchSettingsTab(tabId, btn) {
+  document.querySelectorAll('.s-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.s-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sp-'+tabId).classList.add('active');
+}
+
+async function saveSettings() {
+  const btn = document.querySelector('.save-settings-btn');
+  const ogText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  try {
+    const data = {
+      user_id: currentUser.id,
+      smtp_host: document.getElementById('s-smtp-host').value,
+      smtp_port: parseInt(document.getElementById('s-smtp-port').value)||587,
+      smtp_user: document.getElementById('s-smtp-user').value,
+      smtp_pass: document.getElementById('s-smtp-pass').value,
+      smtp_from: document.getElementById('s-smtp-from').value,
+      notify_email: document.getElementById('s-notify-email').value,
+      telegram_bot_token: document.getElementById('s-tg-token').value,
+      telegram_chat_id: document.getElementById('s-tg-chatid').value,
+      finance_currency: document.getElementById('s-currency').value,
+      finance_report_day: parseInt(document.getElementById('s-report-day').value)||1,
+      news_enabled: document.getElementById('newsEnabledTrack').classList.contains('active'),
+      news_topics: document.getElementById('s-news-topics').value.trim()
+    };
+    if(state.userSettings && state.userSettings.id) data.id = state.userSettings.id;
+    
+    const { data: saved, error } = await sb.from('user_settings').upsert(data).select().single();
+    if(error) throw error;
+    state.userSettings = saved;
+    toast('Settings saved successfully', 'success');
+    closeModal();
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.innerHTML = ogText;
+  }
+}
+
+async function testTelegramSettings() {
+  const token = document.getElementById('s-tg-token').value;
+  const chat = document.getElementById('s-tg-chatid').value;
+  if(!token || !chat) return toast('Please enter bot token and chat ID','error');
+  toast('Sending test message...');
+  try {
+    const { data, error } = await sb.functions.invoke('send-telegram', {
+      body: { botToken: token, chatId: chat, message: '👋 Hello from Knowledge Vault! Telegram notifications are working.' }
+    });
+    if(error) throw error;
+    if(data.success) toast('Message sent! Check Telegram.','success');
+    else throw new Error(data.error);
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ─── Finance Dashboard ───
+const CURRENCY_SYMBOLS = { INR:'₹', USD:'$', EUR:'€' };
+
+function getCurrencySymbol() {
+  return CURRENCY_SYMBOLS[state.userSettings?.finance_currency] || '₹';
+}
+
+function renderFinanceDashboard() {
+  const expenses = state.expenses;
+  const sym = getCurrencySymbol();
+  
+  // Calculate stats for current month
+  const now = new Date();
+  const currentMonthExp = expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  
+  const totalMonth = currentMonthExp.reduce((s,e)=>s+Number(e.amount),0);
+  const reimbMonth = currentMonthExp.filter(e=>e.reimbursable).reduce((s,e)=>s+Number(e.amount),0);
+  const netMonth = totalMonth - reimbMonth;
+
+  let chartHtml = `<div class="chart-wrap">
+    <canvas id="financeChart"></canvas>
+  </div>`;
+
+  let chatHtml = ``;
+
+  let tableHtml = `<div class="exp-table-wrap">
+    <table class="exp-table">
+      <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead>
+      <tbody>
+        ${expenses.slice(0,50).map(e=>`
+          <tr>
+            <td>${e.date}</td>
+            <td>${escHtml(e.description)}
+              ${e.reimbursable?`<div class="reimb-badge" style="margin-top:4px" title="${escHtml(e.reimbursable_note||'')}"><i class="fas fa-receipt"></i> Reimbursable</div>`:''}
+            </td>
+            <td><span class="cat-chip" style="background:${getCatColor(e.category)}22;color:${getCatColor(e.category)}">${e.category}</span></td>
+            <td style="font-weight:600">
+              ${e.reimbursable ? `<span style="text-decoration:line-through;color:var(--ink-faint);margin-right:4px">${sym}${e.amount}</span><span style="color:var(--accent-green)">${sym}0</span>` : `${sym}${e.amount}`}
+            </td>
+            <td><span class="exp-del" onclick="deleteExpense('${e.id}')"><i class="fas fa-trash"></i></span></td>
+          </tr>
+        `).join('')}
+        ${expenses.length===0?'<tr><td colspan="5" style="text-align:center;padding:30px">No expenses recorded yet.</td></tr>':''}
+      </tbody>
+    </table>
+  </div>`;
+
+  setTimeout(renderFinanceChart, 50);
+
+  return `
+    <div class="section-header">
+      <h2>Expense Dashboard</h2>
+    </div>
+    <div class="stat-cards">
+      <div class="stat-card c-blue"><div class="sc-label">This Month Total</div><div class="sc-value">${sym}${totalMonth.toLocaleString()}</div></div>
+      <div class="stat-card c-green"><div class="sc-label">Reimbursable</div><div class="sc-value">${sym}${reimbMonth.toLocaleString()}</div></div>
+      <div class="stat-card c-orange"><div class="sc-label">Net Spent</div><div class="sc-value">${sym}${netMonth.toLocaleString()}</div></div>
+    </div>
+    <div class="dash-grid" style="grid-template-columns:1fr 1fr">
+      ${chatHtml}
+      ${chartHtml}
+    </div>
+    <div class="section-header" style="margin-top:10px">
+      <h2>Recent Transactions</h2>
+    </div>
+    ${tableHtml}
+  `;
+}
+
+function renderFinanceChart() {
+  if(!window.Chart) return setTimeout(renderFinanceChart,100);
+  const ctx = document.getElementById('financeChart');
+  if(!ctx) return;
+  
+  // Calculate category totals for current month
+  const now = new Date();
+  const currentMonthExp = state.expenses.filter(e => {
+    const d = new Date(e.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  
+  const byCat = {};
+  currentMonthExp.forEach(e => { byCat[e.category] = (byCat[e.category]||0) + Number(e.amount); });
+  
+  const labels = Object.keys(byCat);
+  const data = Object.values(byCat);
+  const bgColors = labels.map(c => getCatColor(c));
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: bgColors, borderWidth:0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { boxWidth: 12, font: {family:'Inter', size:11} } }
+      },
+      cutout: '65%'
+    }
+  });
+}
+
+async function sendFinanceChat() {
+  const input = document.getElementById('finChatInput');
+  const msgText = input.value.trim();
+  if(!msgText) return;
+  
+  const msgList = document.getElementById('finChatMsgs');
+  msgList.innerHTML += `<div class="fin-chat-msg user">${escHtml(msgText)}</div>`;
+  input.value = '';
+  msgList.scrollTop = msgList.scrollHeight;
+
+  const thinkingId = 'th-'+Date.now();
+  msgList.innerHTML += `<div class="fin-chat-msg ai" id="${thinkingId}"><i class="fas fa-circle-notch fa-spin"></i> Processing...</div>`;
+  msgList.scrollTop = msgList.scrollHeight;
+
+  try {
+    const { data, error } = await sb.functions.invoke('gemini-chat', {
+      body: { message: msgText, userId: currentUser.id }
+    });
+    if(error) throw error;
+    
+    document.getElementById(thinkingId).remove();
+    msgList.innerHTML += `<div class="fin-chat-msg ai">${data.reply || 'Logged successfully.'}</div>`;
+    msgList.scrollTop = msgList.scrollHeight;
+    
+    // Refresh data silently
+    const { data: newExp } = await sb.from('expenses').select('*').order('date',{ascending:false});
+    if(newExp) {
+      state.expenses = newExp;
+      // Re-render dashboard after a short delay so user can read message
+      setTimeout(() => { if(state.currentView==='finance') renderMainContent(); }, 2000);
+      updateSidebarCounts();
+    }
+  } catch(e) {
+    document.getElementById(thinkingId).innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#c00"></i> Error: ${e.message}`;
+  }
+}
+
+async function deleteExpense(id) {
+  if(!confirm('Delete this expense?')) return;
+  try {
+    await sb.from('expenses').delete().eq('id',id);
+    state.expenses = state.expenses.filter(e=>e.id!==id);
+    renderMainContent();
+    updateSidebarCounts();
+    toast('Expense deleted');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+function renderFinanceReport() {
+  return `
+    <div class="section-header">
+      <h2>Monthly Reports</h2>
+      <button class="sb-new-btn" style="width:auto;margin:0" onclick="triggerFinanceReport()">
+        <i class="fas fa-paper-plane"></i> Email Previous Month Report Now
+      </button>
+    </div>
+    <div class="dash-widget">
+      <div style="font-size:14px;color:var(--ink-secondary);line-height:1.6">
+        <p>The <strong>Monthly Finance Report</strong> calculates your total spend, reimbursable expenses, and net spend for the previous calendar month.</p>
+        <p>It categorizes expenses and generates a beautiful HTML email sent via SMTP to your configured email address.</p>
+        <p>The report is automatically scheduled to run on day <strong>${state.userSettings?.finance_report_day || 1}</strong> of each month using <code>pg_cron</code>.</p>
+        <p>A summary of the report is also saved as a Note in your Vault.</p>
+      </div>
+    </div>
+  `;
+}
+
+async function triggerFinanceReport() {
+  toast('Generating and sending report...');
+  try {
+    const { data, error } = await sb.functions.invoke('send-finance-report', {
+      body: { userId: currentUser.id }
+    });
+    if(error) throw error;
+    if(data.success) {
+      toast(`Report for ${data.monthName} sent successfully!`, 'success');
+      // Refresh notes so the new report note shows up
+      const { data: n } = await sb.from('notes').select('*').order('created_at',{ascending:false});
+      if(n) { state.notes = normalizeArrays(n); updateSidebarCounts(); }
+    } else {
+      throw new Error(data.error);
+    }
+  } catch(e) {
+    toast(e.message, 'error');
+  }
+}
+
+// ─── Eisenhower Matrix (Todos) ───
+function openTodoModal(editId=null, u=false, i=false) {
+  if(editId) {
+    const t = state.todos.find(x=>x.id===editId);
+    if(t) {
+      document.getElementById('todoId').value = t.id;
+      document.getElementById('todoTitle').value = t.title;
+      document.getElementById('todoDesc').value = t.description||'';
+      document.getElementById('todoDueDate').value = t.due_date||'';
+      document.getElementById('todoUrgent').checked = t.urgent;
+      document.getElementById('todoImportant').checked = t.important;
+      document.getElementById('todoNotifyTelegram').checked = t.notify_telegram;
+      document.getElementById('todoModalTitle').textContent = 'Edit Task';
+    }
+  } else {
+    document.getElementById('todoId').value = '';
+    document.getElementById('todoTitle').value = '';
+    document.getElementById('todoDesc').value = '';
+    document.getElementById('todoDueDate').value = '';
+    document.getElementById('todoUrgent').checked = u;
+    document.getElementById('todoImportant').checked = i;
+    document.getElementById('todoNotifyTelegram').checked = false;
+    document.getElementById('todoModalTitle').textContent = 'New Task';
+  }
+  updateQuadrantPreview();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('todoModal').classList.remove('hidden');
+}
+
+function updateQuadrantPreview() {
+  const u = document.getElementById('todoUrgent').checked;
+  const i = document.getElementById('todoImportant').checked;
+  const p = document.getElementById('quadrantPreview');
+  
+  document.getElementById('urgentLabel').style.borderColor = u ? '#dc2626' : 'transparent';
+  document.getElementById('importantLabel').style.borderColor = i ? 'var(--primary)' : 'transparent';
+  
+  if(u && i) p.innerHTML = '<strong style="color:#dc2626">Quadrant 1: DO FIRST</strong><br>Urgent and important tasks.';
+  else if(!u && i) p.innerHTML = '<strong style="color:var(--primary)">Quadrant 2: SCHEDULE</strong><br>Important but not urgent tasks.';
+  else if(u && !i) p.innerHTML = '<strong style="color:#ca8a04">Quadrant 3: DELEGATE</strong><br>Urgent but not important tasks.';
+  else p.innerHTML = '<strong style="color:var(--ink-muted)">Quadrant 4: ELIMINATE</strong><br>Neither urgent nor important tasks.';
+}
+
+async function saveTodo() {
+  const title = document.getElementById('todoTitle').value.trim();
+  if(!title) return toast('Title is required','error');
+  
+  const id = document.getElementById('todoId').value;
+  const todo = {
+    user_id: currentUser.id,
+    title,
+    description: document.getElementById('todoDesc').value.trim(),
+    due_date: document.getElementById('todoDueDate').value || null,
+    urgent: document.getElementById('todoUrgent').checked,
+    important: document.getElementById('todoImportant').checked,
+    notify_telegram: document.getElementById('todoNotifyTelegram').checked,
+    updated_at: new Date().toISOString()
+  };
+  if(id) todo.id = id;
+  
+  try {
+    const { data, error } = await sb.from('todos').upsert(todo).select().single();
+    if(error) throw error;
+    
+    if(id) {
+      const idx = state.todos.findIndex(x=>x.id===id);
+      if(idx>-1) state.todos[idx] = data;
+    } else {
+      state.todos.unshift(data);
+    }
+    
+    closeModal();
+    renderMainContent();
+    updateSidebarCounts();
+    toast('Task saved', 'success');
+  } catch(e) { toast(e.message,'error'); }
+}
+
+async function toggleTodoComplete(id) {
+  const t = state.todos.find(x=>x.id===id);
+  if(!t) return;
+  const newVal = !t.completed;
+  t.completed = newVal;
+  // Optimistic UI
+  renderMainContent();
+  updateSidebarCounts();
+  try {
+    await sb.from('todos').update({completed: newVal, completed_at: newVal?new Date().toISOString():null}).eq('id',id);
+  } catch(e) {
+    t.completed = !newVal; // rollback
+    renderMainContent(); updateSidebarCounts();
+    toast('Update failed: '+e.message, 'error');
+  }
+}
+
+async function deleteTodo(id) {
+  if(!confirm('Delete task?')) return;
+  state.todos = state.todos.filter(x=>x.id!==id);
+  renderMainContent(); updateSidebarCounts();
+  try { await sb.from('todos').delete().eq('id',id); }
+  catch(e) { toast('Delete failed','error'); }
+}
+
+function renderTodoCard(t) {
+  const isOverdue = t.due_date && new Date(t.due_date) < new Date(new Date().setHours(0,0,0,0)) && !t.completed;
+  return `
+    <div class="todo-card ${t.completed?'done':''}">
+      <div style="display:flex;gap:10px">
+        <div style="padding-top:2px">
+          <input type="checkbox" ${t.completed?'checked':''} onchange="toggleTodoComplete('${t.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)">
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="tc-title" onclick="openTodoModal('${t.id}')" style="cursor:pointer">${escHtml(t.title)}</div>
+          ${t.due_date?`<div class="tc-due ${isOverdue?'overdue':''}"><i class="fas fa-calendar-alt"></i> ${t.due_date} ${isOverdue?'(Overdue)':''}</div>`:''}
+        </div>
+      </div>
+      <div class="tc-actions">
+        ${t.notify_telegram?'<span class="tc-btn" title="Telegram Reminder"><i class="fab fa-telegram" style="color:var(--primary)"></i></span>':''}
+        <button class="tc-btn del-btn" onclick="deleteTodo('${t.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>
+  `;
+}
+
+function renderEisenhowerMatrix() {
+  const todos = state.todos;
+  const q1 = todos.filter(t=>t.urgent && t.important);
+  const q2 = todos.filter(t=>!t.urgent && t.important);
+  const q3 = todos.filter(t=>t.urgent && !t.important);
+  const q4 = todos.filter(t=>!t.urgent && !t.important);
+  
+  // Sort incomplete first, then by created desc
+  const sortQ = (a,b) => (a.completed===b.completed ? new Date(b.created_at)-new Date(a.created_at) : (a.completed?1:-1));
+  q1.sort(sortQ); q2.sort(sortQ); q3.sort(sortQ); q4.sort(sortQ);
+
+  let chatHtml = ``;
+
+  return `
+    <div class="section-header">
+      <h2>Eisenhower Matrix</h2>
+      <button class="sb-new-btn" style="width:auto;margin:0" onclick="openTodoModal(null,false,false)"><i class="fas fa-plus"></i> New Task</button>
+    </div>
+    ${chatHtml}
+    <div class="matrix-axis-labels">
+      <div class="matrix-axis-label" style="color:#dc2626">Urgent</div>
+      <div class="matrix-axis-label" style="color:var(--ink-muted)">Not Urgent</div>
+    </div>
+    <div class="matrix-grid">
+      <div class="matrix-quadrant q1">
+        <div class="mq-head">
+          <div class="mq-label q1">Q1: DO FIRST</div>
+          <button class="mq-add" onclick="openTodoModal(null,true,true)"><i class="fas fa-plus"></i></button>
+        </div>
+        ${q1.map(renderTodoCard).join('')}
+      </div>
+      <div class="matrix-quadrant q2">
+        <div class="mq-head">
+          <div class="mq-label q2">Q2: SCHEDULE</div>
+          <button class="mq-add" onclick="openTodoModal(null,false,true)"><i class="fas fa-plus"></i></button>
+        </div>
+        ${q2.map(renderTodoCard).join('')}
+      </div>
+      <div class="matrix-quadrant q3">
+        <div class="mq-head">
+          <div class="mq-label q3">Q3: DELEGATE</div>
+          <button class="mq-add" onclick="openTodoModal(null,true,false)"><i class="fas fa-plus"></i></button>
+        </div>
+        ${q3.map(renderTodoCard).join('')}
+      </div>
+      <div class="matrix-quadrant q4">
+        <div class="mq-head">
+          <div class="mq-label q4">Q4: ELIMINATE</div>
+          <button class="mq-add" onclick="openTodoModal(null,false,false)"><i class="fas fa-plus"></i></button>
+        </div>
+        ${q4.map(renderTodoCard).join('')}
+      </div>
+    </div>
+  `;
+}
+
+async function sendTodoChat() {
+  const input = document.getElementById('todoChatInput');
+  const msgText = input.value.trim();
+  if(!msgText) return;
+  
+  const msgList = document.getElementById('todoChatMsgs');
+  msgList.innerHTML += `<div class="fin-chat-msg user">${escHtml(msgText)}</div>`;
+  input.value = '';
+  msgList.scrollTop = msgList.scrollHeight;
+
+  const thinkingId = 'th-'+Date.now();
+  msgList.innerHTML += `<div class="fin-chat-msg ai" id="${thinkingId}"><i class="fas fa-circle-notch fa-spin"></i> Analyzing...</div>`;
+  msgList.scrollTop = msgList.scrollHeight;
+
+  try {
+    const { data, error } = await sb.functions.invoke('gemini-chat', {
+      body: { 
+        message: msgText, 
+        userId: currentUser.id,
+        telegramBotToken: state.userSettings?.telegram_bot_token,
+        telegramChatId: state.userSettings?.telegram_chat_id
+      }
+    });
+    if(error) throw error;
+    
+    document.getElementById(thinkingId).remove();
+    msgList.innerHTML += `<div class="fin-chat-msg ai">${data.reply || 'Task added.'}</div>`;
+    msgList.scrollTop = msgList.scrollHeight;
+    
+    // Refresh data silently
+    const { data: newTodos } = await sb.from('todos').select('*').order('created_at',{ascending:false});
+    if(newTodos) {
+      state.todos = newTodos;
+      // Re-render dashboard after a short delay
+      setTimeout(() => { if(['matrix','todos'].includes(state.currentView)) renderMainContent(); }, 1500);
+      updateSidebarCounts();
+    }
+  } catch(e) {
+    document.getElementById(thinkingId).innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#c00"></i> Error: ${e.message}`;
+  }
+}
+
+function renderTodoList() {
+  const todos = [...state.todos].sort((a,b) => {
+    if(a.completed!==b.completed) return a.completed?1:-1;
+    if(a.due_date && b.due_date) return new Date(a.due_date)-new Date(b.due_date);
+    return new Date(b.created_at)-new Date(a.created_at);
+  });
+  
+  return `
+    <div class="section-header">
+      <h2>All Tasks</h2>
+      <button class="sb-new-btn" style="width:auto;margin:0" onclick="openTodoModal()"><i class="fas fa-plus"></i> New Task</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
+      ${todos.map(renderTodoCard).join('')}
+    </div>
+  `;
+}
+
+// ─── News Feed ───
+let currentNewsFilter = 'all';
+
+function setNewsFilter(f) {
+  currentNewsFilter = f;
+  renderMainContent();
+}
+
+async function markNewsRead(id, url) {
+  if(url && url !== 'null' && url !== 'undefined' && url !== '') window.open(url, '_blank');
+  const n = state.news_items.find(x=>x.id===id);
+  if(n && !n.is_read) {
+    n.is_read = true;
+    updateSidebarCounts();
+    try { await sb.from('news_items').update({is_read:true}).eq('id',id); } catch(e){}
+    if(state.currentView==='news') renderMainContent();
+  }
+}
+
+function renderNewsFeed() {
+  let items = state.news_items;
+  if(currentNewsFilter !== 'all') {
+    items = items.filter(n => n.category === currentNewsFilter);
+  }
+  
+  // Sort by date desc
+  items.sort((a,b)=>new Date(b.published_at)-new Date(a.published_at));
+
+  const filterTabs = [
+    {id:'all', label:'All Intelligence'},
+    {id:'pib', label:'PIB India'},
+    {id:'gazette', label:'eGazette'},
+    {id:'startup', label:'Startups'},
+    {id:'market', label:'Market Opps'}
+  ];
+
+  return `
+    <div class="section-header">
+      <h2>Intelligence Feed</h2>
+      <button class="fetch-now-btn" onclick="fetchNewsNow()">
+        <i class="fas fa-sync-alt"></i> Fetch Now
+      </button>
+    </div>
+    <div class="news-toolbar">
+      <div class="news-tabs">
+        ${filterTabs.map(f=>`<button class="news-tab ${currentNewsFilter===f.id?'active':''}" onclick="setNewsFilter('${f.id}')">${f.label}</button>`).join('')}
+      </div>
+    </div>
+    <div class="news-grid">
+      ${items.slice(0,60).map(n=>{
+        const time = new Date(n.published_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        return `
+        <div class="news-card ${!n.is_read?'unread':''}" onclick="markNewsRead('${n.id}','${n.url || ''}')">
+          <div class="nc-src ${n.category}">${n.source}</div>
+          <div class="nc-headline">${escHtml(n.title)}</div>
+          <div class="nc-summary">${escHtml(n.summary)}</div>
+          <div class="nc-footer">
+            <span>${time}</span>
+            ${n.url?'<span class="nc-read-link">Read full story &rarr;</span>':''}
+          </div>
+        </div>`;
+      }).join('')}
+      ${items.length===0?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--ink-muted)">No news items found.</div>':''}
+    </div>
+  `;
+}
+
+async function fetchNewsNow() {
+  toast('Fetching latest intelligence...');
+  try {
+    const { data, error } = await sb.functions.invoke('fetch-news', {
+      body: { userId: currentUser.id }
+    });
+    if(error) throw error;
+    
+    // Silently fetch updated news
+    const { data: newNews } = await sb.from('news_items').select('*').order('published_at',{ascending:false});
+    if(newNews) {
+      state.news_items = newNews;
+      updateSidebarCounts();
+      if(state.currentView==='news') renderMainContent();
+    }
+    toast(`Fetched ${data.fetched} items, added ${data.inserted} relevant ones.`, 'success');
+  } catch(e) {
+    toast('News fetch failed: '+e.message, 'error');
+  }
+}
+
 // ─── Initialization ───
 checkSession();
 

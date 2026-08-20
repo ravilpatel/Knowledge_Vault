@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,96 +12,93 @@ serve(async (req) => {
   }
 
   try {
-    const { message, image, vaultData } = await req.json()
-    
-    // Get the Gemini API key from Supabase Secrets
+    const { message, userId, telegramBotToken, telegramChatId } = await req.json()
     const apiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is not configured in Supabase Secrets')
-    }
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
-    const systemInstruction = `You are an AI assistant for Knowledge Vault, a personal knowledge repository app.
-You have access to the user's current vault data. You can answer questions about it, or propose actions to add or update information.
+    const sbUrl = Deno.env.get('SUPABASE_URL')
+    const sbKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const sb = createClient(sbUrl, sbKey)
 
-Respond ONLY with a JSON object containing:
-- "reply": A conversational response answering the user's query or explaining what action you're taking.
-- "actions": An optional array of action objects.
+    const systemInstruction = `You are the core intelligence of "Knowledge Vault". Your job is to extract entities from user messages and return structured JSON.
+You can manage Vault Notes, People, Companies, Projects, Technologies, as well as Financial Expenses and Tasks (Todos).
 
-If the user asks a question about their existing data (e.g., "fetch my last notes", "who is X?"), simply answer it in the "reply" field based on the provided vaultData context. You do not need to return actions for read-only queries.
+Possible actions for Vault: "add_note", "add_person", "add_company", "add_project", "add_technology", "update_...".
+If the user is logging an expense, provide it in the "expenses" array.
+If the user is adding a task/reminder, provide it in the "todos" array.
 
-If the user asks to add or update data, emit the corresponding action(s) in the "actions" array.
-Allowed action types and their data schemas:
-1. "add_note": { "title": string, "description": string, "tags": string[], "categories": string[] }
-2. "add_person": { "name": string, "organisation": string, "designation": string, "contact_info": string, "notes": string }
-3. "add_company": { "name": string, "industry": string, "website": string, "description": string }
-4. "add_project": { "name": string, "status": "planning"|"active"|"completed"|"paused", "description": string }
-5. "add_technology": { "name": string, "description": string }
-
-To UPDATE an existing item, use the "update_..." prefix and INCLUDE the "id" field:
-6. "update_note": { "id": string, ...other_fields_to_update }
-7. "update_person": { "id": string, ...other_fields_to_update }
-8. "update_company": { "id": string, ...other_fields_to_update }
-9. "update_project": { "id": string, ...other_fields_to_update }
-10. "update_technology": { "id": string, ...other_fields_to_update }
-
-If the user gives a linkedin ID/URL or visiting card image, extract the details and create add_person/add_company actions.`
-
-    const parts = []
-    
-    if (vaultData) {
-      parts.push({ text: "Current Vault Data context: " + JSON.stringify(vaultData) })
-    }
-    
-    if (message) {
-      parts.push({ text: "User Input: " + message })
-    }
-    if (image) {
-      // Assuming jpeg if base64 provided
-      parts.push({
-        inlineData: {
-          mimeType: "image/jpeg",
-          data: image
-        }
-      })
-    }
-
-    if (!message && !image) {
-      throw new Error('No message or image provided')
-    }
+JSON Schema:
+{
+  "reply": "Conversational reply confirming actions taken.",
+  "actions": [ { "type": "add_note", "data": { "title": "...", "description": "..." } } ],
+  "expenses": [ { "amount": 100, "description": "Dinner", "category": "Food", "reimbursable": false } ],
+  "todos": [ { "title": "Buy milk", "description": "", "urgent": true, "important": false, "due_date": null } ]
+}`
 
     const payload = {
-      system_instruction: {
-        parts: [{ text: systemInstruction }]
-      },
-      contents: [{
-        parts: parts
-      }],
-      generationConfig: {
-        response_mime_type: "application/json"
-      }
+      system_instruction: { parts: [{ text: systemInstruction }] },
+      contents: [{ parts: [{ text: message }] }],
+      generationConfig: { response_mime_type: 'application/json' }
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+    )
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error?.message || 'Failed to fetch from Gemini API')
+        const err = await response.text()
+        throw new Error('Gemini API error: ' + err)
     }
 
-    const responseData = await response.json()
-    const resultText = responseData.candidates[0].content.parts[0].text
+    const geminiData = await response.json()
+    const resultText = geminiData.candidates[0].content.parts[0].text
     
-    // Validate JSON parsing
     let parsedResult
     try {
-      parsedResult = JSON.parse(resultText)
+      const cleanText = resultText.replace(/^\s*```json/i, '').replace(/^\s*```/i, '').replace(/```\s*$/i, '').trim()
+      parsedResult = JSON.parse(cleanText)
     } catch (e) {
-      console.error('Failed to parse Gemini response as JSON:', resultText)
       throw new Error('Invalid JSON format returned from Gemini')
+    }
+
+    // Insert Expenses
+    if (parsedResult.expenses && parsedResult.expenses.length > 0) {
+       const rows = parsedResult.expenses.map((e) => ({
+          user_id: userId,
+          amount: e.amount || 0,
+          description: e.description || '',
+          category: e.category || 'Other',
+          reimbursable: Boolean(e.reimbursable),
+          reimbursable_note: e.reimbursable_note || null,
+          date: new Date().toISOString().split('T')[0]
+       }))
+       await sb.from('expenses').insert(rows)
+    }
+
+    // Insert Todos
+    if (parsedResult.todos && parsedResult.todos.length > 0) {
+       const rows = parsedResult.todos.map((t) => ({
+          user_id: userId,
+          title: t.title || 'Untitled Task',
+          description: t.description || '',
+          urgent: Boolean(t.urgent),
+          important: Boolean(t.important),
+          due_date: t.due_date || null
+       }))
+       await sb.from('todos').insert(rows)
+       
+       // Telegram Notification logic
+       if (telegramBotToken && telegramChatId) {
+         for (const r of rows) {
+            if (r.urgent && r.important) {
+               await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                  method: 'POST', headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({ chat_id: telegramChatId, text: `🔴 Urgent Task Added: ${r.title}\\nDue: ${r.due_date || "ASAP"}\\nKnowledge Vault` })
+               }).catch(e=>console.error("Telegram fail:", e))
+            }
+         }
+       }
     }
 
     return new Response(JSON.stringify(parsedResult), {
@@ -109,9 +107,6 @@ If the user gives a linkedin ID/URL or visiting card image, extract the details 
     })
 
   } catch (error) {
-    console.error('Edge function error:', error.message)
-    // Return 200 so the Supabase client doesn't throw a generic HTTP error,
-    // allowing the frontend to read the specific `error.message` from the JSON.
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
