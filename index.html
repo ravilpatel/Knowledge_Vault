@@ -140,67 +140,6 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
   font-size: 14px;
   color: var(--ink-muted);
 }
-.auth-card .ac-tabs {
-  display: flex;
-  gap: 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid var(--hairline);
-}
-.auth-card .ac-tabs button {
-  flex: 1;
-  padding: 10px;
-  background: transparent;
-  color: var(--ink-muted);
-  font-size: 14px;
-  font-weight: 500;
-  border-bottom: 2px solid transparent;
-  transition: all var(--transition);
-}
-.auth-card .ac-tabs button.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-}
-.auth-card .ac-form .form-group { margin-bottom: 14px; }
-.auth-card .ac-form .form-label {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink-muted);
-  margin-bottom: 4px;
-}
-.auth-card .ac-form .form-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  background: var(--canvas);
-  color: var(--ink);
-}
-.auth-card .ac-btn {
-  width: 100%;
-  padding: 12px;
-  background: var(--primary);
-  color: var(--on-primary);
-  border-radius: var(--radius-full);
-  font-size: 15px;
-  font-weight: 500;
-  margin-top: 8px;
-  transition: background var(--transition), transform var(--transition);
-}
-.auth-card .ac-btn:hover { background: var(--primary-active); }
-.auth-card .ac-btn:active { transform: scale(0.97); }
-.auth-card .ac-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.auth-card .ac-error {
-  font-size: 13px;
-  color: #c00;
-  background: #fee;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  margin-bottom: 12px;
-  display: none;
-}
-.auth-card .ac-error.show { display: block; }
 .auth-card .ac-forgot {
   text-align: center;
   font-size: 13px;
@@ -208,6 +147,27 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
   margin-top: 12px;
 }
 .auth-card .ac-forgot a { color: var(--primary); }
+.auth-card .ac-form .form-group { margin-bottom: 14px; }
+.auth-card .ac-form .form-label {
+  display: block; font-size: 13px; font-weight: 500; color: var(--ink-muted); margin-bottom: 4px;
+}
+.auth-card .ac-form .form-input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--hairline);
+  border-radius: var(--radius-md); font-size: 15px; background: var(--canvas); color: var(--ink);
+}
+.auth-card .ac-btn {
+  width: 100%; padding: 12px; background: var(--primary); color: var(--on-primary);
+  border-radius: var(--radius-full); font-size: 15px; font-weight: 500; margin-top: 8px;
+  transition: background var(--transition), transform var(--transition);
+}
+.auth-card .ac-btn:hover { background: var(--primary-active); }
+.auth-card .ac-btn:active { transform: scale(0.97); }
+.auth-card .ac-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-card .ac-error {
+  font-size: 13px; color: #c00; background: #fee; padding: 8px 12px;
+  border-radius: var(--radius-md); margin-bottom: 12px; display: none;
+}
+.auth-card .ac-error.show { display: block; }
 
 /* ─── Sync Status Banner ─── */
 #syncBanner {
@@ -537,26 +497,76 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
+/* ─── Responsive / Mobile-Friendly ─── */
 @media (max-width: 768px) {
-  #sidebar { width: 220px; }
   .notes-grid { grid-template-columns: 1fr; }
-  .detail-view { padding: 20px; }
-  .modal-card { width: 95%; max-width: 500px; }
+  .detail-view { padding: 16px; }
+  .modal-card { width: 96%; max-width: none; max-height: 92vh; border-radius: var(--radius-lg); }
   #syncBanner { left: 0; }
+  .mh-row { gap: 8px; }
+  .mh-title { font-size: 18px; }
+  .mh-sort select, .mh-sort button { font-size: 12px; padding: 4px 6px; }
+  .form-row { flex-direction: column; gap: 0; }
+  .dv-actions { flex-wrap: wrap; gap: 6px; }
+  .dv-actions button { flex: 1 1 auto; min-width: 100px; font-size: 13px; padding: 8px 10px; }
 }
 @media (max-width: 600px) {
-  #sidebar { position: fixed; left: -260px; transition: left 300ms ease; z-index: 50; height: 100vh; }
+  #sidebar {
+    position: fixed; left: -280px; top: 0; bottom: 0;
+    width: 280px; transition: left 300ms ease;
+    z-index: 50; height: 100vh; box-shadow: var(--shadow-elevated);
+  }
   #sidebar.mobile-open { left: 0; }
   .mobile-toggle { display: flex !important; }
-  #main-content { padding: 16px; }
+  #main-header { padding: 12px 16px 12px 60px; }
+  #main-content { padding: 12px; }
   #syncBanner { left: 0; }
+  .mh-row { flex-wrap: wrap; }
+  .mh-sort { width: 100%; margin-top: 6px; }
+  .mh-filters { width: 100%; }
+  /* Modal: bottom sheets */
+  .modal-overlay { align-items: flex-end; }
+  .modal-card {
+    width: 100%; max-width: 100%; max-height: 90vh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    animation: slideUp 250ms ease;
+  }
+  /* Auth card fills bottom */
+  .auth-card { width: 100%; max-width: 100%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: 32px 24px; }
+  #authOverlay { align-items: flex-end; }
+  /* Chat: full-width bottom drawer */
+  #chatWidget { bottom: 16px; right: 16px; }
+  #chatToggle { width: 52px; height: 52px; font-size: 20px; }
+  #chatWindow {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    width: 100vw; height: 75vh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    border: none; border-top: 1px solid var(--hairline);
+    animation: slideUp 250ms ease;
+  }
+  /* Hide FAB when chat window is open */
+  #chatWindow.open ~ #chatToggle { display: none; }
+}
+/* Bigger touch targets on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .sb-item { padding: 10px 8px; min-height: 44px; }
+  .chat-action-icon, .chat-send-btn { width: 44px; height: 44px; }
+  .modal-close { width: 40px; height: 40px; }
+  button { min-height: 36px; }
 }
 .mobile-toggle {
-  display: none; position: fixed; top: 12px; left: 12px; z-index: 40;
+  display: none; position: fixed; top: 12px; left: 12px; z-index: 55;
   width: 36px; height: 36px; background: var(--surface);
   border: 1px solid var(--hairline); border-radius: var(--radius-md);
   align-items: center; justify-content: center; font-size: 16px; color: var(--ink-secondary);
+  box-shadow: var(--shadow-soft);
 }
+/* Sidebar backdrop overlay */
+#sidebarOverlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  z-index: 45; animation: fadeIn 150ms ease;
+}
+#sidebarOverlay.show { display: block; }
 
 .hidden { display: none !important; }
 
@@ -621,9 +631,6 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 .image-preview img { max-width: 100%; border-radius: var(--radius-md); border: 1px solid var(--hairline); }
 .image-preview .remove-img { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; }
 
-@media (max-width: 600px) {
-  #chatWindow { width: calc(100vw - 32px); right: 16px; height: 70vh; }
-}
 </style>
 </head>
 <body>
@@ -639,23 +646,16 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <h1>Knowledge Vault</h1>
       <p>Your personal knowledge repository, accessible everywhere.</p>
     </div>
-    <div class="ac-tabs">
-      <button class="active" onclick="switchAuthTab('login')">Log In</button>
-      <button onclick="switchAuthTab('signup')">Sign Up</button>
-    </div>
     <div id="authError" class="ac-error"></div>
     <div class="ac-form" id="authForm">
-      <div class="form-group" id="authNameGroup" style="display:none">
-        <label class="form-label">Full Name</label>
-        <input type="text" class="form-input" id="authName" placeholder="Your name">
-      </div>
       <div class="form-group">
         <label class="form-label">Email</label>
         <input type="email" class="form-input" id="authEmail" placeholder="you@example.com">
       </div>
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input type="password" class="form-input" id="authPassword" placeholder="Min 6 characters">
+        <input type="password" class="form-input" id="authPassword" placeholder="Password"
+               onkeydown="if(event.key==='Enter')handleAuth()">
       </div>
       <button class="ac-btn" id="authSubmit" onclick="handleAuth()">Log In</button>
     </div>
@@ -664,6 +664,9 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     </div>
   </div>
 </div>
+
+<!-- Sidebar backdrop (mobile) -->
+<div id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
 
 <button class="mobile-toggle" onclick="toggleMobileSidebar()"><i class="fas fa-bars"></i></button>
 
@@ -1095,17 +1098,6 @@ async function checkSession() {
   }
 }
 
-function switchAuthTab(mode) {
-  state.authMode = mode;
-  document.querySelectorAll('.auth-card .ac-tabs button').forEach(b => b.classList.remove('active'));
-  const tabs = document.querySelectorAll('.auth-card .ac-tabs button');
-  tabs[mode==='login'?0:1].classList.add('active');
-  document.getElementById('authNameGroup').style.display = mode==='signup'?'block':'none';
-  document.getElementById('authSubmit').textContent = mode==='login'?'Log In':'Sign Up';
-  document.getElementById('authForgot').style.display = mode==='login'?'block':'none';
-  hideAuthError();
-}
-
 function showAuthError(msg) { const el=document.getElementById('authError'); el.textContent=msg; el.classList.add('show'); }
 function hideAuthError() { document.getElementById('authError').classList.remove('show'); }
 
@@ -1119,23 +1111,9 @@ async function handleAuth() {
   if(!email||!password) { showAuthError('Email and password are required.'); btn.disabled=false; return; }
 
   try {
-    if(state.authMode==='signup') {
-      const name = document.getElementById('authName').value.trim();
-      const {data,error} = await sb.auth.signUp({email,password,options:{data:{full_name:name}}});
-      if(error) throw error;
-      if(data.user && !data.session) {
-        // Email confirmation required
-        toast('Check your email to confirm your account, then log in.','info');
-        switchAuthTab('login');
-        btn.disabled=false;
-        return;
-      }
-      currentUser = data.user;
-    } else {
-      const {data,error} = await sb.auth.signInWithPassword({email,password});
-      if(error) throw error;
-      currentUser = data.user;
-    }
+    const {data,error} = await sb.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    currentUser = data.user;
 
     document.getElementById('authOverlay').classList.add('hidden');
     document.getElementById('app').style.display = 'flex';
@@ -1495,8 +1473,14 @@ function handleSortChange() { state.sortField=document.getElementById('sortField
 function toggleSortDir() { state.sortDir=state.sortDir==='desc'?'asc':'desc'; state.page=1; render(); }
 function addFilter(type,value) { if(!state.filters[type])state.filters[type]=[]; if(!state.filters[type].includes(value))state.filters[type].push(value); state.page=1; state.currentDetail=null; if(['people','companies','technologies','projects'].includes(state.currentView))state.currentView='all'; render(); }
 function removeFilter(type,value) { if(state.filters[type])state.filters[type]=state.filters[type].filter(v=>v!==value); state.page=1; render(); }
-function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open'); }
-function closeMobileSidebar() { document.getElementById('sidebar').classList.remove('mobile-open'); }
+function toggleMobileSidebar() {
+  const open = document.getElementById('sidebar').classList.toggle('mobile-open');
+  document.getElementById('sidebarOverlay').classList.toggle('show', open);
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
 
 // ─── Note CRUD ───
 function openNoteModal(editId) {
@@ -2038,6 +2022,11 @@ function addChatMessage(sender, text, id = null, actions = []) {
       else if (action.type === 'add_company') { label = `Add Company: ${action.data.name}`; icon = 'fa-building'; }
       else if (action.type === 'add_project') { label = `Add Project: ${action.data.name}`; icon = 'fa-project-diagram'; }
       else if (action.type === 'add_technology') { label = `Add Tech: ${action.data.name}`; icon = 'fa-microchip'; }
+      else if (action.type === 'update_note') { label = `Update Note: ${action.data.title || 'Untitled'}`; icon = 'fa-edit'; }
+      else if (action.type === 'update_person') { label = `Update Contact: ${action.data.name || 'Unknown'}`; icon = 'fa-user-edit'; }
+      else if (action.type === 'update_company') { label = `Update Company: ${action.data.name || 'Unknown'}`; icon = 'fa-edit'; }
+      else if (action.type === 'update_project') { label = `Update Project: ${action.data.name || 'Unknown'}`; icon = 'fa-edit'; }
+      else if (action.type === 'update_technology') { label = `Update Tech: ${action.data.name || 'Unknown'}`; icon = 'fa-edit'; }
       
       btn.innerHTML = `<i class="fas ${icon}"></i> ${escHtml(label)}`;
       btn.onclick = () => executeChatAction(action, btn);
@@ -2056,7 +2045,17 @@ async function sendChatMessage() {
 
   if (text) addChatMessage('user', text);
   
-  const payload = { message: text, image: currentImageBase64 };
+  const payload = { 
+    message: text, 
+    image: currentImageBase64,
+    vaultData: {
+      notes: state.notes.map(n => ({ id: n.id, title: n.title, description: n.description, priority: n.priority, status: n.status, created_at: n.created_at, updated_at: n.updated_at, tags: n.tags, categories: n.categories })),
+      people: state.people,
+      companies: state.companies,
+      technologies: state.technologies,
+      projects: state.projects
+    }
+  };
   input.value = '';
   input.style.height = 'auto';
   currentImageBase64 = null;
@@ -2086,14 +2085,15 @@ async function sendChatMessage() {
 async function executeChatAction(action, btn) {
   btn.disabled = true;
   btn.style.opacity = '0.5';
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
   
   try {
-    let type = action.type.replace('add_', '');
+    let type = action.type.replace('add_', '').replace('update_', '');
     if (type === 'person') type = 'people';
     if (type === 'technology') type = 'technologies';
+    const isUpdate = action.type.startsWith('update_');
     
-    if (action.type === 'add_note') {
+    if (type === 'note') {
       // Ensure tags exist
       for (const t of (action.data.tags || [])) {
         if(!state.tags.find(x=>x.name===t)) {
@@ -2102,33 +2102,50 @@ async function executeChatAction(action, btn) {
            await sbUpsert('tags',tagObj);
         }
       }
-      const note = {
-        id: uuid(), user_id: currentUser.id,
-        title: action.data.title || 'Untitled',
-        description: action.data.description || '',
-        tags: action.data.tags || [],
-        categories: action.data.categories || [],
-        priority: 'medium',
-        status: 'active',
-        related_people: [], related_companies: [], related_technologies: [], related_projects: [],
-        attachments: [], favourite: false, archived: false
-      };
-      const result = await sbUpsert('notes', note);
-      state.notes.unshift(normItem(result || note));
+      let note = { ...action.data };
+      if (isUpdate) {
+        if (!note.id) throw new Error("Update action missing 'id'");
+        const existing = state.notes.find(x => x.id === note.id);
+        if (!existing) throw new Error("Note not found");
+        Object.assign(existing, note);
+        await sbUpsert('notes', existing);
+      } else {
+        note = {
+          id: uuid(), user_id: currentUser.id,
+          title: action.data.title || 'Untitled',
+          description: action.data.description || '',
+          tags: action.data.tags || [],
+          categories: action.data.categories || [],
+          priority: 'medium',
+          status: 'active',
+          related_people: [], related_companies: [], related_technologies: [], related_projects: [],
+          attachments: [], favourite: false, archived: false, ...action.data
+        };
+        const result = await sbUpsert('notes', note);
+        state.notes.unshift(normItem(result || note));
+      }
     } else {
-       const entity = { id: uuid(), user_id: currentUser.id, ...action.data };
-       // Ensure required array fields exist to prevent DB null errors
-       if(type === 'people') {
-         entity.related_companies = entity.related_companies || [];
-         entity.related_technologies = entity.related_technologies || [];
-         entity.related_projects = entity.related_projects || [];
+       let entity = { ...action.data };
+       if (isUpdate) {
+         if (!entity.id) throw new Error(`Update action missing 'id'`);
+         const existing = state[type].find(x => x.id === entity.id);
+         if (!existing) throw new Error(`${type} not found`);
+         Object.assign(existing, entity);
+         await sbUpsert(type, existing);
+       } else {
+         entity = { id: uuid(), user_id: currentUser.id, ...action.data };
+         if(type === 'people') {
+           entity.related_companies = entity.related_companies || [];
+           entity.related_technologies = entity.related_technologies || [];
+           entity.related_projects = entity.related_projects || [];
+         }
+         const result = await sbUpsert(type, entity);
+         state[type].unshift(normItem(result || entity));
        }
-       const result = await sbUpsert(type, entity);
-       state[type].unshift(normItem(result || entity));
     }
     
-    btn.innerHTML = '<i class="fas fa-check"></i> Added!';
-    toast('Item added to Vault', 'success');
+    btn.innerHTML = '<i class="fas fa-check"></i> ' + (isUpdate ? 'Updated!' : 'Added!');
+    toast(isUpdate ? 'Item updated' : 'Item added to Vault', 'success');
     render(); // Refresh main UI to show the new item
   } catch (e) {
     btn.innerHTML = '<i class="fas fa-times"></i> Failed';
