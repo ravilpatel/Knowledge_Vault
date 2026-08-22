@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, userId, telegramBotToken, telegramChatId } = await req.json()
+    const { message, userId, telegramBotToken, telegramChatId, panels, panelFields, vaultData } = await req.json()
     const apiKey = Deno.env.get('GEMINI_API_KEY')
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
 
@@ -20,18 +20,48 @@ serve(async (req) => {
     const sbKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     const sb = createClient(sbUrl, sbKey)
 
-    const systemInstruction = `You are the core intelligence of "Knowledge Vault". Your job is to extract entities from user messages and return structured JSON.
-You can manage Vault Notes, People, Companies, Projects, Technologies, as well as Financial Expenses and Tasks (Todos).
+    let panelsInstruction = '';
+    if (panels && panels.length > 0) {
+      panelsInstruction = `
+In addition to the standard Note, Person, Company, Project, Technology, and Todo entries, you can manage "Panel Entries" for user-defined custom Panels.
+Available Panels and their configured Fields:
+${panels.map((p) => {
+  const fields = (panelFields || []).filter((f) => f.panel_id === p.id);
+  const fieldsStr = fields.map((f) => `- "${f.field_key}" (${f.field_label}, type: ${f.field_type}${f.options ? `, options: ${JSON.stringify(f.options)}` : ''}${f.is_required ? ', required' : ''})`).join('\n');
+  return `Panel Name: "${p.name}" (referred in messages by name)\nFields:\n${fieldsStr}`;
+}).join('\n\n')}
+
+If the user request maps to one of the custom Panels above, add an action of type "add_panel_entry" to the "actions" array:
+Action Schema:
+{ "type": "add_panel_entry", "panel_name": "[Exact Panel Name]", "data": { "[field_key_1]": "[extracted_value_1]", ... } }
+Extract and map fields precisely based on their type. Array values like "tags" or "people" (references to People names/IDs, matched if possible) should be arrays.
+`;
+    }
+
+    const systemInstruction = `You are the core intelligence of "Knowledge Vault". Your job is to extract entities from user messages and return structured JSON, and also act as a conversational assistant.
+You can manage Vault Notes (Ideas), People, Companies, Projects, Technologies, and Tasks (Todos).
+
+CRITICAL DIRECTIVES:
+1. Limit your knowledge exclusively to the data provided within this application context (provided below). Do NOT use outside knowledge or external data.
+2. If the user's request is ambiguous or lacks required information, use the "reply" field to ask follow-up questions directly to the user.
+3. Take data inputs directly and structure them into the JSON format requested.
+4. When the user asks a question about their data, use the Vault Data provided below to formulate a helpful answer in the "reply" field. You do not need to provide any "actions" if they are just asking a question.
+
+VAULT DATA (YOUR EXCLUSIVE KNOWLEDGE BASE):
+${vaultData ? JSON.stringify(vaultData) : 'No data available yet.'}
 
 Possible actions for Vault: "add_note", "add_person", "add_company", "add_project", "add_technology", "update_...".
-If the user is logging an expense, provide it in the "expenses" array.
 If the user is adding a task/reminder, provide it in the "todos" array.
+
+${panelsInstruction}
 
 JSON Schema:
 {
-  "reply": "Conversational reply confirming actions taken.",
-  "actions": [ { "type": "add_note", "data": { "title": "...", "description": "..." } } ],
-  "expenses": [ { "amount": 100, "description": "Dinner", "category": "Food", "reimbursable": false } ],
+  "reply": "Conversational reply confirming actions taken, answering the user's question based on Vault Data, or asking follow-up questions if more data is required.",
+  "actions": [ 
+    { "type": "add_note", "data": { "title": "...", "description": "..." } },
+    { "type": "add_panel_entry", "panel_name": "...", "data": { ... } } 
+  ],
   "todos": [ { "title": "Buy milk", "description": "", "urgent": true, "important": false, "due_date": null } ]
 }`
 
@@ -60,20 +90,6 @@ JSON Schema:
       parsedResult = JSON.parse(cleanText)
     } catch (e) {
       throw new Error('Invalid JSON format returned from Gemini')
-    }
-
-    // Insert Expenses
-    if (parsedResult.expenses && parsedResult.expenses.length > 0) {
-       const rows = parsedResult.expenses.map((e) => ({
-          user_id: userId,
-          amount: e.amount || 0,
-          description: e.description || '',
-          category: e.category || 'Other',
-          reimbursable: Boolean(e.reimbursable),
-          reimbursable_note: e.reimbursable_note || null,
-          date: new Date().toISOString().split('T')[0]
-       }))
-       await sb.from('expenses').insert(rows)
     }
 
     // Insert Todos
