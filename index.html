@@ -578,7 +578,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 .multi-select-input {
   display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 8px;
   border: 1px solid var(--hairline); border-radius: var(--radius-xs);
-  background: var(--canvas); min-height: 36px; align-items: center; cursor: text;
+  background: var(--canvas); min-height: 36px; align-items: center; cursor: text; position: relative;
 }
 .multi-select-input .msi-tag {
   display: inline-flex; align-items: center; gap: 3px;
@@ -706,7 +706,18 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 
 /* ─── Responsive / Mobile-Friendly ─── */
 @media (max-width: 768px) {
-  .notes-grid { grid-template-columns: 1fr; }
+  .mobile-nav-toggle { display: block !important; }
+  #top-nav { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 12px; position: relative; }
+  .tn-left { min-width: 0; flex: 1; justify-content: flex-start; }
+  .tn-logo { flex: 1; }
+  .tn-center { order: 3; width: 100%; max-width: 100%; margin: 0; }
+  .tn-right { order: 2; flex: 0 0 auto; }
+  .tn-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: var(--canvas); border-bottom: 1px solid var(--hairline); padding: 8px 16px; z-index: 1000; box-shadow: var(--shadow-soft); }
+  .tn-links.show { display: flex; }
+  .tn-menu { position: static; width: 100%; box-shadow: none; border: none; padding-left: 16px; max-height: none; overflow: visible; display: none; }
+  .tn-menu.show { display: block !important; }
+  .tn-dropdown { width: 100%; }
+  .notes-grid { grid-template-columns: 1fr !important; }
   .detail-view { padding: 16px; }
   .modal-card { width: 96%; max-width: none; max-height: 92vh; border-radius: var(--radius-lg); }
   #syncBanner { left: 0; }
@@ -1030,6 +1041,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 <!-- Top Navigation -->
 <nav id="top-nav">
   <div class="tn-left">
+    <button class="mobile-nav-toggle" onclick="toggleMobileNav()" style="display:none; background:transparent; border:none; font-size:20px; color:var(--ink-secondary); cursor:pointer; margin-right:8px;"><i class="fas fa-bars"></i></button>
     <div class="tn-logo"><i class="fas fa-cube"></i> Knowledge Vault</div>
     <button class="tn-new-btn" onclick="triggerGlobalNewAction()" title="New Idea"><i class="fas fa-plus"></i></button>
   </div>
@@ -2417,8 +2429,9 @@ function handleSortChange() { state.sortField=document.getElementById('sortField
 function toggleSortDir() { state.sortDir=state.sortDir==='desc'?'asc':'desc'; state.page=1; render(); }
 function addFilter(type,value) { if(!state.filters[type])state.filters[type]=[]; if(!state.filters[type].includes(value))state.filters[type].push(value); state.page=1; state.currentDetail=null; if(['people','companies','technologies','projects'].includes(state.currentView))state.currentView='all'; render(); }
 function removeFilter(type,value) { if(state.filters[type])state.filters[type]=state.filters[type].filter(v=>v!==value); state.page=1; render(); }
-function toggleMobileSidebar() {}
-function closeMobileSidebar() {}
+function toggleMobileNav() { const l = document.querySelector('.tn-links'); if(l) l.classList.toggle('show'); }
+function toggleMobileSidebar() { toggleMobileNav(); }
+function closeMobileSidebar() { const l = document.querySelector('.tn-links'); if(l) l.classList.remove('show'); }
 
 function triggerGlobalNewAction() {
   const view = state.currentView;
