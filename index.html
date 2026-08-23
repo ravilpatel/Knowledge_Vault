@@ -1055,7 +1055,6 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     <div class="tn-links">
       <a href="#" class="tn-link active" data-view="all" onclick="switchView('all'); return false;">Workspace</a>
       <span id="tn-primary-panels"></span>
-      <a href="#" class="tn-link" data-view="todos" onclick="switchView('todos'); return false;">Tasks <span class="count" id="count-todos">0</span></a>
 
       <a href="#" class="tn-link" data-view="projects" onclick="switchView('projects'); return false;">Projects <span class="count" id="count-proj">0</span></a>
       
@@ -1078,8 +1077,6 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
           <div id="tn-cats" style="display:none;"></div>
           
           <div class="tn-menu-divider"></div>
-          <a href="#" class="tn-menu-item" data-view="matrix" onclick="switchView('matrix'); return false;"><i class="fas fa-th-large"></i> Eisenhower Matrix</a>
-
           <a href="#" class="tn-menu-item" data-view="recycle" onclick="switchView('recycle'); return false;"><i class="fas fa-trash"></i> Recycle Bin <span class="count" id="count-del">0</span></a>
           <div class="tn-menu-divider"></div>
           <a href="#" class="tn-menu-item" onclick="openSettings(); return false;"><i class="fas fa-cog"></i> Settings</a>
@@ -1088,6 +1085,9 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       </div>
     </div>
     
+    <a href="#" class="tn-link" data-view="matrix" onclick="switchView('matrix'); return false;" title="Eisenhower Matrix" style="padding: 6px 10px; font-size: 16px; border-radius: var(--radius-full); margin-right: -8px;">
+      <i class="fas fa-th-large"></i>
+    </a>
     <div class="tn-profile-wrap">
       <div class="sb-user" id="sbUserInfo" onclick="openSettings()" style="cursor:pointer; padding:0; margin:0; border:none; background:transparent;"></div>
     </div>
@@ -4659,6 +4659,27 @@ function renderGlobalSearchResults() {
     });
   });
 
+  const entityTypes = ['people', 'companies', 'technologies', 'projects'];
+  entityTypes.forEach(type => {
+    if (!state[type]) return;
+    const matched = state[type].filter(e => {
+      const haystack = Object.values(e).join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
+    matched.forEach(e => {
+      results.push({
+        id: e.id,
+        type: type,
+        panelName: ENTITY_LABELS[type],
+        panelColor: ENTITY_COLORS[type],
+        panelIcon: ENTITY_ICONS[type],
+        title: e.name || 'Unnamed',
+        desc: e.description || e.designation || e.industry || e.status || '',
+        created_at: e.created_at,
+        updated_at: e.updated_at
+      });
+    });
+  });
   results.sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
 
   if (results.length === 0) {
@@ -4678,9 +4699,14 @@ function renderGlobalSearchResults() {
       </span>
     `;
     
-    const clickHandler = r.type === 'note' 
-      ? `showNoteDetail('${r.id}')` 
-      : `showPanelEntryDetail('${r.id}', '${state.panel_entries.find(e => e.id === r.id)?.panel_id}')`;
+    let clickHandler = '';
+    if (r.type === 'note') {
+      clickHandler = `showNoteDetail('${r.id}')`;
+    } else if (r.type === 'panel_entry') {
+      clickHandler = `showPanelEntryDetail('${r.id}', '${state.panel_entries.find(e => e.id === r.id)?.panel_id}')`;
+    } else {
+      clickHandler = `showEntityDetail('${r.type}', '${r.id}')`;
+    }
 
     return `
       <div class="note-card" onclick="${clickHandler}" style="border-left: 4px solid ${r.panelColor}; padding:16px; min-height: 120px; cursor:pointer;">
