@@ -1047,7 +1047,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
   <div class="tn-left">
     <button class="mobile-nav-toggle" onclick="toggleMobileNav()" style="display:none; background:transparent; border:none; font-size:20px; color:var(--ink-secondary); cursor:pointer; margin-right:8px;"><i class="fas fa-bars"></i></button>
     <div class="tn-logo"><i class="fas fa-cube"></i> Knowledge Vault</div>
-    <button class="tn-new-btn" onclick="triggerGlobalNewAction()" title="New Idea"><i class="fas fa-plus"></i></button>
+    <button class="tn-new-btn" onclick="triggerGlobalNewAction()" title="New Note"><i class="fas fa-plus"></i></button>
   </div>
   <div class="tn-center">
     <div class="tn-search">
@@ -1177,7 +1177,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     <div class="modal-header"><h2>Import Data</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Format</label><select class="form-select" id="importFormat"><option value="json">JSON</option><option value="csv">CSV</option><option value="txt">TXT</option><option value="markdown">Markdown</option></select></div>
-      <div class="form-group"><label class="form-label">Import Type</label><select class="form-select" id="importType"><option value="notes">Ideas</option><option value="people">People</option><option value="companies">Companies</option><option value="technologies">Technologies</option><option value="projects">Projects</option><option value="full">Full Database</option></select></div>
+      <div class="form-group"><label class="form-label">Import Type</label><select class="form-select" id="importType"><option value="notes">Notes</option><option value="people">People</option><option value="companies">Companies</option><option value="technologies">Technologies</option><option value="projects">Projects</option><option value="full">Full Database</option></select></div>
       <div class="form-group"><label class="form-label">File</label><input type="file" class="form-input" id="importFile" accept=".json,.csv,.txt,.md,.markdown" style="padding:6px"></div>
       <div class="form-group"><label class="form-label">Or paste content below</label><textarea class="form-textarea" id="importContent" placeholder="Paste your data here..." style="min-height:80px"></textarea></div>
     </div>
@@ -1192,7 +1192,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     <div class="modal-header"><h2>Export Data</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Format</label><select class="form-select" id="exportFormat"><option value="json">JSON</option><option value="csv">CSV</option><option value="markdown">Markdown</option><option value="txt">TXT</option></select></div>
-      <div class="form-group"><label class="form-label">Export Scope</label><select class="form-select" id="exportScope"><option value="notes">Current View Ideas</option><option value="all-notes">All Ideas</option><option value="people">People</option><option value="companies">Companies</option><option value="technologies">Technologies</option><option value="projects">Projects</option><option value="full">Full Database</option></select></div>
+      <div class="form-group"><label class="form-label">Export Scope</label><select class="form-select" id="exportScope"><option value="notes">Current View Notes</option><option value="all-notes">All Notes</option><option value="people">People</option><option value="companies">Companies</option><option value="technologies">Technologies</option><option value="projects">Projects</option><option value="full">Full Database</option></select></div>
     </div>
     <div class="modal-footer">
       <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
@@ -1332,7 +1332,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
               <div class="tool-card">
                 <div>
                   <div class="tool-card-title"><i class="fas fa-trash-alt" style="color:#dc2626;"></i> Reset Workspace</div>
-                  <div class="tool-card-desc">Permanently delete all your ideas, tasks, contacts, and custom data.</div>
+                  <div class="tool-card-desc">Permanently delete all your notes, tasks, contacts, and custom data.</div>
                 </div>
                 <button class="tool-card-btn btn-danger" onclick="resetWorkspace()" style="background:#dc2626; color:#fff; border:none;">Reset Workspace</button>
               </div>
@@ -1392,7 +1392,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <div class="s-panel active" id="panelPanelGeneral">
         <div class="form-group">
           <label class="form-label">Panel Name</label>
-          <input type="text" class="form-input" id="panelName" placeholder="e.g., Ideas, Doubts, Music Playlists">
+          <input type="text" class="form-input" id="panelName" placeholder="e.g., Notes, Doubts, Music Playlists">
         </div>
         
         <div class="form-group">
@@ -1448,9 +1448,11 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
                 <option value="textarea">Textarea</option>
                 <option value="tags">Tags</option>
                 <option value="people_link">People Link</option>
+                <option value="projects_link">Projects Link</option>
                 <option value="url">URL</option>
                 <option value="date">Date</option>
                 <option value="select">Select</option>
+                <option value="rating">Rating (5 Stars)</option>
               </select>
             </div>
           </div>
@@ -2015,7 +2017,7 @@ function getCatColor(catName) { const key=CATEGORY_COLORS[catName]||'ink-muted';
 
 // ─── View Titles ───
 const VIEW_TITLES = {
-  all:'All Ideas',favourites:'Favourites',archived:'Archived',recent:'Recent Ideas',
+  all:'All Notes',favourites:'Favourites',archived:'Archived',recent:'Recent Notes',
   highpriority:'High Priority',notags:'No Tags',nocategories:'No Categories',recycle:'Recycle Bin',
   people:'People',companies:'Companies',technologies:'Technologies',projects:'Projects',
   matrix:'Eisenhower Matrix', todos:'All Tasks'
@@ -2100,7 +2102,7 @@ function renderMainHeader() {
   } else if (state.currentView === 'all') {
     vt.textContent = 'Workspace Panels';
   } else {
-    vt.textContent=VIEW_TITLES[state.currentView]||'All Ideas';
+    vt.textContent=VIEW_TITLES[state.currentView]||'All Notes';
   }
 
   if (isPanelView) {
@@ -2129,7 +2131,7 @@ function renderMainHeader() {
   } else if(state.currentView === 'all') {
     if (!state.panels || state.panels.length === 0) {
       const filtered = getFilteredNotes();
-      vc.textContent = filtered.length + ' ideas';
+      vc.textContent = filtered.length + ' notes';
       sc.classList.remove('hidden');
       af.innerHTML = '';
       va.innerHTML = `<button onclick="openNoteModal()"><i class="fas fa-plus"></i> New</button>`;
@@ -2177,7 +2179,7 @@ function renderMainHeader() {
 
   const topBtn = document.querySelector('.tn-new-btn');
   if (topBtn) {
-    let title = 'New Idea';
+    let title = 'New Note';
     if (state.currentView === 'todos' || state.currentView === 'matrix') {
       title = 'New Task';
     } else if (['people', 'companies', 'technologies', 'projects'].includes(state.currentView)) {
@@ -2189,7 +2191,7 @@ function renderMainHeader() {
       title = panel ? `New ${getSingularName(panel.name)}` : 'New Entry';
     } else if (state.currentView === 'all') {
       if (!state.panels || state.panels.length === 0) {
-        title = 'New Idea';
+        title = 'New Note';
       } else {
         title = 'New Panel';
       }
@@ -2245,8 +2247,8 @@ function renderMainContent() {
     const isRecycle = state.currentView === 'recycle';
     mc.innerHTML=`<div class="empty-state">
       <div class="es-icon"><i class="fas fa-file-alt"></i></div>
-      <div class="es-title">${isRecycle ? 'No deleted ideas' : 'No ideas found'}</div>
-      <div class="es-desc">${isRecycle ? 'Your recycle bin is empty.' : 'Try adjusting your filters or search, or create a new idea.'}</div>
+      <div class="es-title">${isRecycle ? 'No deleted notes' : 'No notes found'}</div>
+      <div class="es-desc">${isRecycle ? 'Your recycle bin is empty.' : 'Try adjusting your filters or search, or create a new note.'}</div>
       ${isRecycle ? '' : `<button class="sb-new-btn" style="width:auto;margin:0" onclick="openNoteModal()"><i class="fas fa-plus"></i> New Note</button>`}
     </div>`;
     return;
@@ -2371,10 +2373,10 @@ function renderEntityDetail(type,id) {
     combinedLinks.push({
       id: n.id,
       type: 'note',
-      panelName: 'Ideas',
+      panelName: 'Notes',
       panelColor: defaultNotesPanel?.color || '#4F46E5',
       panelIcon: defaultNotesPanel?.icon || 'fa-file-alt',
-      title: n.title || 'Untitled Idea',
+      title: n.title || 'Untitled Note',
       updated_at: n.updated_at || n.created_at
     });
   });
@@ -2488,7 +2490,7 @@ function openNoteModal(editId) {
   state.editingNoteId=editId||null; state.noteFav=false; state.selectedTags=[];
   const modal=document.getElementById('noteModal'); modal.classList.remove('hidden');
   document.getElementById('modalOverlay').classList.add('open');
-  document.getElementById('noteModalTitle').textContent=editId?'Edit Idea':'New Idea';
+  document.getElementById('noteModalTitle').textContent=editId?'Edit Note':'New Note';
   document.getElementById('noteId').value=editId||'';
   document.getElementById('noteTitle').value='';
   document.getElementById('noteDesc').value='';
@@ -2572,27 +2574,27 @@ async function saveNote() {
   if(existing) Object.assign(existing,normItem(result||note));
   else state.notes.push(normItem(result||note));
 
-  closeModal(); toast('Idea saved','success'); render();
+  closeModal(); toast('Note saved','success'); render();
 }
 
 function gatherChecked(selector) { const arr=[]; document.querySelectorAll(selector+' input[type="checkbox"]:checked').forEach(cb=>arr.push(cb.value)); return arr; }
 
 async function deleteNote(id) {
   const n=state.notes.find(x=>x.id===id);
-  if(n) { n.status='deleted'; await sbUpsert('notes',n); toast('Idea moved to Recycle Bin','info'); state.currentDetail=null; render(); }
+  if(n) { n.status='deleted'; await sbUpsert('notes',n); toast('Note moved to Recycle Bin','info'); state.currentDetail=null; render(); }
 }
 async function restoreNote(id) {
   const n=state.notes.find(x=>x.id===id);
-  if(n) { n.status='active'; await sbUpsert('notes',n); toast('Idea restored','success'); state.currentDetail=null; state.currentView='all'; render(); }
+  if(n) { n.status='active'; await sbUpsert('notes',n); toast('Note restored','success'); state.currentDetail=null; state.currentView='all'; render(); }
 }
 async function permanentDelete(id) {
   await sbDelete('notes',id);
   state.notes=state.notes.filter(x=>x.id!==id);
-  toast('Idea permanently deleted','info'); state.currentDetail=null; render();
+  toast('Note permanently deleted','info'); state.currentDetail=null; render();
 }
 async function archiveNote(id) {
   const n=state.notes.find(x=>x.id===id);
-  if(n) { n.archived=!n.archived; await sbUpsert('notes',n); toast(n.archived?'Idea archived':'Idea unarchived','info'); state.currentDetail=null; render(); }
+  if(n) { n.archived=!n.archived; await sbUpsert('notes',n); toast(n.archived?'Note archived':'Note unarchived','info'); state.currentDetail=null; render(); }
 }
 async function toggleNoteFav(id) {
   const n=state.notes.find(x=>x.id===id);
@@ -2953,7 +2955,7 @@ async function doRestore() {
 }
 
 async function resetWorkspace() {
-  if (!confirm('Are you sure you want to permanently delete ALL your ideas, tasks, contacts, and custom panels data? This action cannot be undone.')) return;
+  if (!confirm('Are you sure you want to permanently delete ALL your notes, tasks, contacts, and custom panels data? This action cannot be undone.')) return;
   try {
     showBanner('Resetting workspace...');
     for (const store of TABLES) {
@@ -3535,10 +3537,10 @@ let draggedPanelId = null;
 // ─── Custom Panel Views State Manager & Empty Copy Generator ───
 function getPanelEmptyStateCopy(panelName) {
   const nameLower = panelName.toLowerCase();
-  if (nameLower.includes('idea')) {
+  if (nameLower.includes('note')) {
     return {
-      title: "No ideas yet",
-      desc: "Capture your next big lightbulb moment! Add an idea to get started."
+      title: "No notes yet",
+      desc: "Capture your next big lightbulb moment! Add a note to get started."
     };
   } else if (nameLower.includes('doubt') || nameLower.includes('question') || nameLower.includes('query')) {
     return {
@@ -3571,7 +3573,7 @@ function getSingularName(name) {
   let singular = name;
   const lower = name.toLowerCase();
   if (lower === 'ideas') {
-    singular = 'Idea';
+    singular = 'Note';
   } else if (lower === 'companies') {
     singular = 'Company';
   } else if (lower === 'technologies') {
@@ -3785,6 +3787,33 @@ function togglePePeopleLink(input, key, id) {
     state.editingEntryValues[key] = state.editingEntryValues[key].filter(x => x !== id);
   }
   input.closest('.checkbox-item').classList.toggle('checked', input.checked);
+}
+
+function togglePeProjectsLink(input, key, id) {
+  if (!state.editingEntryValues[key]) state.editingEntryValues[key] = [];
+  if (input.checked) {
+    if (!state.editingEntryValues[key].includes(id)) {
+      state.editingEntryValues[key].push(id);
+    }
+  } else {
+    state.editingEntryValues[key] = state.editingEntryValues[key].filter(x => x !== id);
+  }
+  input.closest('.checkbox-item').classList.toggle('checked', input.checked);
+}
+
+function setPeRating(key, val, el) {
+  const container = el.closest('.rating-input');
+  container.querySelector('input').value = val;
+  const stars = container.querySelectorAll('i');
+  stars.forEach((star, index) => {
+    if (index < val) {
+      star.classList.add('active');
+      star.style.color = '#f59e0b';
+    } else {
+      star.classList.remove('active');
+      star.style.color = 'var(--hairline)';
+    }
+  });
 }
 
 // ─── Custom Panel Fields Builder ───
@@ -4028,7 +4057,7 @@ function renderNavPanels() {
     const entryCount = counts[notesPanel.id] || 0;
     primaryContainer.innerHTML = `
       <a href="#" class="tn-link ${isActive ? 'active' : ''}" data-view="panel-${notesPanel.id}" onclick="switchView('panel-${notesPanel.id}'); return false;">
-        Ideas <span class="count">${entryCount}</span>
+        Notes <span class="count">${entryCount}</span>
       </a>
     `;
   } else {
@@ -4036,7 +4065,7 @@ function renderNavPanels() {
     const entryCount = state.notes.filter(n=>n.status!=='deleted'&&!n.archived).length;
     primaryContainer.innerHTML = `
       <a href="#" class="tn-link ${isActive ? 'active' : ''}" data-view="notes" onclick="switchView('notes'); return false;">
-        Ideas <span class="count">${entryCount}</span>
+        Notes <span class="count">${entryCount}</span>
       </a>
     `;
   }
@@ -4655,6 +4684,12 @@ function renderPanelEntries(panelId) {
             return name ? `<span class="cat-badge" style="background:${ENTITY_COLORS.people}22;color:${ENTITY_COLORS.people}">${escHtml(name)}</span>` : '';
           }).join('');
           
+          const projectsList = Array.isArray(e.data.projects) ? e.data.projects : [];
+          const projectsHtml = projectsList.map(pId => {
+            const name = entityName('projects', pId);
+            return name ? `<span class="cat-badge" style="background:${ENTITY_COLORS.projects}22;color:${ENTITY_COLORS.projects}">${escHtml(name)}</span>` : '';
+          }).join('');
+          
           return `
             <div class="panel-list-row" onclick="showPanelEntryDetail('${e.id}', '${panelId}')" style="border-left: 4px solid ${panel.color || 'var(--primary)'};">
               <div class="panel-list-left">
@@ -4666,7 +4701,7 @@ function renderPanelEntries(panelId) {
                 </div>
               </div>
               <div class="panel-list-right">
-                ${peopleHtml}${tagsHtml}
+                ${peopleHtml}${projectsHtml}${tagsHtml}
                 <span style="font-size: 11px; color: var(--ink-faint); margin-left: 8px;">
                   ${fmtDateShort(e.created_at || e.updated_at)}
                 </span>
@@ -4692,11 +4727,17 @@ function renderPanelEntries(panelId) {
             return name ? `<span class="cat-badge" style="background:${ENTITY_COLORS.people}22;color:${ENTITY_COLORS.people}">${escHtml(name)}</span>` : '';
           }).join('');
           
+          const projectsList = Array.isArray(e.data.projects) ? e.data.projects : [];
+          const projectsHtml = projectsList.map(pId => {
+            const name = entityName('projects', pId);
+            return name ? `<span class="cat-badge" style="background:${ENTITY_COLORS.projects}22;color:${ENTITY_COLORS.projects}">${escHtml(name)}</span>` : '';
+          }).join('');
+          
           return `
             <div class="note-card" onclick="showPanelEntryDetail('${e.id}', '${panelId}')" style="border-left: 4px solid ${panel.color || 'var(--primary)'};">
               <div class="nc-title">${escHtml(title)}</div>
               <div class="nc-desc">${escHtml(desc)}</div>
-              <div class="nc-badges">${peopleHtml}${tagsHtml}</div>
+              <div class="nc-badges">${peopleHtml}${projectsHtml}${tagsHtml}</div>
               <div class="nc-meta"><span>${fmtDateShort(e.created_at || e.updated_at)}</span></div>
             </div>
           `;
@@ -4745,10 +4786,10 @@ function renderGlobalSearchResults() {
     results.push({
       id: n.id,
       type: 'note',
-      panelName: 'Ideas',
+      panelName: 'Notes',
       panelColor: defaultNotesPanel?.color || '#4F46E5',
       panelIcon: defaultNotesPanel?.icon || 'fa-file-alt',
-      title: n.title || 'Untitled Idea',
+      title: n.title || 'Untitled Note',
       desc: n.description || '',
       created_at: n.created_at,
       updated_at: n.updated_at
@@ -5039,7 +5080,7 @@ function renderPanelsColumns() {
     
     if (panel.name === 'Notes' || panel.name === 'Ideas') {
       const activeNotes = state.notes.filter(n => n.status !== 'deleted' && !n.archived);
-      subtext = `${activeNotes.length} ideas`;
+      subtext = `${activeNotes.length} notes`;
       activeNotes.forEach(n => {
         const t = new Date(n.updated_at || n.created_at);
         if (!latestTime || t > latestTime) latestTime = t;
@@ -5088,7 +5129,7 @@ function renderPanelsColumns() {
   const activities = [];
   state.notes.filter(n => n.status !== 'deleted').slice(0, 10).forEach(n => {
     activities.push({
-      text: `You ${n.created_at === n.updated_at ? 'created idea' : 'edited idea'} "<strong>${escHtml(n.title || 'Untitled')}</strong>"`,
+      text: `You ${n.created_at === n.updated_at ? 'created note' : 'edited note'} "<strong>${escHtml(n.title || 'Untitled')}</strong>"`,
       time: new Date(n.updated_at || n.created_at)
     });
   });
@@ -5202,7 +5243,7 @@ function renderPanelsColumns() {
     const greetingText = getGreeting();
     const activeNotesCount = state.notes.filter(n => n.status !== 'deleted' && !n.archived).length;
     
-    const ideasPanel = state.panels.find(p => p.name.toLowerCase().includes('idea'));
+    const ideasPanel = state.panels.find(p => p.name.toLowerCase().includes('note'));
     const ideasPendingCount = ideasPanel ? state.panel_entries.filter(e => e.panel_id === ideasPanel.id).length : 0;
     
     const pendingTasksCount = state.todos.filter(t => !t.completed).length;
@@ -5227,9 +5268,9 @@ function renderPanelsColumns() {
       <div class="dash-stats-grid">
         <div class="stat-card">
           <div class="stat-info">
-            <span class="stat-label">Ideas</span>
+            <span class="stat-label">Notes</span>
             <span class="stat-val">${activeNotesCount}</span>
-            <span class="stat-sub">Total Ideas</span>
+            <span class="stat-sub">Total Notes</span>
           </div>
           <div class="stat-icon-wrapper" style="background:rgba(0,117,222,0.08); color:var(--primary);">
             <i class="fas fa-file-alt"></i>
@@ -5238,7 +5279,7 @@ function renderPanelsColumns() {
         
         <div class="stat-card">
           <div class="stat-info">
-            <span class="stat-label">Ideas</span>
+            <span class="stat-label">Notes</span>
             <span class="stat-val">${ideasPendingCount}</span>
             <span class="stat-sub">Pending</span>
           </div>
@@ -5268,9 +5309,9 @@ function renderPanelsColumns() {
       
       <div class="split-sections">
         <div class="recent-notes-box">
-          <div class="dash-section-title" style="margin-bottom:14px;"><i class="fas fa-file-alt"></i> Recent Ideas</div>
-          ${recentNotesHtml.length === 0 ? `<div style="text-align:center; padding:16px; color:var(--ink-faint); font-size:13px; font-style:italic;">No ideas found</div>` : recentNotesHtml}
-          ${recentNotesHtml.length > 0 ? `<div style="margin-top:12px; text-align:left;"><a href="#" onclick="switchView('panel-${state.panels.find(p => p.name === 'Notes' || p.name === 'Ideas')?.id || ''}'); return false;" style="font-size:12px; font-weight:600; color:var(--primary); text-decoration:none;">View all ideas &rarr;</a></div>` : ''}
+          <div class="dash-section-title" style="margin-bottom:14px;"><i class="fas fa-file-alt"></i> Recent Notes</div>
+          ${recentNotesHtml.length === 0 ? `<div style="text-align:center; padding:16px; color:var(--ink-faint); font-size:13px; font-style:italic;">No notes found</div>` : recentNotesHtml}
+          ${recentNotesHtml.length > 0 ? `<div style="margin-top:12px; text-align:left;"><a href="#" onclick="switchView('panel-${state.panels.find(p => p.name === 'Notes' || p.name === 'Ideas')?.id || ''}'); return false;" style="font-size:12px; font-weight:600; color:var(--primary); text-decoration:none;">View all notes &rarr;</a></div>` : ''}
         </div>
         <div class="recent-activity-box">
           <div class="dash-section-title" style="margin-bottom:14px;"><i class="fas fa-clock"></i> Recent Activity</div>
@@ -5360,12 +5401,27 @@ function renderPanelEntryDetail(id) {
   const panel = state.panels.find(p => p.id === entry.panel_id);
   const panelName = panel ? panel.name : 'Panel';
   
+  const fields = panel ? state.panel_fields.filter(f => f.panel_id === panel.id) : [];
+
   const dataRows = Object.entries(entry.data)
     .filter(([key]) => key !== '_archived')
     .map(([key, val]) => {
     let valStr = '';
-    if (Array.isArray(val)) {
-      if (key === 'people' || key.includes('people') || key.includes('person')) {
+    const fieldDef = fields.find(f => f.field_key === key);
+    const fType = fieldDef ? fieldDef.field_type : null;
+    
+    if (fType === 'projects_link' || key === 'projects' || key.includes('project')) {
+      if (Array.isArray(val)) {
+        valStr = val.map(pId => {
+          const name = entityName('projects', pId);
+          return name ? `<span class="entity-badge" style="background:${ENTITY_COLORS.projects}22;color:${ENTITY_COLORS.projects};cursor:pointer" onclick="showEntityDetail('projects','${pId}')">${escHtml(name)}</span>` : '';
+        }).join(' ');
+      }
+    } else if (fType === 'rating') {
+      const r = parseInt(val) || 0;
+      valStr = `<div style="font-size:18px; color:var(--ink-faint); display:flex; gap:4px;">${[1,2,3,4,5].map(s => `<i class="fas fa-star" style="color:${r >= s ? '#f59e0b' : 'var(--hairline)'}"></i>`).join('')}</div>`;
+    } else if (Array.isArray(val)) {
+      if (fType === 'people_link' || key === 'people' || key.includes('people') || key.includes('person')) {
         valStr = val.map(pId => {
           const name = entityName('people', pId);
           return name ? `<span class="entity-badge" style="background:${ENTITY_COLORS.people}22;color:${ENTITY_COLORS.people};cursor:pointer" onclick="showEntityDetail('people','${pId}')">${escHtml(name)}</span>` : '';
@@ -5507,6 +5563,33 @@ function openPanelEntryModal(entryId = null, panelId) {
           }).join('')}
         </div>
       `;
+    } else if (f.field_type === 'projects_link') {
+      if (!state.editingEntryValues[f.field_key]) {
+        state.editingEntryValues[f.field_key] = Array.isArray(val) ? val : [];
+      }
+      const selectedIds = state.editingEntryValues[f.field_key];
+      inputHtml = `
+        <div class="checkbox-group pe-field" data-key="${f.field_key}" data-type="projects_link" id="pe-projects-group-${f.field_key}">
+          ${state.projects.map(p => {
+            const isChecked = selectedIds.includes(p.id);
+            return `
+              <label class="checkbox-item ${isChecked ? 'checked' : ''}">
+                <input type="checkbox" value="${p.id}" ${isChecked ? 'checked' : ''} onchange="togglePeProjectsLink(this, '${f.field_key}', '${p.id}')"> ${escHtml(p.name)}
+              </label>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } else if (f.field_type === 'rating') {
+      const currentVal = parseInt(val) || 0;
+      inputHtml = `
+        <div class="rating-input pe-field" data-key="${f.field_key}" data-type="rating" style="display:flex; gap:8px; font-size:24px; color:var(--ink-faint); cursor:pointer;">
+          ${[1,2,3,4,5].map(star => `
+            <i class="fas fa-star ${currentVal >= star ? 'active' : ''}" style="color:${currentVal >= star ? '#f59e0b' : 'var(--hairline)'}" onclick="setPeRating('${f.field_key}', ${star}, this)"></i>
+          `).join('')}
+          <input type="hidden" id="pe-input-${f.field_key}" value="${currentVal}">
+        </div>
+      `;
     }
     
     return `<div class="form-group">${labelHtml}${inputHtml}</div>`;
@@ -5529,12 +5612,15 @@ async function savePanelEntry() {
   fields.forEach(f => {
     const el = document.querySelector(`.pe-field[data-key="${f.field_key}"]`);
     if (!el) {
-      if (f.field_type !== 'tags' && f.field_type !== 'people_link') {
+      if (!['tags', 'people_link', 'projects_link'].includes(f.field_type)) {
         return;
       }
     } else {
       if (['text', 'textarea', 'url', 'date', 'select'].includes(f.field_type)) {
         values[f.field_key] = el.value.trim();
+      } else if (f.field_type === 'rating') {
+        const hInput = el.querySelector('input');
+        if (hInput) values[f.field_key] = parseInt(hInput.value, 10) || 0;
       }
     }
     
@@ -5609,10 +5695,10 @@ async function savePanelEntry() {
       const idx = state.notes.findIndex(n => n.id === id);
       if (idx >= 0) {
         state.notes[idx] = result || note;
-        toast('Idea updated', 'success');
+        toast('Note updated', 'success');
       } else {
         state.notes.unshift(result || note);
-        toast('Idea saved', 'success');
+        toast('Note saved', 'success');
       }
       closeModal();
       render();
@@ -5667,7 +5753,7 @@ async function deletePanelEntry(id, panelId) {
       if (n) {
         n.status = 'deleted';
         await sbUpsert('notes', n);
-        toast('Idea moved to Recycle Bin', 'info');
+        toast('Note moved to Recycle Bin', 'info');
       } else {
         await sbDelete('notes', id);
         toast('Entry deleted', 'info');
