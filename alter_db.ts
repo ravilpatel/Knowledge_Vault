@@ -5,7 +5,7 @@ if (!sbUrl || !sbKey) throw new Error('Missing credentials')
 const sb = createClient(sbUrl, sbKey)
 
 async function run() {
-  const { data, error } = await sb.rpc('exec_sql', { sql: "ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS news_topics TEXT DEFAULT 'Indian policy, startups, technology';" })
+  const { data, error } = await sb.rpc('exec_sql', { sql: "ALTER TABLE panels ADD COLUMN IF NOT EXISTS archive_tab_name TEXT;" })
   if (error) console.error(error)
   else console.log('Added news_topics')
 }

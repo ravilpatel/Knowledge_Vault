@@ -81,6 +81,7 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 .tn-new-btn:hover { opacity: 0.9; }
 
 .tn-center { flex: 1; justify-content: center; max-width: 400px; margin: 0 24px; }
+.mobile-search-toggle { display: none; }
 .tn-search { position: relative; width: 100%; }
 .tn-search i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); font-size: 13px; }
 .tn-search input { width: 100%; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-full); padding: 6px 16px 6px 32px; font-size: 13px; color: var(--ink); transition: border-color var(--transition); }
@@ -707,11 +708,14 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 /* ─── Responsive / Mobile-Friendly ─── */
 @media (max-width: 768px) {
   .mobile-nav-toggle { display: block !important; }
+  .mobile-search-toggle { display: flex !important; align-items: center; justify-content: center; width: 32px; height: 32px; background: transparent; color: var(--ink-secondary); font-size: 16px; border: none; cursor: pointer; border-radius: var(--radius-full); margin-right: 8px; }
   #top-nav { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: 12px; position: relative; }
-  .tn-left { min-width: 0; flex: 1; justify-content: flex-start; }
-  .tn-logo { flex: 1; }
-  .tn-center { order: 3; width: 100%; max-width: 100%; margin: 0; }
-  .tn-right { order: 2; flex: 0 0 auto; }
+  .tn-left { min-width: 0; flex: 1; justify-content: flex-start; overflow: hidden; }
+  .tn-logo { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 8px; }
+  .tn-new-btn { margin-right: 12px; } /* Prevent collision with right side icons */
+  .tn-center { display: none; order: 4; width: 100%; max-width: 100%; margin: 0; margin-top: 4px; }
+  .tn-center.mobile-active { display: flex; }
+  .tn-right { order: 2; flex: 0 0 auto; gap: 8px; }
   .tn-links { display: none; flex-direction: column; position: absolute; top: 100%; left: 0; width: 100%; background: var(--canvas); border-bottom: 1px solid var(--hairline); padding: 8px 16px; z-index: 1000; box-shadow: var(--shadow-soft); }
   .tn-links.show { display: flex; }
   .tn-menu { position: static; width: 100%; box-shadow: none; border: none; padding-left: 16px; max-height: none; overflow: visible; display: none; }
@@ -1085,6 +1089,10 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       </div>
     </div>
     
+    <button class="mobile-search-toggle" onclick="document.querySelector('.tn-center').classList.toggle('mobile-active'); document.getElementById('searchInput').focus();" title="Search">
+      <i class="fas fa-search"></i>
+    </button>
+
     <a href="#" class="tn-link" data-view="matrix" onclick="switchView('matrix'); return false;" title="Eisenhower Matrix" style="padding: 6px 10px; font-size: 16px; border-radius: var(--radius-full); margin-right: -8px;">
       <i class="fas fa-th-large"></i>
     </a>
@@ -1407,6 +1415,17 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
             <button onclick="applyPanelTemplate('media')" type="button" style="flex:1; padding:8px; background:var(--canvas-soft); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:12px; cursor:pointer;"><i class="fas fa-book" style="color:#d6b6f6"></i> Reading List</button>
           </div>
         </div>
+
+        <div class="form-group" style="margin-top: 16px; border-top: 1px solid var(--hairline); padding-top: 16px;">
+          <label class="form-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+            <input type="checkbox" id="panelEnableArchive" onchange="document.getElementById('panelArchiveNameContainer').style.display = this.checked ? 'block' : 'none'">
+            Enable Completion / Archive Feature
+          </label>
+          <div id="panelArchiveNameContainer" style="display: none; margin-top: 8px;">
+            <label class="form-label" style="font-size: 12px; color: var(--ink-secondary);">Tab/Status Name (e.g., Completed, Processed, Done)</label>
+            <input type="text" class="form-input" id="panelArchiveName" placeholder="Completed">
+          </div>
+        </div>
       </div>
 
       <!-- Fields Tab Panel -->
@@ -1661,7 +1680,16 @@ async function sbFetchAll() {
     state.todos = results[7].data||[];
     state.panels = (results[8].data||[]).sort((a,b)=>a.sort_order - b.sort_order);
     state.panel_fields = results[9].data||[];
-    state.panel_entries = results[10].data||[];
+    let rawPanelEntries = results[10].data||[];
+    const configs = rawPanelEntries.filter(e => e.data && e.data._is_panel_config);
+    state.panels.forEach(p => {
+      const conf = configs.find(c => c.panel_id === p.id);
+      if (conf) {
+        p.archive_tab_name = conf.data.archive_tab_name;
+        p.dashboard_hidden = conf.data.dashboard_hidden;
+      }
+    });
+    state.panel_entries = rawPanelEntries.filter(e => !e.data || !e.data._is_panel_config);
 
     if ((!state.pinnedPanelIds || state.pinnedPanelIds.length === 0) && state.panels.length > 0) {
       state.pinnedPanelIds = state.panels.slice(0, 3).map(p => p.id);
@@ -3564,10 +3592,51 @@ function initPeViewState(panelId) {
       sortField: 'created_at',
       sortAsc: false,
       filterField: '',
-      filterVal: ''
+      filterVal: '',
+      tab: 'active'
     };
   }
   return state.panelViewsState[panelId];
+}
+
+function setPeTab(panelId, tabName) {
+  const viewState = initPeViewState(panelId);
+  viewState.tab = tabName;
+  render();
+}
+
+async function markPanelEntryStatus(id, panelId, isArchived) {
+  const entry = state.panel_entries.find(e => e.id === id);
+  if (!entry) {
+    const note = state.notes.find(n => n.id === id);
+    if (note) {
+      note.archived = isArchived;
+      note.updated_at = new Date().toISOString();
+      try {
+        showBanner('Updating status...', '');
+        await sbUpsert('notes', note);
+        toast('Status updated', 'success');
+        render();
+      } catch (err) {
+        console.error('Failed to update status:', err);
+        toast('Failed to update status: ' + err.message, 'error');
+      }
+    }
+    return;
+  }
+  
+  entry.data._archived = isArchived;
+  entry.updated_at = new Date().toISOString();
+  
+  try {
+    showBanner('Updating status...', '');
+    await sbUpsert('panel_entries', entry);
+    toast('Status updated', 'success');
+    render();
+  } catch (err) {
+    console.error('Failed to update status:', err);
+    toast('Failed to update status: ' + err.message, 'error');
+  }
 }
 
 function setPeLayout(panelId, layout) {
@@ -4183,6 +4252,11 @@ function openPanelModal(e, editId = null) {
       colorInput.value = p.color || '#62aef0';
       deleteBtn.classList.remove('hidden');
       
+      const enableArchive = !!p.archive_tab_name;
+      document.getElementById('panelEnableArchive').checked = enableArchive;
+      document.getElementById('panelArchiveNameContainer').style.display = enableArchive ? 'block' : 'none';
+      document.getElementById('panelArchiveName').value = p.archive_tab_name || '';
+      
       // Load and clone panel fields
       state.editingPanelFields = JSON.parse(JSON.stringify(
         state.panel_fields.filter(f => f.panel_id === editId).sort((a, b) => a.field_order - b.field_order)
@@ -4194,6 +4268,10 @@ function openPanelModal(e, editId = null) {
     iconInput.value = 'fa-file-alt';
     colorInput.value = '#62aef0';
     deleteBtn.classList.add('hidden');
+    
+    document.getElementById('panelEnableArchive').checked = false;
+    document.getElementById('panelArchiveNameContainer').style.display = 'none';
+    document.getElementById('panelArchiveName').value = '';
     
     state.editingPanelFields = [];
   }
@@ -4271,6 +4349,9 @@ async function savePanel() {
     if (existing) sort_order = existing.sort_order;
   }
   
+  const enableArchive = document.getElementById('panelEnableArchive').checked;
+  const archiveName = enableArchive ? document.getElementById('panelArchiveName').value.trim() || 'Completed' : null;
+  
   const panel = {
     id,
     user_id: currentUser.id,
@@ -4283,6 +4364,22 @@ async function savePanel() {
   try {
     showBanner('Saving panel...');
     const result = await sbUpsert('panels', panel);
+    
+    // Save panel config to panel_entries
+    const existingConfig = state.panel_entries.find(e => e.panel_id === id && e.data && e.data._is_panel_config);
+    const configEntry = {
+      id: existingConfig ? existingConfig.id : uuid(),
+      panel_id: id,
+      user_id: currentUser.id,
+      data: { _is_panel_config: true, archive_tab_name: archiveName, dashboard_hidden: existingConfig ? existingConfig.data.dashboard_hidden : false },
+      created_at: existingConfig ? existingConfig.created_at : new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    await sbUpsert('panel_entries', configEntry);
+    
+    // Update local config
+    const updatedPanel = result || panel;
+    updatedPanel.archive_tab_name = archiveName;
     
     // Save panel fields
     const originalFields = state.panel_fields.filter(f => f.panel_id === id);
@@ -4323,10 +4420,10 @@ async function savePanel() {
 
     if (state.editingPanelId) {
       const idx = state.panels.findIndex(p => p.id === id);
-      if (idx >= 0) state.panels[idx] = result || panel;
+      if (idx >= 0) state.panels[idx] = updatedPanel;
       toast('Panel updated', 'success');
     } else {
-      state.panels.push(result || panel);
+      state.panels.push(updatedPanel);
       toast('Panel created', 'success');
     }
     
@@ -4396,7 +4493,8 @@ function renderPanelEntries(panelId) {
         description: n.description,
         tags: n.tags,
         people: n.related_people,
-        links: n.source
+        links: n.source,
+        _archived: n.archived
       }
     }));
     
@@ -4434,6 +4532,15 @@ function renderPanelEntries(panelId) {
   }
 
   const viewState = initPeViewState(panelId);
+  const currentTab = viewState.tab || 'active';
+
+  // Apply Tab Filtering
+  const hasArchive = !!panel.archive_tab_name;
+  if (hasArchive && currentTab === 'archived') {
+    entries = entries.filter(e => e.data._archived === true);
+  } else {
+    entries = entries.filter(e => e.data._archived !== true);
+  }
   
   // 1. Apply Filtering
   if (viewState.filterField && viewState.filterVal.trim()) {
@@ -4482,7 +4589,14 @@ function renderPanelEntries(panelId) {
   });
 
   // 3. Render Controls Bar
-  const controlsBar = `
+  const tabsHtml = hasArchive ? `
+    <div style="display:flex; gap:16px; margin-bottom: 12px; border-bottom: 1px solid var(--hairline); padding-bottom: 8px;">
+      <button onclick="setPeTab('${panelId}', 'active')" style="background:none; border:none; cursor:pointer; font-weight: 500; font-size: 14px; padding-bottom: 4px; border-bottom: 2px solid ${currentTab === 'active' ? 'var(--primary)' : 'transparent'}; color: ${currentTab === 'active' ? 'var(--primary)' : 'var(--ink-secondary)'};">Active</button>
+      <button onclick="setPeTab('${panelId}', 'archived')" style="background:none; border:none; cursor:pointer; font-weight: 500; font-size: 14px; padding-bottom: 4px; border-bottom: 2px solid ${currentTab === 'archived' ? 'var(--primary)' : 'transparent'}; color: ${currentTab === 'archived' ? 'var(--primary)' : 'var(--ink-secondary)'};">${escHtml(panel.archive_tab_name)}</button>
+    </div>
+  ` : '';
+
+  const controlsBar = tabsHtml + `
     <div class="panel-controls-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:12px 16px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-md); gap:12px; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
         <span style="font-size:13px; color:var(--ink-secondary); font-weight:500;">Filter:</span>
@@ -4818,8 +4932,91 @@ function unpinPanel(event, panelId) {
   render();
 }
 
-window.addEventListener('click', () => {
-  document.getElementById('pinSelector')?.classList.add('hidden');
+let draggedColumnId = null;
+function handleColumnDragStart(e, id) {
+  draggedColumnId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+  e.currentTarget.closest('.panel-column').style.opacity = '0.5';
+}
+
+function handleColumnDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const column = e.target.closest('.panel-column');
+  if (column && column.getAttribute('data-id') !== draggedColumnId) {
+    column.style.transform = 'scale(1.02)';
+  }
+}
+
+function handleColumnDragLeave(e) {
+  const column = e.target.closest('.panel-column');
+  if (column) {
+    column.style.transform = 'none';
+  }
+}
+
+async function handleColumnDrop(e, targetId) {
+  e.preventDefault();
+  const column = e.target.closest('.panel-column');
+  if (column) {
+    column.style.transform = 'none';
+    column.style.opacity = '1';
+  }
+  
+  if (!draggedColumnId || draggedColumnId === targetId) return;
+  
+  const draggedIndex = state.panels.findIndex(p => p.id === draggedColumnId);
+  const targetIndex = state.panels.findIndex(p => p.id === targetId);
+  
+  if (draggedIndex < 0 || targetIndex < 0) return;
+  
+  const [removed] = state.panels.splice(draggedIndex, 1);
+  state.panels.splice(targetIndex, 0, removed);
+  
+  state.panels.forEach((p, idx) => { p.sort_order = idx; });
+  render();
+  
+  try {
+    const updates = state.panels.map(p => ({
+      id: p.id, user_id: p.user_id, name: p.name, icon: p.icon, color: p.color, sort_order: p.sort_order
+    }));
+    await sbUpsert('panels', updates);
+  } catch(err) {
+    console.error('Failed to save order:', err);
+  }
+}
+
+function handleColumnDragEnd(e) {
+  const column = e.target.closest('.panel-column');
+  if (column) column.style.opacity = '1';
+}
+
+async function toggleDashColumn(id) {
+  const p = state.panels.find(x => x.id === id);
+  if (!p) return;
+  p.dashboard_hidden = !p.dashboard_hidden;
+  render();
+  
+  const existingConfig = state.panel_entries.find(e => e.panel_id === id && e.data && e.data._is_panel_config);
+  const configEntry = {
+    id: existingConfig ? existingConfig.id : uuid(),
+    panel_id: id,
+    user_id: currentUser.id,
+    data: { _is_panel_config: true, archive_tab_name: p.archive_tab_name, dashboard_hidden: p.dashboard_hidden },
+    created_at: existingConfig ? existingConfig.created_at : new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  try { await sbUpsert('panel_entries', configEntry); } catch(e) {}
+}
+
+window.addEventListener('click', (e) => {
+  if (!e.target.closest('.add-pin-card') && !e.target.closest('#pinSelector')) {
+    document.getElementById('pinSelector')?.classList.add('hidden');
+  }
+  if (!e.target.closest('button[onclick*="dashColumnsDropdown"]') && !e.target.closest('#dashColumnsDropdown')) {
+    document.getElementById('dashColumnsDropdown')?.classList.add('hidden');
+  }
 });
 
 function renderPanelsColumns() {
@@ -4923,8 +5120,9 @@ function renderPanelsColumns() {
   }).join('');
 
   // ─── Compile Columns ───
-  const columnsHtml = state.panels.map(panel => {
-    let entries = state.panel_entries.filter(e => e.panel_id === panel.id);
+  const visiblePanels = state.panels.filter(p => !p.dashboard_hidden);
+  const columnsHtml = visiblePanels.map(panel => {
+    let entries = state.panel_entries.filter(e => e.panel_id === panel.id && e.data._archived !== true);
     const fields = state.panel_fields.filter(f => f.panel_id === panel.id);
     
     if (panel.name === 'Notes' || panel.name === 'Ideas') {
@@ -4938,7 +5136,8 @@ function renderPanelsColumns() {
           description: n.description,
           tags: n.tags,
           people: n.related_people,
-          links: n.source
+          links: n.source,
+          _archived: n.archived
         }
       }));
       const entryMap = new Map();
@@ -4970,8 +5169,16 @@ function renderPanelsColumns() {
     }).join('');
     
     return `
-      <div class="panel-column" style="display:flex; flex-direction:column; flex: 0 0 320px; width: 320px; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); max-height: calc(100vh - 180px); overflow: hidden; box-shadow: var(--shadow-sm);">
-        <div class="column-header" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom: 1px solid var(--hairline); background: var(--canvas-soft);">
+      <div class="panel-column" data-id="${panel.id}" style="display:flex; flex-direction:column; flex: 0 0 320px; width: 320px; background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); max-height: calc(100vh - 180px); overflow: hidden; box-shadow: var(--shadow-sm);"
+           ondragover="handleColumnDragOver(event)"
+           ondragleave="handleColumnDragLeave(event)"
+           ondrop="handleColumnDrop(event, '${panel.id}')"
+      >
+        <div class="column-header" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 16px; border-bottom: 1px solid var(--hairline); background: var(--canvas-soft); cursor: grab;"
+             draggable="true" 
+             ondragstart="handleColumnDragStart(event, '${panel.id}')"
+             ondragend="handleColumnDragEnd(event)"
+        >
           <div style="display:flex; align-items:center; gap:8px; font-weight:600; color:var(--ink);">
             <i class="fas ${panel.icon || 'fa-folder'}" style="color:${panel.color || 'var(--primary)'}"></i>
             <span>${escHtml(panel.name)}</span>
@@ -5074,7 +5281,39 @@ function renderPanelsColumns() {
       </div>
 
       <div class="dash-divider"></div>
-      <div class="dash-section-title" style="margin-bottom:16px;"><i class="fas fa-columns"></i> Workspace Columns</div>
+      <div class="dash-section-title" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <div><i class="fas fa-columns"></i> Workspace Columns</div>
+        <div style="position:relative;">
+           <button class="btn-secondary" onclick="document.getElementById('dashColumnsDropdown').classList.toggle('hidden')">
+             <i class="fas fa-eye"></i> Visible Columns
+           </button>
+           <div id="dashColumnsDropdown" class="hidden" style="position:absolute; right:0; top:calc(100% + 4px); background:var(--canvas); border:1px solid var(--hairline); border-radius:var(--radius-md); padding:8px; box-shadow:var(--shadow-md); z-index:100; min-width:200px; display:flex; flex-direction:column; gap:4px; max-height:300px; overflow-y:auto;">
+             ${state.panels.map(p => `
+               <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:13px; border-radius:var(--radius-sm);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+                 <input type="checkbox" onchange="toggleDashColumn('${p.id}')" ${p.dashboard_hidden ? '' : 'checked'}>
+                 ${escHtml(p.name)}
+               </label>
+             `).join('')}
+           </div>
+        </div>
+      </div>
+    `;
+  } else {
+    // In minimal mode, ensure dropdown is still accessible
+    dashboardHtml = `
+      <div style="display:flex; justify-content:flex-end; margin-bottom: 12px; position:relative;">
+         <button class="btn-secondary" onclick="document.getElementById('dashColumnsDropdown').classList.toggle('hidden')">
+           <i class="fas fa-eye"></i> Visible Columns
+         </button>
+         <div id="dashColumnsDropdown" class="hidden" style="position:absolute; right:0; top:calc(100% + 4px); background:var(--canvas); border:1px solid var(--hairline); border-radius:var(--radius-md); padding:8px; box-shadow:var(--shadow-md); z-index:100; min-width:200px; display:flex; flex-direction:column; gap:4px; max-height:300px; overflow-y:auto;">
+           ${state.panels.map(p => `
+             <label style="display:flex; align-items:center; gap:8px; padding:6px; cursor:pointer; font-size:13px; border-radius:var(--radius-sm);" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
+               <input type="checkbox" onchange="toggleDashColumn('${p.id}')" ${p.dashboard_hidden ? '' : 'checked'}>
+               ${escHtml(p.name)}
+             </label>
+           `).join('')}
+         </div>
+      </div>
     `;
   }
 
@@ -5110,7 +5349,8 @@ function renderPanelEntryDetail(id) {
           description: n.description,
           tags: n.tags,
           people: n.related_people,
-          links: n.source
+          links: n.source,
+          _archived: n.archived
         }
       };
     }
@@ -5120,7 +5360,9 @@ function renderPanelEntryDetail(id) {
   const panel = state.panels.find(p => p.id === entry.panel_id);
   const panelName = panel ? panel.name : 'Panel';
   
-  const dataRows = Object.entries(entry.data).map(([key, val]) => {
+  const dataRows = Object.entries(entry.data)
+    .filter(([key]) => key !== '_archived')
+    .map(([key, val]) => {
     let valStr = '';
     if (Array.isArray(val)) {
       if (key === 'people' || key.includes('people') || key.includes('person')) {
@@ -5160,6 +5402,11 @@ function renderPanelEntryDetail(id) {
       <div class="detail-actions" style="margin-top:24px; padding-top:16px; border-top:1px solid var(--hairline); display:flex; gap:8px;">
         <button class="btn-secondary" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back</button>
         <button class="btn-secondary" onclick="openPanelEntryModal('${entry.id}', '${entry.panel_id}')"><i class="fas fa-edit"></i> Edit</button>
+        ${panel && panel.archive_tab_name ? (
+          entry.data._archived 
+            ? `<button class="btn-secondary" onclick="markPanelEntryStatus('${entry.id}', '${entry.panel_id}', false)"><i class="fas fa-undo"></i> Mark as Active</button>`
+            : `<button class="btn-secondary" onclick="markPanelEntryStatus('${entry.id}', '${entry.panel_id}', true)"><i class="fas fa-check"></i> ${escHtml(panel.archive_tab_name)}</button>`
+        ) : ''}
         <button class="btn-danger" onclick="deletePanelEntry('${entry.id}', '${entry.panel_id}')" style="margin-left:auto; background:#dc2626; color:#fff; border:none; padding:8px 16px; border-radius:var(--radius-md); cursor:pointer;"><i class="fas fa-trash"></i> Delete</button>
       </div>
     </div>
@@ -5195,7 +5442,8 @@ function openPanelEntryModal(entryId = null, panelId) {
           description: n.description,
           tags: n.tags,
           people: n.related_people,
-          links: n.source
+          links: n.source,
+          _archived: n.archived
         }
       };
     }
