@@ -24,46 +24,89 @@ serve(async (req) => {
   }
 
   try {
-    const { message, userId, telegramBotToken, telegramChatId } = await req.json()
-
-    const apiKey = Deno.env.get('GEMINI_API_KEY')
-    if (!apiKey) throw new Error('GEMINI_API_KEY not configured')
+    const { message, userId, telegramBotToken, telegramChatId, mode } = await req.json()
 
     const sb = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const systemInstruction = `You are a smart task management assistant using the Eisenhower Matrix methodology.
+    // If mode is breakdown, generate subtask breakdown for a given task title
+    if (mode === 'breakdown') {
+      const breakdownPrompt = `You are a productivity expert. Given a task title and optional description, break it down into 3 to 5 clear, actionable, concise subtasks.
+Respond ONLY with a JSON object:
+{
+  "subtasks": [
+    { "text": "Actionable step 1" },
+    { "text": "Actionable step 2" }
+  ]
+}
+
+Task: ${message}`
+
+      const groqKey = Deno.env.get('GROQ_API_KEY') || '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'
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'groq/compound-mini',
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'user', content: breakdownPrompt }
+          ]
+        })
+      })
+
+      if (!response.ok) {
+        const err = await response.text()
+        throw new Error(`Groq API error: ${err}`)
+      }
+
+      const groqData = await response.json()
+      const resultText = groqData.choices[0].message.content
+      const cleanText = resultText.replace(/^```json/i, '').replace(/^```/i, '').replace(/```$/i, '').trim()
+      const parsed = JSON.parse(cleanText)
+
+      return new Response(JSON.stringify(parsed), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    const systemInstruction = `You are a smart task management assistant for Knowledge Vault.
 Parse the user's task input and extract structured todo items.
 
-Eisenhower Matrix rules:
-- urgent=true, important=true → Q1: Do First (crises, deadlines, emergencies)
-- urgent=false, important=true → Q2: Schedule (planning, development, important goals)
-- urgent=true, important=false → Q3: Delegate (interruptions, some meetings, some emails)
-- urgent=false, important=false → Q4: Eliminate (time wasters, trivial tasks)
-
-Keywords for urgency: "today", "ASAP", "urgent", "immediately", "by tomorrow", "deadline", "due soon", "critical", specific near dates
-Keywords for importance: "important", "critical", "key", "must", "priority", "goal", "project", "strategic"
+Priority mapping rules:
+- Critical/Urgent + High Impact: priority "p1" (urgent=true, important=true)
+- High priority / Important strategic: priority "p2" (urgent=false, important=true)
+- Medium / Quick / Delegable: priority "p3" (urgent=true, important=false)
+- Low priority / Trivial: priority "p4" (urgent=false, important=false)
 
 For EACH task detected, extract:
 - title: string (concise task title)
 - description: string (optional detail)
-- urgent: boolean
-- important: boolean
+- priority: "p1" | "p2" | "p3" | "p4"
+- status: "todo" | "in_progress" | "blocked" | "done" (default "todo")
+- tags: string[] (e.g. ["Work", "Design", "Urgent"])
+- subtasks: Array of { "text": string } (if user mentions sub-steps)
 - due_date: string | null (YYYY-MM-DD format, or null if not specified; "tomorrow" = next day, "Friday" = next occurrence)
 
 Today's date: ${new Date().toISOString().split('T')[0]}
 
 Respond ONLY with valid JSON:
 {
-  "reply": "Friendly confirmation of tasks added, with their quadrant assignments",
+  "reply": "Friendly confirmation of tasks added with their priorities and due dates",
   "todos": [
     {
       "title": string,
       "description": string,
-      "urgent": boolean,
-      "important": boolean,
+      "priority": "p1"|"p2"|"p3"|"p4",
+      "status": "todo",
+      "tags": string[],
+      "subtasks": [ { "text": string } ],
       "due_date": string | null
     }
   ]
@@ -99,14 +142,28 @@ Respond ONLY with valid JSON:
     // Insert todos into DB
     if (parsed.todos && parsed.todos.length > 0 && userId) {
       for (const todo of parsed.todos) {
+        const priority = todo.priority || 'p3'
+        const isUrgent = priority === 'p1' || priority === 'p3'
+        const isImportant = priority === 'p1' || priority === 'p2'
+
+        const formattedSubtasks = (todo.subtasks || []).map((s: any, idx: number) => ({
+          id: `st-${Date.now()}-${idx}`,
+          text: typeof s === 'string' ? s : (s.text || ''),
+          completed: false
+        }))
+
         const row = {
           user_id: userId,
           title: todo.title || 'Untitled Task',
           description: todo.description || '',
-          urgent: Boolean(todo.urgent),
-          important: Boolean(todo.important),
+          status: todo.status || 'todo',
+          priority: priority,
+          urgent: isUrgent,
+          important: isImportant,
+          tags: todo.tags || [],
+          subtasks: formattedSubtasks,
           due_date: todo.due_date || null,
-          completed: false,
+          completed: todo.status === 'done',
           notify_telegram: Boolean(telegramBotToken && telegramChatId),
         }
         const { data: inserted, error: insertErr } = await sb.from('todos').insert(row).select().single()
@@ -115,13 +172,13 @@ Respond ONLY with valid JSON:
           continue
         }
 
-        // Send Telegram notification for Q1 tasks (urgent + important)
-        if (todo.urgent && todo.important && telegramBotToken && telegramChatId) {
+        // Send Telegram notification for P1 tasks
+        if (priority === 'p1' && telegramBotToken && telegramChatId) {
           const dueStr = todo.due_date ? `📅 Due: ${todo.due_date}` : '⚡ Due: ASAP'
           await sendTelegram(
             telegramBotToken,
             telegramChatId,
-            `🔴 <b>Q1 Task Added — Do First!</b>\n\n📌 ${todo.title}\n${dueStr}\n\n<i>Knowledge Vault</i>`
+            `🔴 <b>P1 Urgent Task Added!</b>\n\n📌 ${todo.title}\n${dueStr}\n\n<i>Knowledge Vault</i>`
           )
         }
       }
@@ -131,7 +188,7 @@ Respond ONLY with valid JSON:
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('todo-chat error:', error.message)
     return new Response(JSON.stringify({ error: error.message, todos: [] }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

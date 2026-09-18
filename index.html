@@ -874,10 +874,482 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 
 
 
-/* ─── Eisenhower Matrix ─── */
+/* ─── Enhanced Tasks & To-Do Management System ─── */
+.tasks-container { display: flex; flex-direction: column; gap: 16px; min-height: calc(100vh - 180px); }
+
+/* Task Stats Overview Bar */
+.tasks-stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+.task-stat-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.task-stat-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+.ts-val { font-size: 20px; font-weight: 700; color: var(--ink); line-height: 1.2; }
+.ts-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-muted); }
+.ts-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 15px; }
+
+/* Control & Filter Bar */
+.tasks-controls-bar {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 10px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.tasks-view-modes {
+  display: inline-flex;
+  background: var(--canvas-soft);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--hairline);
+  gap: 2px;
+}
+.view-mode-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+.view-mode-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: var(--shadow-soft);
+}
+.tasks-smart-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.smart-filter-pill {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-full);
+  background: var(--canvas-soft);
+  color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.smart-filter-pill:hover { background: var(--surface); color: var(--ink); border-color: var(--primary); }
+.smart-filter-pill.active { background: var(--primary-light); color: var(--primary); border-color: var(--primary); font-weight: 600; }
+.smart-filter-pill .pill-cnt { background: rgba(0,0,0,0.06); font-size: 10px; padding: 1px 6px; border-radius: 10px; }
+
+/* Quick Add Bar */
+.tasks-quick-add {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.tasks-quick-add:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,117,222,0.12);
+}
+.tqa-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--ink);
+  padding: 6px 8px;
+  outline: none;
+}
+.tqa-select {
+  border: 1px solid var(--hairline);
+  background: var(--canvas-soft);
+  color: var(--ink-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: var(--radius-md);
+  outline: none;
+  cursor: pointer;
+}
+.tqa-btn {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s, transform 0.1s;
+}
+.tqa-btn:hover { background: var(--primary-active); }
+.tqa-btn:active { transform: scale(0.97); }
+
+/* Kanban Board Layout */
+.tasks-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(270px, 1fr));
+  gap: 14px;
+  align-items: start;
+  overflow-x: auto;
+  padding-bottom: 16px;
+  min-height: 480px;
+}
+.board-column {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 260px);
+  min-height: 280px;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.2s, background 0.2s;
+}
+.board-column.drag-over {
+  background: rgba(0,117,222,0.05);
+  border-color: var(--primary);
+  border-style: dashed;
+}
+.bcol-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--canvas-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+.bcol-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.bcol-count {
+  font-size: 11px;
+  background: var(--hairline);
+  color: var(--ink-secondary);
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+.bcol-add {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.bcol-add:hover { background: rgba(0,0,0,0.08); color: var(--ink); }
+.bcol-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bcol-empty {
+  text-align: center;
+  padding: 30px 10px;
+  color: var(--ink-faint);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* Enhanced Task Card */
+.task-card-enhanced {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  cursor: grab;
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+.task-card-enhanced:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+  border-color: rgba(0,117,222,0.3);
+}
+.task-card-enhanced.dragging {
+  opacity: 0.35;
+  transform: scale(0.98);
+}
+.task-card-enhanced.done-card {
+  opacity: 0.65;
+  background: var(--canvas-soft);
+}
+.task-card-enhanced.done-card .tce-title {
+  text-decoration: line-through;
+  color: var(--ink-muted);
+}
+.tce-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.tce-checkbox {
+  margin-top: 2px;
+  width: 17px;
+  height: 17px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+.tce-main { flex: 1; min-width: 0; }
+.tce-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+  word-break: break-word;
+  cursor: pointer;
+}
+.tce-title:hover { color: var(--primary); }
+.tce-desc {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Badges & Chips */
+.tce-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.p-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.p-badge.p1 { background: rgba(220,38,38,0.12); color: #dc2626; border: 1px solid rgba(220,38,38,0.25); }
+.p-badge.p2 { background: rgba(221,91,0,0.12); color: #dd5b00; border: 1px solid rgba(221,91,0,0.25); }
+.p-badge.p3 { background: rgba(0,117,222,0.12); color: #0075de; border: 1px solid rgba(0,117,222,0.25); }
+.p-badge.p4 { background: rgba(97,93,89,0.12); color: #615d59; border: 1px solid rgba(97,93,89,0.25); }
+
+.due-chip {
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+  background: var(--canvas-soft);
+  color: var(--ink-secondary);
+  border: 1px solid var(--hairline);
+}
+.due-chip.overdue { background: rgba(220,38,38,0.1); color: #dc2626; border-color: rgba(220,38,38,0.3); font-weight: 700; }
+.due-chip.today { background: rgba(221,91,0,0.1); color: #dd5b00; border-color: rgba(221,91,0,0.3); font-weight: 600; }
+.due-chip.tomorrow { background: rgba(0,117,222,0.1); color: #0075de; border-color: rgba(0,117,222,0.3); }
+
+.project-chip {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(98,174,240,0.15);
+  color: #0066cc;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tag-chip {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--canvas-soft);
+  color: var(--ink-muted);
+  border: 1px solid var(--hairline);
+}
+
+/* Subtasks Progress & Inline Checklist */
+.subtasks-progress-box {
+  margin-top: 8px;
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+}
+.subtasks-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+.subtasks-header-bar:hover { color: var(--ink); }
+.subtasks-bar-track {
+  height: 4px;
+  background: var(--hairline);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+.subtasks-bar-fill {
+  height: 100%;
+  background: var(--accent-green);
+  transition: width 0.3s ease;
+}
+.subtasks-list-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+}
+.subtask-item-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.subtask-item-inline.done-st span {
+  text-decoration: line-through;
+  color: var(--ink-faint);
+}
+
+/* Card Footer & Actions */
+.tce-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 6px;
+  border-top: 1px solid var(--hairline);
+  font-size: 11px;
+}
+.tce-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+.tce-btn {
+  padding: 3px 6px;
+  font-size: 11px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  color: var(--ink-faint);
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.tce-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-muted); border-color: var(--hairline); }
+.tce-btn.del:hover { color: #dc2626; background: rgba(220,38,38,0.08); }
+
+/* List View Layout */
+.tasks-list-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.task-group {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+.task-group-head {
+  padding: 10px 16px;
+  background: var(--canvas-soft);
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.task-list-rows {
+  display: flex;
+  flex-direction: column;
+}
+.task-row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+  transition: background 0.15s;
+}
+.task-row-item:last-child { border-bottom: none; }
+.task-row-item:hover { background: var(--canvas-soft); }
+.task-row-item.done-row { opacity: 0.6; }
+.task-row-item.done-row .tr-title { text-decoration: line-through; }
+.tr-title { font-size: 13px; font-weight: 600; color: var(--ink); flex: 1; cursor: pointer; }
+.tr-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Eisenhower Matrix Layout (Optional View) */
 .matrix-axis-labels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
 .matrix-axis-label { text-align: center; font-size: 11px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.5px; }
-.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: calc(100vh - 220px); min-height: 420px; }
+.matrix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 440px; }
 .matrix-quadrant { border-radius: var(--radius-lg); padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; border: 2px solid transparent; }
 .matrix-quadrant.q1 { background: rgba(220,38,38,0.04); border-color: rgba(220,38,38,0.18); }
 .matrix-quadrant.q2 { background: rgba(0,117,222,0.04); border-color: rgba(0,117,222,0.18); }
@@ -888,23 +1360,10 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
 .mq-label.q1 { color: #dc2626; } .mq-label.q2 { color: var(--primary); } .mq-label.q3 { color: #ca8a04; } .mq-label.q4 { color: var(--ink-muted); }
 .mq-add { width: 22px; height: 22px; border-radius: var(--radius-full); background: rgba(0,0,0,0.06); color: var(--ink-muted); font-size: 11px; display: flex; align-items: center; justify-content: center; cursor: pointer; border: none; transition: background var(--transition); }
 .mq-add:hover { background: rgba(0,0,0,0.12); }
-.todo-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-md); padding: 10px 12px; cursor: default; transition: box-shadow var(--transition); position: relative; }
-.todo-card:hover { box-shadow: var(--shadow-soft); }
-.todo-card.done { opacity: 0.45; }
-.todo-card.done .tc-title { text-decoration: line-through; }
-.tc-title { font-size: 13px; font-weight: 500; color: var(--ink); line-height: 1.35; padding-right: 22px; }
-.tc-due { font-size: 11px; color: var(--ink-faint); margin-top: 4px; }
-.tc-due.overdue { color: #dc2626; font-weight: 600; }
-.tc-actions { display: flex; align-items: center; gap: 4px; margin-top: 8px; }
-.tc-btn { padding: 2px 6px; font-size: 11px; border-radius: var(--radius-xs); cursor: pointer; color: var(--ink-faint); background: transparent; border: 1px solid transparent; transition: all var(--transition); }
-.tc-btn:hover { background: rgba(0,0,0,0.06); color: var(--ink-muted); border-color: var(--hairline); }
-.tc-btn.done-btn.done { color: var(--accent-green); }
-.tc-btn.del-btn:hover { color: #c00; background: #fee; }
-.tc-tg-btn { color: var(--primary); } .tc-tg-btn:hover { background: rgba(0,117,222,0.08); color: var(--primary); }
-.todo-chat-section { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; margin-top: 16px; }
-@media (max-width: 600px) {
+
+@media (max-width: 900px) {
+  .tasks-board { grid-template-columns: 1fr; }
   .matrix-grid { grid-template-columns: 1fr; height: auto; }
-  .matrix-quadrant { min-height: 180px; }
 }
 
 
@@ -1093,8 +1552,9 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <i class="fas fa-search"></i>
     </button>
 
-    <a href="#" class="tn-link" data-view="matrix" onclick="switchView('matrix'); return false;" title="Eisenhower Matrix" style="padding: 6px 10px; font-size: 16px; border-radius: var(--radius-full); margin-right: -8px;">
-      <i class="fas fa-th-large"></i>
+    <a href="#" class="tn-link" data-view="todos" onclick="switchView('todos'); return false;" title="Tasks & To-Do List" style="padding: 6px 10px; font-size: 15px; border-radius: var(--radius-full); margin-right: -8px; position: relative;">
+      <i class="fas fa-check-circle"></i>
+      <span id="nav-todos-badge" style="display:none; position:absolute; top:-3px; right:-3px; background:#dc2626; color:#ffffff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 5px; min-width:14px; text-align:center; line-height:1.2; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
     </a>
     <div class="tn-profile-wrap">
       <div class="sb-user" id="sbUserInfo" onclick="openSettings()" style="cursor:pointer; padding:0; margin:0; border:none; background:transparent;"></div>
@@ -1347,30 +1807,124 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     </div>
   </div>
 
-  <!-- ─── Todo Modal ─── -->
-  <div class="modal-card hidden" id="todoModal" style="max-width:500px">
-    <div class="modal-header"><h2 id="todoModalTitle">New Task</h2><button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
-    <div class="modal-body">
+  <!-- ─── Enhanced Task Modal ─── -->
+  <div class="modal-card hidden" id="todoModal" style="max-width:580px">
+    <div class="modal-header">
+      <h2 id="todoModalTitle"><i class="fas fa-tasks" style="color:var(--primary); margin-right:8px;"></i> New Task</h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="max-height:75vh; overflow-y:auto; padding-right:6px;">
       <input type="hidden" id="todoId">
-      <div class="form-group"><label class="form-label">Task Title</label><input type="text" class="form-input" id="todoTitle" placeholder="What needs to be done?"></div>
-      <div class="form-group"><label class="form-label">Description (optional)</label><textarea class="form-textarea" id="todoDesc" placeholder="Additional details..." style="min-height:70px"></textarea></div>
-      <div class="form-group"><label class="form-label">Due Date (optional)</label><input type="date" class="form-input" id="todoDueDate"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
-        <div style="padding:12px;background:rgba(220,38,38,0.05);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-md)">
-          <div class="toggle-switch" onclick="toggleTodoUrgent()"><div class="ts-track" id="todoUrgentTrack"></div><span class="ts-label" style="color:#dc2626;font-weight:600">&#9889; Urgent</span></div>
-          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Needs attention now</p>
+      
+      <div class="form-group">
+        <label class="form-label">Task Title <span style="color:#dc2626">*</span></label>
+        <input type="text" class="form-input" id="todoTitle" placeholder="What needs to be done?" style="font-size:15px; font-weight:500;">
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Description / Notes (optional)</label>
+        <textarea class="form-textarea" id="todoDesc" placeholder="Add context, specifications, links, or notes..." style="min-height:75px; font-size:13px;"></textarea>
+      </div>
+
+      <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Status</label>
+          <select class="form-select" id="todoStatus">
+            <option value="todo">📌 To Do / Backlog</option>
+            <option value="in_progress">🚀 In Progress</option>
+            <option value="blocked">⏸️ Blocked / Waiting</option>
+            <option value="done">✅ Done / Completed</option>
+          </select>
         </div>
-        <div style="padding:12px;background:rgba(0,117,222,0.05);border:1px solid rgba(0,117,222,0.2);border-radius:var(--radius-md)">
-          <div class="toggle-switch" onclick="toggleTodoImportant()"><div class="ts-track" id="todoImportantTrack"></div><span class="ts-label" style="color:var(--primary);font-weight:600">&#127919; Important</span></div>
-          <p style="font-size:11px;color:var(--ink-faint);margin-top:6px">Significant impact on goals</p>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="todoPriority">
+            <option value="p1">🔴 P1 — Critical & Urgent</option>
+            <option value="p2">🟠 P2 — High Priority</option>
+            <option value="p3" selected>🟡 P3 — Medium / Normal</option>
+            <option value="p4">⚪ P4 — Low Priority</option>
+          </select>
         </div>
       </div>
-      <div style="margin-top:12px;padding:10px 14px;background:var(--canvas-soft);border-radius:var(--radius-md);font-size:13px;color:var(--ink-muted)" id="quadrantPreview">Select urgency/importance to see quadrant.</div>
-      <div class="form-group" style="margin-top:12px"><div class="toggle-switch" onclick="toggleTodoTelegram()"><div class="ts-track" id="todoTelegramTrack"></div><span class="ts-label">Send Telegram reminder for this task</span></div></div>
+
+      <div class="form-row" style="display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:10px; margin-bottom:14px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Project</label>
+          <select class="form-select" id="todoProject">
+            <option value="">📁 No Project</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Due Date</label>
+          <input type="date" class="form-input" id="todoDueDate">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Due Time</label>
+          <input type="time" class="form-input" id="todoDueTime">
+        </div>
+      </div>
+
+      <div class="form-row" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Recurrence</label>
+          <select class="form-select" id="todoRecurrence">
+            <option value="none">No Repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Estimated Time (mins)</label>
+          <input type="number" class="form-input" id="todoEstMins" placeholder="e.g. 30" min="0" step="5">
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:14px;">
+        <label class="form-label">Tags / Labels (comma-separated)</label>
+        <input type="text" class="form-input" id="todoTagsInput" placeholder="e.g. Frontend, Design, Urgent, Research" style="font-size:13px;">
+      </div>
+
+      <!-- Subtasks / Checklist Builder -->
+      <div style="background:var(--canvas-soft); border:1px solid var(--hairline); border-radius:var(--radius-lg); padding:12px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px;">
+            <i class="fas fa-tasks" style="color:var(--primary);"></i> Checklist & Subtasks
+          </span>
+          <button type="button" id="btnAiSubtasks" onclick="aiBreakdownCurrentTask()" style="background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-md); padding:4px 10px; font-size:11px; font-weight:600; color:var(--primary); cursor:pointer; display:flex; align-items:center; gap:4px; box-shadow:var(--shadow-soft);">
+            <i class="fas fa-magic"></i> AI Subtask Suggestions
+          </button>
+        </div>
+        <div id="todoSubtasksList" style="display:flex; flex-direction:column; gap:6px; margin-bottom:8px;"></div>
+        <div style="display:flex; gap:6px;">
+          <input type="text" class="form-input" id="todoNewSubtaskText" placeholder="Add a subtask step (press Enter)..." onkeydown="if(event.key==='Enter'){event.preventDefault();addModalSubtask();}" style="font-size:13px; background:var(--surface);">
+          <button type="button" onclick="addModalSubtask()" style="padding:6px 14px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; flex-shrink:0;">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+      </div>
+
+      <!-- Telegram Reminder Toggle -->
+      <div class="form-group" style="margin-top:10px;">
+        <div class="toggle-switch" onclick="toggleTodoTelegram()">
+          <div class="ts-track" id="todoTelegramTrack"></div>
+          <span class="ts-label" style="font-size:13px; font-weight:500;"><i class="fab fa-telegram" style="color:#0088cc; margin-right:4px;"></i> Send instant Telegram alert for this task</span>
+        </div>
+      </div>
     </div>
-    <div class="modal-footer">
-      <button onclick="closeModal()" style="padding:8px 20px;background:var(--canvas);color:var(--ink-secondary);border:1px solid var(--hairline);border-radius:var(--radius-md);font-size:14px;font-weight:500">Cancel</button>
-      <button onclick="saveTodo()" style="padding:8px 20px;background:var(--primary);color:var(--on-primary);border-radius:var(--radius-full);font-size:14px;font-weight:500">Save Task</button>
+
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <div>
+        <button id="btnDeleteTodoModal" type="button" onclick="deleteCurrentModalTodo()" style="display:none; padding:8px 16px; background:rgba(220,38,38,0.1); color:#dc2626; border:1px solid rgba(220,38,38,0.2); border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="closeModal()" style="padding:8px 18px; background:var(--canvas); color:var(--ink-secondary); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:13px; font-weight:500; cursor:pointer;">Cancel</button>
+        <button onclick="saveTodo()" style="padding:8px 22px; background:var(--primary); color:var(--on-primary); border:none; border-radius:var(--radius-full); font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 2px 6px rgba(0,117,222,0.3);">
+          <i class="fas fa-save" style="margin-right:4px;"></i> Save Task
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1659,6 +2213,10 @@ let state = {
   noteFav:false, selectedTags:[], authMode:'login',
   minimalMode: localStorage.getItem('kv-minimal-mode') === 'true',
   pinnedPanelIds: JSON.parse(localStorage.getItem('kv-pinned-panels') || '[]'),
+  taskViewMode: localStorage.getItem('kv-task-view-mode') || 'board',
+  taskFilter: 'all',
+  taskProjectFilter: 'all',
+  taskSearchQuery: '',
 };
 
 // ─── Supabase Data Operations ───
@@ -2020,7 +2578,7 @@ const VIEW_TITLES = {
   all:'All Notes',favourites:'Favourites',archived:'Archived',recent:'Recent Notes',
   highpriority:'High Priority',notags:'No Tags',nocategories:'No Categories',recycle:'Recycle Bin',
   people:'People',companies:'Companies',technologies:'Technologies',projects:'Projects',
-  matrix:'Eisenhower Matrix', todos:'All Tasks'
+  matrix:'Tasks & To-Do List', todos:'Tasks & To-Do List'
 };
 
 // ─── Render ───
@@ -2046,8 +2604,17 @@ function updateNavCounts() {
   if(document.getElementById('count-tech')) document.getElementById('count-tech').textContent=state.technologies.length;
   if(document.getElementById('count-proj')) document.getElementById('count-proj').textContent=state.projects.length;
   
-
-  if(document.getElementById('count-todos')) document.getElementById('count-todos').textContent=state.todos.filter(t=>!t.completed).length;
+  const pendingTodos = state.todos.filter(t => !t.completed && (t.status !== 'done')).length;
+  if(document.getElementById('count-todos')) document.getElementById('count-todos').textContent = pendingTodos;
+  const navBadge = document.getElementById('nav-todos-badge');
+  if(navBadge) {
+    if(pendingTodos > 0) {
+      navBadge.textContent = pendingTodos > 99 ? '99+' : pendingTodos;
+      navBadge.style.display = 'inline-block';
+    } else {
+      navBadge.style.display = 'none';
+    }
+  }
 }
 
 function toggleCategoriesCollapse() {
@@ -2125,9 +2692,10 @@ function renderMainHeader() {
     sc.classList.add('hidden'); af.innerHTML='';
     va.innerHTML=`<button onclick="openEntityModal('${state.currentView}')"><i class="fas fa-plus"></i> New</button>`;
   } else if(['matrix','todos'].includes(state.currentView)) {
-    vc.textContent=state.todos.length+' records';
+    const pendingCount = state.todos.filter(t => !t.completed && t.status !== 'done').length;
+    vc.textContent = pendingCount + ' pending · ' + state.todos.length + ' total';
     sc.classList.add('hidden'); af.innerHTML='';
-    va.innerHTML=`<button onclick="openTodoModal()"><i class="fas fa-plus"></i> New</button>`;
+    va.innerHTML=`<button onclick="openTodoModal()"><i class="fas fa-plus"></i> New Task</button>`;
   } else if(state.currentView === 'all') {
     if (!state.panels || state.panels.length === 0) {
       const filtered = getFilteredNotes();
@@ -2234,8 +2802,7 @@ function renderMainContent() {
   }
   
 
-  if(state.currentView === 'matrix') { mc.innerHTML=renderEisenhowerMatrix(); return; }
-  if(state.currentView === 'todos') { mc.innerHTML=renderTodoList(); return; }
+  if(state.currentView === 'matrix' || state.currentView === 'todos') { mc.innerHTML=renderEnhancedTasks(); return; }
 
   const filtered=getFilteredNotes();
   const totalPages=Math.ceil(filtered.length/PAGE_SIZE)||1;
@@ -3310,150 +3877,1030 @@ async function testTelegramSettings() {
 }
 
 
-// ─── Eisenhower Matrix (Todos) ───
-function openTodoModal(editId=null, u=false, i=false) {
-  if(editId) {
-    const t = state.todos.find(x=>x.id===editId);
-    if(t) {
+// ─── Enhanced Tasks & To-Do Management System ───
+let modalSubtasks = [];
+let expandedTaskSubtasks = new Set();
+let draggedTaskId = null;
+
+function getNormalizedTask(t) {
+  const status = t.status || (t.completed ? 'done' : 'todo');
+  let priority = t.priority;
+  if (!priority) {
+    if (t.urgent && t.important) priority = 'p1';
+    else if (!t.urgent && t.important) priority = 'p2';
+    else if (t.urgent && !t.important) priority = 'p3';
+    else priority = 'p4';
+  }
+  const tags = Array.isArray(t.tags) ? t.tags : [];
+  const subtasks = Array.isArray(t.subtasks) ? t.subtasks : [];
+  return {
+    ...t,
+    status,
+    priority,
+    tags,
+    subtasks,
+    recurrence: t.recurrence || 'none',
+    completed: status === 'done' || Boolean(t.completed)
+  };
+}
+
+function openTodoModal(editId=null, defaultStatus='todo', defaultPriority='p3') {
+  // Populate projects dropdown
+  const projSelect = document.getElementById('todoProject');
+  if (projSelect) {
+    let projOptions = '<option value="">📁 No Project</option>';
+    if (state.projects && state.projects.length > 0) {
+      projOptions += state.projects.map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+    }
+    projSelect.innerHTML = projOptions;
+  }
+
+  const delBtn = document.getElementById('btnDeleteTodoModal');
+  
+  if (editId) {
+    const raw = state.todos.find(x => x.id === editId);
+    if (raw) {
+      const t = getNormalizedTask(raw);
       document.getElementById('todoId').value = t.id;
-      document.getElementById('todoTitle').value = t.title;
-      document.getElementById('todoDesc').value = t.description||'';
-      document.getElementById('todoDueDate').value = t.due_date||'';
-      document.getElementById('todoUrgentTrack').classList.toggle('active', t.urgent);
-      document.getElementById('todoImportantTrack').classList.toggle('active', t.important);
-      document.getElementById('todoTelegramTrack').classList.toggle('active', t.notify_telegram);
-      document.getElementById('todoModalTitle').textContent = 'Edit Task';
+      document.getElementById('todoTitle').value = t.title || '';
+      document.getElementById('todoDesc').value = t.description || '';
+      document.getElementById('todoStatus').value = t.status || 'todo';
+      document.getElementById('todoPriority').value = t.priority || 'p3';
+      document.getElementById('todoProject').value = t.project_id || '';
+      document.getElementById('todoDueDate').value = t.due_date || '';
+      document.getElementById('todoDueTime').value = t.due_time || '';
+      document.getElementById('todoRecurrence').value = t.recurrence || 'none';
+      document.getElementById('todoEstMins').value = t.estimated_minutes || '';
+      document.getElementById('todoTagsInput').value = (t.tags || []).join(', ');
+      document.getElementById('todoTelegramTrack').classList.toggle('active', Boolean(t.notify_telegram));
+      document.getElementById('todoModalTitle').innerHTML = '<i class="fas fa-edit" style="color:var(--primary); margin-right:8px;"></i> Edit Task';
+      if (delBtn) delBtn.style.display = 'inline-block';
+      
+      modalSubtasks = JSON.parse(JSON.stringify(t.subtasks || []));
     }
   } else {
     document.getElementById('todoId').value = '';
     document.getElementById('todoTitle').value = '';
     document.getElementById('todoDesc').value = '';
+    document.getElementById('todoStatus').value = defaultStatus || 'todo';
+    document.getElementById('todoPriority').value = defaultPriority || 'p3';
+    document.getElementById('todoProject').value = state.taskProjectFilter !== 'all' ? state.taskProjectFilter : '';
     document.getElementById('todoDueDate').value = '';
-    document.getElementById('todoUrgentTrack').classList.toggle('active', u);
-    document.getElementById('todoImportantTrack').classList.toggle('active', i);
+    document.getElementById('todoDueTime').value = '';
+    document.getElementById('todoRecurrence').value = 'none';
+    document.getElementById('todoEstMins').value = '';
+    document.getElementById('todoTagsInput').value = '';
     document.getElementById('todoTelegramTrack').classList.remove('active');
-    document.getElementById('todoModalTitle').textContent = 'New Task';
+    document.getElementById('todoModalTitle').innerHTML = '<i class="fas fa-tasks" style="color:var(--primary); margin-right:8px;"></i> New Task';
+    if (delBtn) delBtn.style.display = 'none';
+    
+    modalSubtasks = [];
   }
-  updateQuadrantPreview();
+
+  renderModalSubtasks();
   document.getElementById('modalOverlay').classList.add('open');
   document.getElementById('todoModal').classList.remove('hidden');
+  setTimeout(() => {
+    const input = document.getElementById('todoTitle');
+    if (input) input.focus();
+  }, 100);
 }
 
-function updateQuadrantPreview() {
-  const u = document.getElementById('todoUrgentTrack').classList.contains('active');
-  const i = document.getElementById('todoImportantTrack').classList.contains('active');
-  const p = document.getElementById('quadrantPreview');
+function renderModalSubtasks() {
+  const container = document.getElementById('todoSubtasksList');
+  if (!container) return;
+  if (!modalSubtasks || modalSubtasks.length === 0) {
+    container.innerHTML = '<div style="font-size:12px; color:var(--ink-faint); font-style:italic; padding:4px 0;">No subtasks added yet.</div>';
+    return;
+  }
+  container.innerHTML = modalSubtasks.map((st, idx) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--surface); padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--hairline);">
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+        <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="toggleModalSubtask(${idx})" style="cursor:pointer; accent-color:var(--primary); width:15px; height:15px;">
+        <span style="font-size:13px; color:var(--ink); ${st.completed ? 'text-decoration:line-through; color:var(--ink-muted);' : ''}">${escHtml(st.text)}</span>
+      </div>
+      <button type="button" onclick="removeModalSubtask(${idx})" style="background:none; border:none; color:var(--ink-faint); cursor:pointer; font-size:12px; padding:2px;" title="Remove subtask">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+function addModalSubtask() {
+  const input = document.getElementById('todoNewSubtaskText');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  modalSubtasks.push({
+    id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+    text,
+    completed: false
+  });
+  input.value = '';
+  renderModalSubtasks();
+  input.focus();
+}
+
+function removeModalSubtask(idx) {
+  modalSubtasks.splice(idx, 1);
+  renderModalSubtasks();
+}
+
+function toggleModalSubtask(idx) {
+  if (modalSubtasks[idx]) {
+    modalSubtasks[idx].completed = !modalSubtasks[idx].completed;
+    renderModalSubtasks();
+  }
+}
+
+async function aiBreakdownCurrentTask() {
+  const title = document.getElementById('todoTitle').value.trim();
+  if (!title) return toast('Please enter a task title first to get suggestions', 'info');
   
-  if(u && i) p.innerHTML = '<strong style="color:#dc2626">Quadrant 1: DO FIRST</strong><br>Urgent and important tasks.';
-  else if(!u && i) p.innerHTML = '<strong style="color:var(--primary)">Quadrant 2: SCHEDULE</strong><br>Important but not urgent tasks.';
-  else if(u && !i) p.innerHTML = '<strong style="color:#ca8a04">Quadrant 3: DELEGATE</strong><br>Urgent but not important tasks.';
-  else p.innerHTML = '<strong style="color:var(--ink-muted)">Quadrant 4: ELIMINATE</strong><br>Neither urgent nor important tasks.';
+  const btn = document.getElementById('btnAiSubtasks');
+  const ogHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  }
+  
+  try {
+    const { data, error } = await sb.functions.invoke('todo-chat', {
+      body: { mode: 'breakdown', message: title }
+    });
+    
+    if (error) throw error;
+    if (data && Array.isArray(data.subtasks) && data.subtasks.length > 0) {
+      data.subtasks.forEach((st, i) => {
+        const text = typeof st === 'string' ? st : (st.text || '');
+        if (text) {
+          modalSubtasks.push({
+            id: 'st-' + Date.now() + '-' + i,
+            text,
+            completed: false
+          });
+        }
+      });
+      renderModalSubtasks();
+      toast('AI added ' + data.subtasks.length + ' subtask steps!', 'success');
+    } else {
+      // Smart local fallback breakdown
+      const fallbackSteps = [
+        `Research & outline plan for "${title}"`,
+        `Execute first milestone of "${title}"`,
+        `Review & test output of "${title}"`,
+        `Finalize & deliver "${title}"`
+      ];
+      fallbackSteps.forEach((text, i) => {
+        modalSubtasks.push({
+          id: 'st-' + Date.now() + '-' + i,
+          text,
+          completed: false
+        });
+      });
+      renderModalSubtasks();
+      toast('Generated subtask steps!', 'success');
+    }
+  } catch (err) {
+    console.warn('AI breakdown fallback:', err);
+    const fallbackSteps = [
+      `Plan prerequisites for "${title}"`,
+      `Implement core requirements for "${title}"`,
+      `Verify and test completion of "${title}"`
+    ];
+    fallbackSteps.forEach((text, i) => {
+      modalSubtasks.push({
+        id: 'st-' + Date.now() + '-' + i,
+        text,
+        completed: false
+      });
+    });
+    renderModalSubtasks();
+    toast('Added suggested subtask steps', 'info');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = ogHtml;
+    }
+  }
 }
 
 async function saveTodo() {
   const title = document.getElementById('todoTitle').value.trim();
-  if(!title) return toast('Title is required','error');
-  
+  if (!title) return toast('Task title is required', 'error');
+
   const id = document.getElementById('todoId').value;
+  const status = document.getElementById('todoStatus').value || 'todo';
+  const priority = document.getElementById('todoPriority').value || 'p3';
+  const projectId = document.getElementById('todoProject').value || null;
+  const dueDate = document.getElementById('todoDueDate').value || null;
+  const dueTime = document.getElementById('todoDueTime').value || null;
+  const recurrence = document.getElementById('todoRecurrence').value || 'none';
+  const estMins = parseInt(document.getElementById('todoEstMins').value, 10) || null;
+  
+  const rawTags = document.getElementById('todoTagsInput').value;
+  const tags = rawTags.split(',').map(s => s.trim()).filter(Boolean);
+  const notifyTelegram = document.getElementById('todoTelegramTrack').classList.contains('active');
+  const isCompleted = status === 'done';
+
+  const isUrgent = priority === 'p1' || priority === 'p3';
+  const isImportant = priority === 'p1' || priority === 'p2';
+
   const todo = {
     user_id: currentUser.id,
     title,
     description: document.getElementById('todoDesc').value.trim(),
-    due_date: document.getElementById('todoDueDate').value || null,
-    urgent: document.getElementById('todoUrgentTrack').classList.contains('active'),
-    important: document.getElementById('todoImportantTrack').classList.contains('active'),
-    notify_telegram: document.getElementById('todoTelegramTrack').classList.contains('active'),
+    status,
+    priority,
+    project_id: projectId,
+    due_date: dueDate,
+    due_time: dueTime,
+    recurrence,
+    estimated_minutes: estMins,
+    tags,
+    subtasks: modalSubtasks,
+    urgent: isUrgent,
+    important: isImportant,
+    completed: isCompleted,
+    completed_at: isCompleted ? new Date().toISOString() : null,
+    notify_telegram: notifyTelegram,
     updated_at: new Date().toISOString()
   };
-  if(id) todo.id = id;
-  
+  if (id) todo.id = id;
+
   try {
     const { data, error } = await sb.from('todos').upsert(todo).select().single();
-    if(error) throw error;
-    
-    if(id) {
-      const idx = state.todos.findIndex(x=>x.id===id);
-      if(idx>-1) state.todos[idx] = data;
+    if (error) throw error;
+
+    const saved = getNormalizedTask(data || todo);
+    if (id) {
+      const idx = state.todos.findIndex(x => x.id === id);
+      if (idx > -1) state.todos[idx] = saved;
     } else {
-      state.todos.unshift(data);
+      state.todos.unshift(saved);
     }
-    
+
     closeModal();
-    renderMainContent();
-    updateNavCounts();
+    render();
     toast('Task saved', 'success');
-  } catch(e) { toast(e.message,'error'); }
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function deleteCurrentModalTodo() {
+  const id = document.getElementById('todoId').value;
+  if (!id) return;
+  closeModal();
+  await deleteTodo(id);
+}
+
+async function saveQuickTodo() {
+  const input = document.getElementById('tqaTitle');
+  if (!input) return;
+  const title = input.value.trim();
+  if (!title) return toast('Please enter a task title', 'info');
+
+  const priority = document.getElementById('tqaPriority')?.value || 'p3';
+  const dueDateVal = document.getElementById('tqaDueDate')?.value || '';
+  const projectId = document.getElementById('tqaProject')?.value || null;
+
+  let calculatedDueDate = null;
+  const today = new Date();
+  if (dueDateVal === 'today') {
+    calculatedDueDate = today.toISOString().split('T')[0];
+  } else if (dueDateVal === 'tomorrow') {
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    calculatedDueDate = tomorrow.toISOString().split('T')[0];
+  } else if (dueDateVal === 'next_week') {
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    calculatedDueDate = nextWeek.toISOString().split('T')[0];
+  } else if (dueDateVal) {
+    calculatedDueDate = dueDateVal;
+  }
+
+  const isUrgent = priority === 'p1' || priority === 'p3';
+  const isImportant = priority === 'p1' || priority === 'p2';
+
+  const newTodo = {
+    user_id: currentUser.id,
+    title,
+    description: '',
+    status: 'todo',
+    priority,
+    project_id: projectId,
+    due_date: calculatedDueDate,
+    subtasks: [],
+    tags: [],
+    urgent: isUrgent,
+    important: isImportant,
+    completed: false,
+    notify_telegram: false,
+    updated_at: new Date().toISOString()
+  };
+
+  input.value = '';
+
+  try {
+    const { data, error } = await sb.from('todos').insert(newTodo).select().single();
+    if (error) throw error;
+    state.todos.unshift(getNormalizedTask(data || newTodo));
+    render();
+    toast('Task created!', 'success');
+  } catch (e) {
+    toast('Error creating task: ' + e.message, 'error');
+  }
 }
 
 async function toggleTodoComplete(id) {
-  const t = state.todos.find(x=>x.id===id);
-  if(!t) return;
-  const newVal = !t.completed;
-  t.completed = newVal;
-  // Optimistic UI
+  const t = state.todos.find(x => x.id === id);
+  if (!t) return;
+  const wasCompleted = Boolean(t.completed || t.status === 'done');
+  const newCompleted = !wasCompleted;
+  const newStatus = newCompleted ? 'done' : 'todo';
+  
+  t.completed = newCompleted;
+  t.status = newStatus;
+  t.completed_at = newCompleted ? new Date().toISOString() : null;
+
   renderMainContent();
   updateNavCounts();
+
   try {
-    await sb.from('todos').update({completed: newVal, completed_at: newVal?new Date().toISOString():null}).eq('id',id);
-  } catch(e) {
-    t.completed = !newVal; // rollback
-    renderMainContent(); updateNavCounts();
-    toast('Update failed: '+e.message, 'error');
+    await sb.from('todos').update({
+      completed: newCompleted,
+      status: newStatus,
+      completed_at: t.completed_at,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+  } catch (e) {
+    t.completed = wasCompleted;
+    t.status = wasCompleted ? 'done' : 'todo';
+    renderMainContent();
+    updateNavCounts();
+    toast('Update failed: ' + e.message, 'error');
+  }
+}
+
+async function updateTodoStatus(id, newStatus) {
+  const t = state.todos.find(x => x.id === id);
+  if (!t || t.status === newStatus) return;
+  const oldStatus = t.status;
+  const oldCompleted = t.completed;
+
+  t.status = newStatus;
+  t.completed = newStatus === 'done';
+  t.completed_at = newStatus === 'done' ? new Date().toISOString() : null;
+
+  renderMainContent();
+  updateNavCounts();
+
+  try {
+    await sb.from('todos').update({
+      status: newStatus,
+      completed: t.completed,
+      completed_at: t.completed_at,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+  } catch (e) {
+    t.status = oldStatus;
+    t.completed = oldCompleted;
+    renderMainContent();
+    updateNavCounts();
+    toast('Status update failed: ' + e.message, 'error');
+  }
+}
+
+async function updateTodoPriority(id, newPriority) {
+  const t = state.todos.find(x => x.id === id);
+  if (!t || t.priority === newPriority) return;
+  const oldPriority = t.priority;
+  t.priority = newPriority;
+  t.urgent = newPriority === 'p1' || newPriority === 'p3';
+  t.important = newPriority === 'p1' || newPriority === 'p2';
+
+  renderMainContent();
+
+  try {
+    await sb.from('todos').update({
+      priority: newPriority,
+      urgent: t.urgent,
+      important: t.important,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    toast('Priority updated to ' + newPriority.toUpperCase(), 'success');
+  } catch (e) {
+    t.priority = oldPriority;
+    renderMainContent();
+    toast('Priority update failed: ' + e.message, 'error');
+  }
+}
+
+async function toggleSubtask(todoId, subtaskId, event) {
+  if (event) event.stopPropagation();
+  const t = state.todos.find(x => x.id === todoId);
+  if (!t || !Array.isArray(t.subtasks)) return;
+  const st = t.subtasks.find(s => s.id === subtaskId);
+  if (!st) return;
+
+  st.completed = !st.completed;
+  renderMainContent();
+
+  try {
+    await sb.from('todos').update({
+      subtasks: t.subtasks,
+      updated_at: new Date().toISOString()
+    }).eq('id', todoId);
+  } catch (e) {
+    st.completed = !st.completed;
+    renderMainContent();
+    toast('Subtask update failed: ' + e.message, 'error');
+  }
+}
+
+function toggleInlineSubtasks(todoId) {
+  if (expandedTaskSubtasks.has(todoId)) {
+    expandedTaskSubtasks.delete(todoId);
+  } else {
+    expandedTaskSubtasks.add(todoId);
+  }
+  renderMainContent();
+}
+
+async function addQuickSubtaskInline(todoId) {
+  const input = document.getElementById('inlineStInput-' + todoId);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  const t = state.todos.find(x => x.id === todoId);
+  if (!t) return;
+  if (!Array.isArray(t.subtasks)) t.subtasks = [];
+
+  t.subtasks.push({
+    id: 'st-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+    text,
+    completed: false
+  });
+  input.value = '';
+  renderMainContent();
+
+  try {
+    await sb.from('todos').update({
+      subtasks: t.subtasks,
+      updated_at: new Date().toISOString()
+    }).eq('id', todoId);
+  } catch (e) {
+    toast('Failed to add subtask: ' + e.message, 'error');
+  }
+}
+
+async function duplicateTodo(id) {
+  const t = state.todos.find(x => x.id === id);
+  if (!t) return;
+  const clone = {
+    user_id: currentUser.id,
+    title: t.title + ' (Copy)',
+    description: t.description || '',
+    status: 'todo',
+    priority: t.priority || 'p3',
+    project_id: t.project_id || null,
+    due_date: t.due_date || null,
+    due_time: t.due_time || null,
+    recurrence: t.recurrence || 'none',
+    estimated_minutes: t.estimated_minutes || null,
+    tags: Array.isArray(t.tags) ? [...t.tags] : [],
+    subtasks: Array.isArray(t.subtasks) ? t.subtasks.map(s => ({ ...s, completed: false })) : [],
+    urgent: t.urgent,
+    important: t.important,
+    completed: false,
+    notify_telegram: false,
+    updated_at: new Date().toISOString()
+  };
+
+  try {
+    const { data, error } = await sb.from('todos').insert(clone).select().single();
+    if (error) throw error;
+    state.todos.unshift(getNormalizedTask(data || clone));
+    render();
+    toast('Task duplicated!', 'success');
+  } catch (e) {
+    toast('Duplicate failed: ' + e.message, 'error');
   }
 }
 
 async function deleteTodo(id) {
-  if(!confirm('Delete task?')) return;
+  if (!confirm('Are you sure you want to delete this task?')) return;
   const oldTodos = [...state.todos];
-  state.todos = state.todos.filter(x=>x.id!==id);
-  renderMainContent(); updateNavCounts();
-  
-  const { error } = await sb.from('todos').delete().eq('id',id);
-  if(error) {
+  state.todos = state.todos.filter(x => x.id !== id);
+  render();
+
+  const { error } = await sb.from('todos').delete().eq('id', id);
+  if (error) {
     toast('Delete failed: ' + error.message, 'error');
     state.todos = oldTodos;
-    renderMainContent(); updateNavCounts();
+    render();
   } else {
     toast('Task deleted', 'success');
   }
 }
 
-function renderTodoCard(t) {
-  const isOverdue = t.due_date && new Date(t.due_date) < new Date(new Date().setHours(0,0,0,0)) && !t.completed;
+// ─── Drag & Drop (Kanban Board) ───
+function handleTaskDragStart(e, id) {
+  draggedTaskId = id;
+  e.dataTransfer.setData('text/plain', id);
+  e.dataTransfer.effectAllowed = 'move';
+  const el = e.currentTarget;
+  setTimeout(() => { if (el) el.classList.add('dragging'); }, 0);
+}
+
+function handleTaskDragEnd(e) {
+  draggedTaskId = null;
+  document.querySelectorAll('.task-card-enhanced').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.board-column').forEach(el => el.classList.remove('drag-over'));
+}
+
+function handleTaskColDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const col = e.currentTarget;
+  col.classList.add('drag-over');
+}
+
+function handleTaskColDragLeave(e) {
+  const col = e.currentTarget;
+  col.classList.remove('drag-over');
+}
+
+function handleTaskColDrop(e, targetStatus) {
+  e.preventDefault();
+  const col = e.currentTarget;
+  col.classList.remove('drag-over');
+  const taskId = e.dataTransfer.getData('text/plain') || draggedTaskId;
+  if (taskId) {
+    updateTodoStatus(taskId, targetStatus);
+  }
+}
+
+// ─── View Filters & Modes ───
+function setTaskViewMode(mode) {
+  state.taskViewMode = mode;
+  localStorage.setItem('kv-task-view-mode', mode);
+  renderMainContent();
+}
+
+function setTaskFilter(filter) {
+  state.taskFilter = filter;
+  renderMainContent();
+}
+
+function setTaskProjectFilter(projId) {
+  state.taskProjectFilter = projId;
+  renderMainContent();
+}
+
+function handleTaskSearch(query) {
+  state.taskSearchQuery = (query || '').toLowerCase().trim();
+  renderMainContent();
+}
+
+function getFilteredEnhancedTasks() {
+  let tasks = state.todos.map(getNormalizedTask);
+  const filter = state.taskFilter || 'all';
+  const projFilter = state.taskProjectFilter || 'all';
+  const q = state.taskSearchQuery || '';
+
+  // Project filter
+  if (projFilter !== 'all') {
+    if (projFilter === 'none') tasks = tasks.filter(t => !t.project_id);
+    else tasks = tasks.filter(t => t.project_id === projFilter);
+  }
+
+  // Smart Filter
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const next7Days = new Date(now);
+  next7Days.setDate(next7Days.getDate() + 7);
+  const next7Str = next7Days.toISOString().split('T')[0];
+
+  if (filter === 'today') {
+    tasks = tasks.filter(t => !t.completed && (t.due_date === todayStr || (t.due_date && t.due_date < todayStr)));
+  } else if (filter === 'upcoming') {
+    tasks = tasks.filter(t => !t.completed && t.due_date && t.due_date >= todayStr && t.due_date <= next7Str);
+  } else if (filter === 'priority') {
+    tasks = tasks.filter(t => !t.completed && (t.priority === 'p1' || t.priority === 'p2'));
+  } else if (filter === 'overdue') {
+    tasks = tasks.filter(t => !t.completed && t.due_date && t.due_date < todayStr);
+  } else if (filter === 'completed') {
+    tasks = tasks.filter(t => t.completed);
+  }
+
+  // Text search
+  if (q) {
+    tasks = tasks.filter(t => {
+      const projName = t.project_id ? (state.projects.find(p => p.id === t.project_id)?.name || '') : '';
+      const text = [
+        t.title,
+        t.description,
+        projName,
+        ...(t.tags || []),
+        ...(t.subtasks || []).map(s => s.text)
+      ].join(' ').toLowerCase();
+      return text.includes(q);
+    });
+  }
+
+  return tasks;
+}
+
+function renderEnhancedTasks() {
+  const allTasks = state.todos.map(getNormalizedTask);
+  const totalCount = allTasks.length;
+  const completedCount = allTasks.filter(t => t.completed).length;
+  const inProgressCount = allTasks.filter(t => t.status === 'in_progress').length;
+  
+  const todayStr = new Date().toISOString().split('T')[0];
+  const overdueCount = allTasks.filter(t => !t.completed && t.due_date && t.due_date < todayStr).length;
+  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const filteredTasks = getFilteredEnhancedTasks();
+  const currentMode = state.taskViewMode || 'board';
+  const currentFilter = state.taskFilter || 'all';
+  const currentProj = state.taskProjectFilter || 'all';
+
+  // Project selector options
+  let projectFilterOptions = '<option value="all">📁 All Projects</option><option value="none">No Project</option>';
+  if (state.projects && state.projects.length > 0) {
+    projectFilterOptions += state.projects.map(p => `
+      <option value="${p.id}" ${currentProj === p.id ? 'selected' : ''}>${escHtml(p.name)}</option>
+    `).join('');
+  }
+
+  let quickAddProjOptions = '<option value="">📁 No Project</option>';
+  if (state.projects && state.projects.length > 0) {
+    quickAddProjOptions += state.projects.map(p => `<option value="${p.id}">${escHtml(p.name)}</option>`).join('');
+  }
+
   return `
-    <div class="todo-card ${t.completed?'done':''}">
-      <div style="display:flex;gap:10px">
-        <div style="padding-top:2px">
-          <input type="checkbox" ${t.completed?'checked':''} onchange="toggleTodoComplete('${t.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)">
+    <div class="tasks-container">
+      <!-- ─── Top Stats Bar ─── -->
+      <div class="tasks-stats-bar">
+        <div class="task-stat-card" onclick="setTaskFilter('all')">
+          <div>
+            <div class="ts-val">${totalCount}</div>
+            <div class="ts-label">Total Tasks</div>
+          </div>
+          <div class="ts-icon" style="background:rgba(0,117,222,0.1); color:var(--primary);">
+            <i class="fas fa-tasks"></i>
+          </div>
         </div>
-        <div style="flex:1;min-width:0">
-          <div class="tc-title" onclick="openTodoModal('${t.id}')" style="cursor:pointer">${escHtml(t.title)}</div>
-          ${t.due_date?`<div class="tc-due ${isOverdue?'overdue':''}"><i class="fas fa-calendar-alt"></i> ${t.due_date} ${isOverdue?'(Overdue)':''}</div>`:''}
+
+        <div class="task-stat-card" onclick="setTaskFilter('all'); setTaskViewMode('board');">
+          <div>
+            <div class="ts-val">${inProgressCount}</div>
+            <div class="ts-label">In Progress</div>
+          </div>
+          <div class="ts-icon" style="background:rgba(221,91,0,0.1); color:var(--accent-orange);">
+            <i class="fas fa-spinner"></i>
+          </div>
+        </div>
+
+        <div class="task-stat-card" onclick="setTaskFilter('overdue')">
+          <div>
+            <div class="ts-val" style="color:${overdueCount > 0 ? '#dc2626' : 'inherit'}">${overdueCount}</div>
+            <div class="ts-label" style="color:${overdueCount > 0 ? '#dc2626' : 'inherit'}">Overdue</div>
+          </div>
+          <div class="ts-icon" style="background:rgba(220,38,38,0.1); color:#dc2626;">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+        </div>
+
+        <div class="task-stat-card" onclick="setTaskFilter('completed')">
+          <div>
+            <div class="ts-val">${completedCount} <span style="font-size:12px; font-weight:normal; color:var(--ink-muted);">(${pct}%)</span></div>
+            <div class="ts-label">Completed</div>
+          </div>
+          <div class="ts-icon" style="background:rgba(26,174,57,0.1); color:var(--accent-green);">
+            <i class="fas fa-check-double"></i>
+          </div>
         </div>
       </div>
-      <div class="tc-actions">
-        ${t.notify_telegram?'<span class="tc-btn" title="Telegram Reminder"><i class="fab fa-telegram" style="color:var(--primary)"></i></span>':''}
-        <button class="tc-btn del-btn" onclick="deleteTodo('${t.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+
+      <!-- ─── Quick Add Bar ─── -->
+      <div class="tasks-quick-add">
+        <i class="fas fa-bolt" style="color:var(--primary); font-size:14px; margin-left:4px;"></i>
+        <input type="text" id="tqaTitle" class="tqa-input" placeholder="⚡ Quick add task... (e.g. Finish client wireframes) and press Enter" onkeydown="if(event.key==='Enter'){event.preventDefault();saveQuickTodo();}">
+        
+        <select id="tqaPriority" class="tqa-select" title="Priority">
+          <option value="p1">🔴 P1 Urgent</option>
+          <option value="p2">🟠 P2 High</option>
+          <option value="p3" selected>🟡 P3 Normal</option>
+          <option value="p4">⚪ P4 Low</option>
+        </select>
+
+        <select id="tqaDueDate" class="tqa-select" title="Due Date">
+          <option value="">📅 No Date</option>
+          <option value="today">Today</option>
+          <option value="tomorrow">Tomorrow</option>
+          <option value="next_week">Next Week</option>
+        </select>
+
+        <select id="tqaProject" class="tqa-select" title="Assign Project">
+          ${quickAddProjOptions}
+        </select>
+
+        <button type="button" class="tqa-btn" onclick="saveQuickTodo()">
+          <i class="fas fa-plus"></i> Add
+        </button>
+      </div>
+
+      <!-- ─── Controls & Filter Bar ─── -->
+      <div class="tasks-controls-bar">
+        <!-- View Mode Switcher -->
+        <div class="tasks-view-modes">
+          <button type="button" class="view-mode-btn ${currentMode === 'board' ? 'active' : ''}" onclick="setTaskViewMode('board')">
+            <i class="fas fa-columns"></i> Board
+          </button>
+          <button type="button" class="view-mode-btn ${currentMode === 'list' ? 'active' : ''}" onclick="setTaskViewMode('list')">
+            <i class="fas fa-list"></i> List
+          </button>
+          <button type="button" class="view-mode-btn ${currentMode === 'matrix' ? 'active' : ''}" onclick="setTaskViewMode('matrix')">
+            <i class="fas fa-th-large"></i> Matrix
+          </button>
+        </div>
+
+        <!-- Smart Filter Pills -->
+        <div class="tasks-smart-filters">
+          <div class="smart-filter-pill ${currentFilter === 'all' ? 'active' : ''}" onclick="setTaskFilter('all')">
+            All <span class="pill-cnt">${totalCount}</span>
+          </div>
+          <div class="smart-filter-pill ${currentFilter === 'today' ? 'active' : ''}" onclick="setTaskFilter('today')">
+            ⚡ Today
+          </div>
+          <div class="smart-filter-pill ${currentFilter === 'upcoming' ? 'active' : ''}" onclick="setTaskFilter('upcoming')">
+            📅 Upcoming
+          </div>
+          <div class="smart-filter-pill ${currentFilter === 'priority' ? 'active' : ''}" onclick="setTaskFilter('priority')">
+            🔴 High Priority
+          </div>
+          <div class="smart-filter-pill ${currentFilter === 'overdue' ? 'active' : ''}" onclick="setTaskFilter('overdue')" style="${overdueCount > 0 ? 'color:#dc2626; border-color:rgba(220,38,38,0.3);' : ''}">
+            ⚠️ Overdue <span class="pill-cnt" style="${overdueCount > 0 ? 'background:rgba(220,38,38,0.15); color:#dc2626;' : ''}">${overdueCount}</span>
+          </div>
+          <div class="smart-filter-pill ${currentFilter === 'completed' ? 'active' : ''}" onclick="setTaskFilter('completed')">
+            ✅ Completed <span class="pill-cnt">${completedCount}</span>
+          </div>
+        </div>
+
+        <!-- Search & Project Dropdown -->
+        <div style="display:flex; align-items:center; gap:8px;">
+          <select class="tqa-select" onchange="setTaskProjectFilter(this.value)">
+            ${projectFilterOptions}
+          </select>
+          <div style="position:relative; width:160px;">
+            <input type="text" placeholder="Filter tasks..." value="${escHtml(state.taskSearchQuery || '')}" oninput="handleTaskSearch(this.value)" style="width:100%; padding:5px 8px 5px 24px; font-size:12px; border:1px solid var(--hairline); border-radius:var(--radius-md); background:var(--canvas-soft); outline:none;">
+            <i class="fas fa-search" style="position:absolute; left:8px; top:50%; transform:translateY(-50%); font-size:10px; color:var(--ink-faint);"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Main View Content ─── -->
+      <div>
+        ${
+          currentMode === 'board'
+            ? renderTasksBoard(filteredTasks)
+            : (currentMode === 'list' ? renderTasksList(filteredTasks) : renderEisenhowerMatrix(filteredTasks))
+        }
       </div>
     </div>
   `;
 }
 
-function renderEisenhowerMatrix() {
-  const todos = state.todos;
-  const q1 = todos.filter(t=>t.urgent && t.important);
-  const q2 = todos.filter(t=>!t.urgent && t.important);
-  const q3 = todos.filter(t=>t.urgent && !t.important);
-  const q4 = todos.filter(t=>!t.urgent && !t.important);
+function renderEnhancedTaskCard(t) {
+  const isDone = t.completed || t.status === 'done';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isOverdue = t.due_date && t.due_date < todayStr && !isDone;
+  const isToday = t.due_date && t.due_date === todayStr && !isDone;
   
-  // Sort incomplete first, then by created desc
-  const sortQ = (a,b) => (a.completed===b.completed ? new Date(b.created_at)-new Date(a.created_at) : (a.completed?1:-1));
-  q1.sort(sortQ); q2.sort(sortQ); q3.sort(sortQ); q4.sort(sortQ);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split('T')[0];
+  const isTomorrow = t.due_date && t.due_date === tomorrowStr && !isDone;
 
-  let chatHtml = ``;
+  // Project label
+  const project = t.project_id ? state.projects.find(p => p.id === t.project_id) : null;
+
+  // Priority badge
+  const priorityLabels = { p1: 'P1 Urgent', p2: 'P2 High', p3: 'P3 Medium', p4: 'P4 Low' };
+  const priorityIcons = { p1: 'fa-fire', p2: 'fa-arrow-up', p3: 'fa-minus', p4: 'fa-arrow-down' };
+  const pCode = t.priority || 'p3';
+
+  // Subtasks progress
+  const subtasks = t.subtasks || [];
+  const stCount = subtasks.length;
+  const stDone = subtasks.filter(s => s.completed).length;
+  const stPct = stCount > 0 ? Math.round((stDone / stCount) * 100) : 0;
+  const isExpanded = expandedTaskSubtasks.has(t.id);
 
   return `
-    ${chatHtml}
+    <div class="task-card-enhanced ${isDone ? 'done-card' : ''}" 
+         draggable="true" 
+         ondragstart="handleTaskDragStart(event, '${t.id}')"
+         ondragend="handleTaskDragEnd(event)"
+    >
+      <div class="tce-top">
+        <input type="checkbox" class="tce-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodoComplete('${t.id}')" title="Mark complete">
+        <div class="tce-main">
+          <div class="tce-title" onclick="openTodoModal('${t.id}')">${escHtml(t.title)}</div>
+          ${t.description ? `<div class="tce-desc">${escHtml(t.description)}</div>` : ''}
+          
+          <div class="tce-badges">
+            <span class="p-badge ${pCode}" title="Priority ${priorityLabels[pCode]}">
+              <i class="fas ${priorityIcons[pCode]}"></i> ${priorityLabels[pCode]}
+            </span>
+
+            ${t.due_date ? `
+              <span class="due-chip ${isOverdue ? 'overdue' : (isToday ? 'today' : (isTomorrow ? 'tomorrow' : ''))}">
+                <i class="fas fa-calendar-alt"></i> 
+                ${isOverdue ? `Overdue (${t.due_date})` : (isToday ? 'Today' : (isTomorrow ? 'Tomorrow' : t.due_date))}
+                ${t.due_time ? ` ${t.due_time}` : ''}
+              </span>
+            ` : ''}
+
+            ${project ? `
+              <span class="project-chip" onclick="switchView('projects')" title="Project: ${escHtml(project.name)}">
+                <i class="fas fa-folder"></i> ${escHtml(project.name)}
+              </span>
+            ` : ''}
+
+            ${(t.tags || []).map(tag => `<span class="tag-chip">#${escHtml(tag)}</span>`).join('')}
+          </div>
+
+          ${stCount > 0 ? `
+            <div class="subtasks-progress-box">
+              <div class="subtasks-header-bar" onclick="toggleInlineSubtasks('${t.id}')">
+                <span><i class="fas fa-tasks"></i> Subtasks (${stDone}/${stCount})</span>
+                <span><i class="fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i></span>
+              </div>
+              <div class="subtasks-bar-track">
+                <div class="subtasks-bar-fill" style="width:${stPct}%"></div>
+              </div>
+              ${isExpanded ? `
+                <div class="subtasks-list-inline">
+                  ${subtasks.map(st => `
+                    <div class="subtask-item-inline ${st.completed ? 'done-st' : ''}">
+                      <input type="checkbox" ${st.completed ? 'checked' : ''} onchange="toggleSubtask('${t.id}', '${st.id}', event)" style="cursor:pointer; accent-color:var(--primary); width:13px; height:13px;">
+                      <span>${escHtml(st.text)}</span>
+                    </div>
+                  `).join('')}
+                  <div style="display:flex; gap:4px; margin-top:6px;">
+                    <input type="text" id="inlineStInput-${t.id}" placeholder="Quick subtask..." onkeydown="if(event.key==='Enter'){event.preventDefault();addQuickSubtaskInline('${t.id}');}" style="font-size:11px; padding:3px 6px; border:1px solid var(--hairline); border-radius:var(--radius-xs); flex:1; background:var(--canvas);">
+                    <button type="button" onclick="addQuickSubtaskInline('${t.id}')" style="font-size:11px; padding:3px 8px; background:var(--canvas); border:1px solid var(--hairline); border-radius:var(--radius-xs); cursor:pointer;"><i class="fas fa-plus"></i></button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <div class="tce-footer">
+        <div style="font-size:10px; color:var(--ink-faint);">
+          ${t.estimated_minutes ? `<i class="fas fa-stopwatch"></i> ${t.estimated_minutes}m` : ''}
+          ${t.recurrence && t.recurrence !== 'none' ? `<i class="fas fa-redo" style="margin-left:4px;"></i> ${t.recurrence}` : ''}
+        </div>
+        <div class="tce-actions">
+          ${t.notify_telegram ? '<span class="tce-btn" title="Telegram alerts active"><i class="fab fa-telegram" style="color:#0088cc;"></i></span>' : ''}
+          <button type="button" class="tce-btn" onclick="duplicateTodo('${t.id}')" title="Duplicate"><i class="fas fa-copy"></i></button>
+          <button type="button" class="tce-btn" onclick="openTodoModal('${t.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+          <button type="button" class="tce-btn del" onclick="deleteTodo('${t.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderTasksBoard(tasks) {
+  const columns = [
+    { id: 'todo', title: 'To Do', icon: 'fa-circle-notch', color: '#615d59' },
+    { id: 'in_progress', title: 'In Progress', icon: 'fa-spinner', color: '#dd5b00' },
+    { id: 'blocked', title: 'Blocked / Waiting', icon: 'fa-pause-circle', color: '#ca8a04' },
+    { id: 'done', title: 'Done', icon: 'fa-check-circle', color: '#1aae39' }
+  ];
+
+  return `
+    <div class="tasks-board">
+      ${columns.map(col => {
+        const colTasks = tasks.filter(t => t.status === col.id);
+        // Sort incomplete first, then by priority (p1 -> p4), then due date
+        colTasks.sort((a, b) => {
+          if (col.id !== 'done') {
+            const pOrder = { p1: 1, p2: 2, p3: 3, p4: 4 };
+            if (pOrder[a.priority] !== pOrder[b.priority]) return pOrder[a.priority] - pOrder[b.priority];
+            if (a.due_date && b.due_date) return new Date(a.due_date) - new Date(b.due_date);
+          }
+          return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+        });
+
+        return `
+          <div class="board-column" 
+               data-status="${col.id}"
+               ondragover="handleTaskColDragOver(event)"
+               ondragleave="handleTaskColDragLeave(event)"
+               ondrop="handleTaskColDrop(event, '${col.id}')"
+          >
+            <div class="bcol-header">
+              <div class="bcol-title">
+                <i class="fas ${col.icon}" style="color:${col.color};"></i>
+                <span>${col.title}</span>
+                <span class="bcol-count">${colTasks.length}</span>
+              </div>
+              <button type="button" class="bcol-add" onclick="openTodoModal(null, '${col.id}')" title="Add task in ${col.title}">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="bcol-cards">
+              ${colTasks.length === 0 ? `<div class="bcol-empty">No tasks in ${col.title}</div>` : colTasks.map(renderEnhancedTaskCard).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderTasksList(tasks) {
+  if (tasks.length === 0) {
+    return `
+      <div class="empty-state">
+        <div class="es-icon"><i class="fas fa-tasks"></i></div>
+        <div class="es-title">No matching tasks found</div>
+        <div class="es-desc">Try adjusting your filters or search, or create a new task.</div>
+        <button class="sb-new-btn" style="width:auto;margin:0" onclick="openTodoModal()"><i class="fas fa-plus"></i> New Task</button>
+      </div>
+    `;
+  }
+
+  // Group by status
+  const groups = [
+    { id: 'todo', title: 'To Do', icon: 'fa-circle-notch', color: '#615d59' },
+    { id: 'in_progress', title: 'In Progress', icon: 'fa-spinner', color: '#dd5b00' },
+    { id: 'blocked', title: 'Blocked / Waiting', icon: 'fa-pause-circle', color: '#ca8a04' },
+    { id: 'done', title: 'Done', icon: 'fa-check-circle', color: '#1aae39' }
+  ];
+
+  return `
+    <div class="tasks-list-view">
+      ${groups.map(grp => {
+        const grpTasks = tasks.filter(t => t.status === grp.id);
+        if (grpTasks.length === 0) return '';
+        return `
+          <div class="task-group">
+            <div class="task-group-head">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <i class="fas ${grp.icon}" style="color:${grp.color};"></i>
+                <span>${grp.title}</span>
+                <span style="font-size:11px; background:var(--hairline); padding:2px 7px; border-radius:var(--radius-full);">${grpTasks.length}</span>
+              </div>
+              <button type="button" onclick="openTodoModal(null, '${grp.id}')" style="background:none; border:none; color:var(--primary); font-size:12px; font-weight:600; cursor:pointer;">
+                <i class="fas fa-plus"></i> Add
+              </button>
+            </div>
+            <div class="task-list-rows">
+              ${grpTasks.map(t => {
+                const isDone = t.completed || t.status === 'done';
+                const project = t.project_id ? state.projects.find(p => p.id === t.project_id) : null;
+                const priorityLabels = { p1: 'P1', p2: 'P2', p3: 'P3', p4: 'P4' };
+                const pCode = t.priority || 'p3';
+                return `
+                  <div class="task-row-item ${isDone ? 'done-row' : ''}">
+                    <input type="checkbox" ${isDone ? 'checked' : ''} onchange="toggleTodoComplete('${t.id}')" style="cursor:pointer; accent-color:var(--primary); width:16px; height:16px;">
+                    <span class="p-badge ${pCode}">${priorityLabels[pCode]}</span>
+                    <div class="tr-title" onclick="openTodoModal('${t.id}')">${escHtml(t.title)}</div>
+                    <div class="tr-meta">
+                      ${project ? `<span class="project-chip" style="font-size:10px;"><i class="fas fa-folder"></i> ${escHtml(project.name)}</span>` : ''}
+                      ${t.due_date ? `<span class="due-chip" style="font-size:10px;"><i class="fas fa-calendar"></i> ${t.due_date}</span>` : ''}
+                      <button type="button" class="tce-btn" onclick="openTodoModal('${t.id}')" title="Edit"><i class="fas fa-edit"></i></button>
+                      <button type="button" class="tce-btn del" onclick="deleteTodo('${t.id}')" title="Delete"><i class="fas fa-trash"></i></button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderEisenhowerMatrix(tasks) {
+  const q1 = tasks.filter(t => t.priority === 'p1' || (t.urgent && t.important));
+  const q2 = tasks.filter(t => t.priority === 'p2' || (!t.urgent && t.important));
+  const q3 = tasks.filter(t => t.priority === 'p3' || (t.urgent && !t.important));
+  const q4 = tasks.filter(t => t.priority === 'p4' || (!t.urgent && !t.important));
+
+  return `
     <div class="matrix-axis-labels">
       <div class="matrix-axis-label" style="color:#dc2626">Urgent</div>
       <div class="matrix-axis-label" style="color:var(--ink-muted)">Not Urgent</div>
@@ -3461,58 +4908,32 @@ function renderEisenhowerMatrix() {
     <div class="matrix-grid">
       <div class="matrix-quadrant q1">
         <div class="mq-head">
-          <div class="mq-label q1">Q1: DO FIRST</div>
-          <button class="mq-add" onclick="openTodoModal(null,true,true)"><i class="fas fa-plus"></i></button>
+          <div class="mq-label q1">Q1: DO FIRST (Urgent & Important)</div>
+          <button class="mq-add" onclick="openTodoModal(null, 'todo', 'p1')"><i class="fas fa-plus"></i></button>
         </div>
-        ${q1.map(renderTodoCard).join('')}
+        ${q1.map(renderEnhancedTaskCard).join('')}
       </div>
       <div class="matrix-quadrant q2">
         <div class="mq-head">
-          <div class="mq-label q2">Q2: SCHEDULE</div>
-          <button class="mq-add" onclick="openTodoModal(null,false,true)"><i class="fas fa-plus"></i></button>
+          <div class="mq-label q2">Q2: SCHEDULE (Important & Not Urgent)</div>
+          <button class="mq-add" onclick="openTodoModal(null, 'todo', 'p2')"><i class="fas fa-plus"></i></button>
         </div>
-        ${q2.map(renderTodoCard).join('')}
+        ${q2.map(renderEnhancedTaskCard).join('')}
       </div>
       <div class="matrix-quadrant q3">
         <div class="mq-head">
-          <div class="mq-label q3">Q3: DELEGATE</div>
-          <button class="mq-add" onclick="openTodoModal(null,true,false)"><i class="fas fa-plus"></i></button>
+          <div class="mq-label q3">Q3: DELEGATE (Urgent & Not Important)</div>
+          <button class="mq-add" onclick="openTodoModal(null, 'todo', 'p3')"><i class="fas fa-plus"></i></button>
         </div>
-        ${q3.map(renderTodoCard).join('')}
+        ${q3.map(renderEnhancedTaskCard).join('')}
       </div>
       <div class="matrix-quadrant q4">
         <div class="mq-head">
-          <div class="mq-label q4">Q4: ELIMINATE</div>
-          <button class="mq-add" onclick="openTodoModal(null,false,false)"><i class="fas fa-plus"></i></button>
+          <div class="mq-label q4">Q4: ELIMINATE (Neither Urgent nor Important)</div>
+          <button class="mq-add" onclick="openTodoModal(null, 'todo', 'p4')"><i class="fas fa-plus"></i></button>
         </div>
-        ${q4.map(renderTodoCard).join('')}
+        ${q4.map(renderEnhancedTaskCard).join('')}
       </div>
-    </div>
-  `;
-}
-
-
-function renderTodoList() {
-  const todos = [...state.todos].sort((a,b) => {
-    if(a.completed!==b.completed) return a.completed?1:-1;
-    if(a.due_date && b.due_date) return new Date(a.due_date)-new Date(b.due_date);
-    return new Date(b.created_at)-new Date(a.created_at);
-  });
-  
-  if (todos.length === 0) {
-    return `
-      <div class="empty-state">
-        <div class="es-icon"><i class="fas fa-tasks"></i></div>
-        <div class="es-title">No Tasks yet</div>
-        <div class="es-desc">Create your first task record.</div>
-        <button class="sb-new-btn" style="width:auto;margin:0" onclick="openTodoModal()"><i class="fas fa-plus"></i> New Task</button>
-      </div>
-    `;
-  }
-
-  return `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">
-      ${todos.map(renderTodoCard).join('')}
     </div>
   `;
 }
@@ -5246,15 +6667,13 @@ function renderPanelsColumns() {
     const ideasPanel = state.panels.find(p => p.name.toLowerCase().includes('note'));
     const ideasPendingCount = ideasPanel ? state.panel_entries.filter(e => e.panel_id === ideasPanel.id).length : 0;
     
-    const pendingTasksCount = state.todos.filter(t => !t.completed).length;
-    const completedTasksCount = state.todos.filter(t => t.completed).length;
+    const pendingTasksCount = state.todos.filter(t => !t.completed && t.status !== 'done').length;
+    const completedTasksCount = state.todos.filter(t => t.completed || t.status === 'done').length;
     const totalTasksCount = state.todos.length;
     const pct = totalTasksCount > 0 ? Math.round((completedTasksCount / totalTasksCount) * 100) : 0;
-    
-
 
     const progressRingHtml = `
-      <div class="progress-ring" style="background: conic-gradient(var(--accent-purple) ${pct}%, var(--hairline) ${pct}%)" title="${completedTasksCount} / ${totalTasksCount} tasks completed">
+      <div class="progress-ring" style="background: conic-gradient(var(--accent-green) ${pct}%, var(--hairline) ${pct}%)" title="${completedTasksCount} / ${totalTasksCount} tasks completed">
         <div class="progress-ring-inner">${pct}%</div>
       </div>
     `;
@@ -5288,11 +6707,11 @@ function renderPanelsColumns() {
           </div>
         </div>
         
-        <div class="stat-card">
+        <div class="stat-card" onclick="switchView('todos')" style="cursor:pointer;" title="View all tasks">
           <div class="stat-info">
             <span class="stat-label">Tasks</span>
             <span class="stat-val">${pendingTasksCount}</span>
-            <span class="stat-sub">To-do</span>
+            <span class="stat-sub">${completedTasksCount}/${totalTasksCount} Done</span>
           </div>
           ${progressRingHtml}
         </div>
