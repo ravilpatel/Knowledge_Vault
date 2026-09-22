@@ -47,3 +47,42 @@ self.addEventListener('fetch', (e) => {
     )
   );
 });
+
+// ─── Notification Click Handler ───
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.postMessage({ type: 'NAVIGATE_VIEW', view: 'habits' });
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./?view=habits');
+      }
+    })
+  );
+});
+
+// ─── Push Event Handler ───
+self.addEventListener('push', (event) => {
+  let data = { title: 'Knowledge Vault Habit Reminder', body: 'Time to check in on your daily habits!' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+  const options = {
+    body: data.body,
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-72.png',
+    vibrate: [100, 50, 100],
+    data: { url: './?view=habits', ...data }
+  };
+  event.waitUntil(self.registration.showNotification(data.title, options));
+});
+
