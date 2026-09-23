@@ -8971,7 +8971,7 @@ function renderHabitCard(h) {
               <i class="fas ${icon}"></i>
             </div>
             <div class="habit-title-wrap">
-              <div class="habit-title" title="${escHtml(h.name)}">${escHtml(h.name)}</div>
+              <div class="habit-title" onclick="openHabitModal('${h.id}')" style="cursor:pointer;" title="Click to edit: ${escHtml(h.name)}">${escHtml(h.name)} <i class="fas fa-pencil-alt" style="font-size:11px; opacity:0.35; margin-left:4px;"></i></div>
               <div style="display:flex; align-items:center; gap:6px;">
                 <span class="habit-category-badge">${escHtml(h.category || 'Personal')}</span>
                 <span class="streak-pill target">${freqLabel}</span>
@@ -9078,7 +9078,7 @@ function renderHabitsTodayView() {
                   <i class="fas ${h.icon || 'fa-check'}"></i>
                 </div>
                 <div>
-                  <div class="today-item-title">${escHtml(h.name)}</div>
+                  <div class="today-item-title" onclick="openHabitModal('${h.id}')" style="cursor:pointer;" title="Click to edit: ${escHtml(h.name)}">${escHtml(h.name)} <i class="fas fa-pencil-alt" style="font-size:10px; opacity:0.35; margin-left:4px;"></i></div>
                   <div style="font-size:12px; color:var(--ink-muted); display:flex; gap:8px; align-items:center;">
                     <span class="habit-category-badge">${escHtml(h.category || 'Personal')}</span>
                     ${h.target_count > 1 ? `<span>🎯 Goal: ${h.target_count} ${escHtml(h.unit || '')}</span>` : ''}
@@ -9087,8 +9087,11 @@ function renderHabitsTodayView() {
                 </div>
               </div>
 
-              <div>
-                <button class="habit-history-btn" onclick="openHabitCalendarModal('${h.id}')" title="History">
+              <div style="display:flex; gap:6px; align-items:center;">
+                <button class="habit-history-btn" onclick="openHabitModal('${h.id}')" title="Edit Habit">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="habit-history-btn" onclick="openHabitCalendarModal('${h.id}')" title="View History Calendar">
                   <i class="fas fa-calendar-alt"></i>
                 </button>
               </div>
@@ -9325,38 +9328,40 @@ function openHabitModal(editId = null) {
   const title = document.getElementById('hModalHeadingText');
   const delBtn = document.getElementById('btnDeleteHabitModal');
 
-  // Render Icon Picker
-  const iconPicker = document.getElementById('habitIconPicker');
-  if (iconPicker) {
-    iconPicker.innerHTML = HABIT_ICONS.map(ic => `
-      <div class="icon-picker-item ${selectedHabitIcon === ic ? 'selected' : ''}" onclick="selectHabitIcon('${ic}', this)">
-        <i class="fas ${ic}"></i>
-      </div>
-    `).join('');
-  }
-
-  // Render Color Picker
-  const colorPicker = document.getElementById('habitColorPicker');
-  if (colorPicker) {
-    colorPicker.innerHTML = HABIT_COLORS.map(c => `
-      <div class="color-picker-item ${selectedHabitColor === c ? 'selected' : ''}" style="background:${c};" onclick="selectHabitColor('${c}', this)"></div>
-    `).join('');
-  }
-
   if (editId) {
-    const habit = state.habits.find(h => h.id === editId);
-    if (!habit) return;
-    title.textContent = 'Edit Habit';
-    delBtn.style.display = 'block';
+    let habit = state.habits.find(h => h.id === editId);
+    if (!habit) {
+      try {
+        const cached = JSON.parse(localStorage.getItem('kv-local-habits') || '[]');
+        habit = cached.find(h => h.id === editId);
+      } catch (e) {}
+    }
 
-    document.getElementById('habitName').value = habit.name || '';
-    document.getElementById('habitDesc').value = habit.description || '';
-    document.getElementById('habitCategory').value = habit.category || 'Personal';
-    document.getElementById('habitFrequency').value = habit.frequency || 'daily';
-    document.getElementById('habitTargetCount').value = habit.target_count || 1;
-    document.getElementById('habitUnit').value = habit.unit || 'times';
-    document.getElementById('habitReminderTime').value = habit.reminder_time || '09:00';
-    document.getElementById('habitReminderEnabled').checked = habit.reminder_enabled !== false;
+    if (!habit) {
+      toast('Habit not found', 'error');
+      return;
+    }
+
+    if (title) title.textContent = 'Edit Habit';
+    if (delBtn) delBtn.style.display = 'block';
+
+    const nameInput = document.getElementById('habitName');
+    const descInput = document.getElementById('habitDesc');
+    const catSelect = document.getElementById('habitCategory');
+    const freqSelect = document.getElementById('habitFrequency');
+    const countInput = document.getElementById('habitTargetCount');
+    const unitInput = document.getElementById('habitUnit');
+    const reminderTimeInput = document.getElementById('habitReminderTime');
+    const reminderCheck = document.getElementById('habitReminderEnabled');
+
+    if (nameInput) nameInput.value = habit.name || '';
+    if (descInput) descInput.value = habit.description || '';
+    if (catSelect) catSelect.value = habit.category || 'Personal';
+    if (freqSelect) freqSelect.value = habit.frequency || 'daily';
+    if (countInput) countInput.value = habit.target_count || 1;
+    if (unitInput) unitInput.value = habit.unit || 'times';
+    if (reminderTimeInput) reminderTimeInput.value = habit.reminder_time || '09:00';
+    if (reminderCheck) reminderCheck.checked = habit.reminder_enabled !== false;
 
     selectedHabitIcon = habit.icon || 'fa-check';
     selectedHabitColor = habit.color || '#1aae39';
@@ -9368,35 +9373,61 @@ function openHabitModal(editId = null) {
       });
     }
   } else {
-    title.textContent = 'New Habit';
-    delBtn.style.display = 'none';
+    if (title) title.textContent = 'New Habit';
+    if (delBtn) delBtn.style.display = 'none';
 
-    document.getElementById('habitName').value = '';
-    document.getElementById('habitDesc').value = '';
-    document.getElementById('habitCategory').value = 'Personal';
-    document.getElementById('habitFrequency').value = 'daily';
-    document.getElementById('habitTargetCount').value = 1;
-    document.getElementById('habitUnit').value = 'times';
-    document.getElementById('habitReminderTime').value = '09:00';
-    document.getElementById('habitReminderEnabled').checked = true;
+    const nameInput = document.getElementById('habitName');
+    const descInput = document.getElementById('habitDesc');
+    const catSelect = document.getElementById('habitCategory');
+    const freqSelect = document.getElementById('habitFrequency');
+    const countInput = document.getElementById('habitTargetCount');
+    const unitInput = document.getElementById('habitUnit');
+    const reminderTimeInput = document.getElementById('habitReminderTime');
+    const reminderCheck = document.getElementById('habitReminderEnabled');
+
+    if (nameInput) nameInput.value = '';
+    if (descInput) descInput.value = '';
+    if (catSelect) catSelect.value = 'Personal';
+    if (freqSelect) freqSelect.value = 'daily';
+    if (countInput) countInput.value = 1;
+    if (unitInput) unitInput.value = 'times';
+    if (reminderTimeInput) reminderTimeInput.value = '09:00';
+    if (reminderCheck) reminderCheck.checked = true;
 
     selectedHabitIcon = 'fa-check';
     selectedHabitColor = '#1aae39';
     handleHabitFrequencyChange('daily');
   }
 
-  // Update selected classes in pickers
+  // Render Icon Picker
+  const iconPicker = document.getElementById('habitIconPicker');
   if (iconPicker) {
-    iconPicker.querySelectorAll('.icon-picker-item').forEach(el => el.classList.remove('selected'));
-    const selIconEl = iconPicker.querySelector(`.icon-picker-item:has(.${selectedHabitIcon})`);
-    if (selIconEl) selIconEl.classList.add('selected');
-  }
-  if (colorPicker) {
-    colorPicker.querySelectorAll('.color-picker-item').forEach(el => el.classList.remove('selected'));
+    iconPicker.innerHTML = HABIT_ICONS.map(ic => `
+      <div class="icon-picker-item ${selectedHabitIcon === ic ? 'selected' : ''}" data-icon="${ic}" onclick="selectHabitIcon('${ic}', this)">
+        <i class="fas ${ic}"></i>
+      </div>
+    `).join('');
   }
 
-  document.getElementById('modalOverlay').classList.add('open');
-  modal.classList.remove('hidden');
+  // Render Color Picker
+  const colorPicker = document.getElementById('habitColorPicker');
+  if (colorPicker) {
+    colorPicker.innerHTML = HABIT_COLORS.map(c => `
+      <div class="color-picker-item ${selectedHabitColor === c ? 'selected' : ''}" data-color="${c}" style="background:${c};" onclick="selectHabitColor('${c}', this)"></div>
+    `).join('');
+  }
+
+  const overlay = document.getElementById('modalOverlay');
+  if (overlay) overlay.classList.add('open');
+  if (modal) modal.classList.remove('hidden');
+
+  setTimeout(() => {
+    const nameInput = document.getElementById('habitName');
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.select();
+    }
+  }, 60);
 }
 
 function selectHabitIcon(icon, el) {
@@ -9419,19 +9450,21 @@ function handleHabitFrequencyChange(freq) {
 }
 
 async function saveHabit() {
-  const name = document.getElementById('habitName').value.trim();
+  const nameInput = document.getElementById('habitName');
+  const name = nameInput ? nameInput.value.trim() : '';
   if (!name) {
     toast('Please enter a habit name', 'error');
+    if (nameInput) nameInput.focus();
     return;
   }
 
-  const desc = document.getElementById('habitDesc').value.trim();
-  const category = document.getElementById('habitCategory').value;
-  const frequency = document.getElementById('habitFrequency').value;
-  const targetCount = parseInt(document.getElementById('habitTargetCount').value, 10) || 1;
-  const unit = document.getElementById('habitUnit').value.trim() || 'times';
-  const reminderTime = document.getElementById('habitReminderTime').value || '09:00';
-  const reminderEnabled = document.getElementById('habitReminderEnabled').checked;
+  const desc = document.getElementById('habitDesc') ? document.getElementById('habitDesc').value.trim() : '';
+  const category = document.getElementById('habitCategory') ? document.getElementById('habitCategory').value : 'Personal';
+  const frequency = document.getElementById('habitFrequency') ? document.getElementById('habitFrequency').value : 'daily';
+  const targetCount = parseInt(document.getElementById('habitTargetCount') ? document.getElementById('habitTargetCount').value : 1, 10) || 1;
+  const unit = (document.getElementById('habitUnit') ? document.getElementById('habitUnit').value.trim() : '') || 'times';
+  const reminderTime = (document.getElementById('habitReminderTime') ? document.getElementById('habitReminderTime').value : '') || '09:00';
+  const reminderEnabled = document.getElementById('habitReminderEnabled') ? document.getElementById('habitReminderEnabled').checked : true;
 
   let targetDays = [0, 1, 2, 3, 4, 5, 6];
   if (frequency === 'weekdays') targetDays = [1, 2, 3, 4, 5];
@@ -9445,47 +9478,51 @@ async function saveHabit() {
   }
 
   const isEdit = Boolean(state.editingHabitId);
+  const existingHabit = isEdit ? state.habits.find(h => h.id === state.editingHabitId) : null;
+
   const habitData = {
     id: isEdit ? state.editingHabitId : uuid(),
     user_id: currentUser ? currentUser.id : 'local',
-    name,
+    name: name,
     description: desc,
-    category,
+    category: category,
     color: selectedHabitColor,
     icon: selectedHabitIcon,
-    frequency,
+    frequency: frequency,
     target_days: targetDays,
     target_count: targetCount,
-    unit,
+    unit: unit,
     reminder_time: reminderTime,
     reminder_enabled: reminderEnabled,
-    archived: false,
+    archived: existingHabit ? Boolean(existingHabit.archived) : false,
+    sort_order: existingHabit ? (existingHabit.sort_order || 0) : 0,
+    created_at: existingHabit && existingHabit.created_at ? existingHabit.created_at : nowISO(),
     updated_at: nowISO()
   };
 
-  if (!isEdit) {
-    habitData.created_at = nowISO();
-  }
-
-  try {
-    if (currentUser && sb) {
-      await sbUpsert('habits', habitData);
-    }
-    if (isEdit) {
-      const idx = state.habits.findIndex(h => h.id === habitData.id);
-      if (idx >= 0) state.habits[idx] = { ...state.habits[idx], ...habitData };
-    syncLocalHabitsCache();
+  // Optimistically update local state immediately so changes reflect instantly
+  if (isEdit) {
+    const idx = state.habits.findIndex(h => h.id === habitData.id);
+    if (idx >= 0) {
+      state.habits[idx] = { ...state.habits[idx], ...habitData };
     } else {
       state.habits.unshift(habitData);
-    syncLocalHabitsCache();
     }
+  } else {
+    state.habits.unshift(habitData);
+  }
+  syncLocalHabitsCache();
+  closeModal();
+  render();
+  toast(isEdit ? `Habit "${name}" updated! 🎯` : `Habit "${name}" created! 🚀`, 'success');
 
-    closeModal();
-    toast(isEdit ? 'Habit updated' : 'Habit created! 🚀', 'success');
-    render();
-  } catch (err) {
-    console.error('Error saving habit:', err);
-    toast('Error saving habit: ' + err.message, 'error');
+  // Sync with Supabase in background
+  if (currentUser && sb) {
+    try {
+      await sbUpsert('habits', habitData);
+    } catch (err) {
+      console.warn('Supabase sync warning (data saved locally):', err);
+    }
   }
 }
 
