@@ -5,44 +5,177 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Knowledge Vault</title>
 <link rel="preConnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-/* ─── Design Tokens (Notion-inspired) ─── */
+/* ─── Warm Architectural Workspace Design Tokens & Accessibility System ─── */
 :root {
-  --primary: #0075de;
-  --primary-active: #005bab;
+  --primary: #d97706;
+  --primary-active: #b45309;
+  --primary-light: #fef3c7;
   --on-primary: #ffffff;
-  --canvas: #ffffff;
-  --canvas-soft: #f6f5f4;
+  --canvas: #fbf9f8;
+  --canvas-soft: #f7f6f4;
   --surface: #ffffff;
-  --ink: #000000;
-  --ink-secondary: #31302e;
-  --ink-muted: #615d59;
-  --ink-faint: #a39e98;
-  --hairline: #e6e6e6;
-  --accent-sky: #62aef0;
-  --accent-purple: #d6b6f6;
-  --accent-purple-deep: #391c57;
-  --accent-pink: #ff64c8;
-  --accent-orange: #dd5b00;
-  --accent-orange-deep: #793400;
-  --accent-teal: #2a9d99;
-  --accent-green: #1aae39;
-  --accent-brown: #523410;
-  --shadow-soft: 0 1px 3px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
-  --shadow-elevated: 0 4px 12px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+  --surface-hover: #f1f0ec;
+  --ink: #1a1a1a;
+  --ink-secondary: #2f2f2f;
+  --ink-muted: #666663;
+  --ink-faint: #9e9e9a;
+  --hairline: #e6e5e1;
+  --hairline-strong: #d4d3cc;
+  --accent-sky: #3b82f6;
+  --accent-purple: #8b5cf6;
+  --accent-purple-deep: #4c1d95;
+  --accent-pink: #ec4899;
+  --accent-orange: #d97706;
+  --accent-orange-deep: #9a3412;
+  --accent-teal: #0d9488;
+  --accent-green: #10b981;
+  --accent-brown: #78350f;
+  --accent-indigo: #4f46e5;
+  --shadow-soft: 0 1px 3px rgba(47,47,47,0.03), 0 2px 8px rgba(47,47,47,0.02);
+  --shadow-elevated: 0 4px 14px rgba(47,47,47,0.06), 0 10px 28px rgba(47,47,47,0.04);
+  --shadow-overlay: 0 16px 36px rgba(47,47,47,0.12), 0 4px 10px rgba(47,47,47,0.05);
   --radius-xs: 4px;
-  --radius-sm: 5px;
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-full: 9999px;
   --font: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
   --sidebar-width: 260px;
-  --transition: 180ms ease;
+  --transition: 150ms ease;
+  --focus-ring: 2px solid var(--accent-indigo);
+  --focus-offset: 2px;
+}
+
+/* ─── Accessibility Theme: WCAG AAA High Contrast ─── */
+[data-theme="high-contrast"] {
+  --canvas: #ffffff;
+  --canvas-soft: #f4f4f4;
+  --surface: #ffffff;
+  --surface-hover: #e5e5e5;
+  --ink: #000000;
+  --ink-secondary: #000000;
+  --ink-muted: #1f1f1f;
+  --ink-faint: #333333;
+  --hairline: #000000;
+  --hairline-strong: #000000;
+  --primary: #000000;
+  --primary-active: #222222;
+  --primary-light: #e5e5e5;
+  --on-primary: #ffffff;
+  --accent-sky: #0044cc;
+  --accent-orange: #b33900;
+  --accent-green: #006622;
+  --accent-indigo: #0000cc;
+  --shadow-soft: none;
+  --shadow-elevated: 0 0 0 2px #000000;
+  --shadow-overlay: 0 0 0 3px #000000;
+  --focus-ring: 3px solid #000000;
+}
+
+/* ─── Accessibility Theme: Dark Slate ─── */
+[data-theme="dark-slate"] {
+  --canvas: #18181b;
+  --canvas-soft: #121214;
+  --surface: #27272a;
+  --surface-hover: #323236;
+  --ink: #f4f4f5;
+  --ink-secondary: #e4e4e7;
+  --ink-muted: #a1a1aa;
+  --ink-faint: #71717a;
+  --hairline: #3f3f46;
+  --hairline-strong: #52525b;
+  --primary: #fbbf24;
+  --primary-active: #f59e0b;
+  --primary-light: rgba(251, 191, 36, 0.15);
+  --on-primary: #18181b;
+  --accent-sky: #60a5fa;
+  --accent-purple: #c084fc;
+  --accent-pink: #f472b6;
+  --accent-orange: #fb923c;
+  --accent-green: #34d399;
+  --accent-indigo: #818cf8;
+  --shadow-soft: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-elevated: 0 6px 18px rgba(0,0,0,0.5);
+  --shadow-overlay: 0 20px 40px rgba(0,0,0,0.7);
+  --focus-ring: 2px solid #fbbf24;
+}
+
+/* ─── Accessibility Theme: OLED Midnight ─── */
+[data-theme="oled"] {
+  --canvas: #000000;
+  --canvas-soft: #050505;
+  --surface: #0f0f10;
+  --surface-hover: #1c1c1f;
+  --ink: #ffffff;
+  --ink-secondary: #f0f0f0;
+  --ink-muted: #a0a0a0;
+  --ink-faint: #606060;
+  --hairline: #262626;
+  --hairline-strong: #404040;
+  --primary: #f59e0b;
+  --primary-active: #d97706;
+  --primary-light: rgba(245, 158, 11, 0.15);
+  --on-primary: #000000;
+  --accent-sky: #38bdf8;
+  --accent-purple: #a855f7;
+  --accent-pink: #ec4899;
+  --accent-orange: #f97316;
+  --accent-green: #22c55e;
+  --accent-indigo: #6366f1;
+  --shadow-soft: none;
+  --shadow-elevated: 0 0 0 1px #262626;
+  --shadow-overlay: 0 0 0 2px #404040;
+  --focus-ring: 2px solid #f59e0b;
+}
+
+/* ─── Accessibility Typography & Spacing ─── */
+[data-dyslexic="true"] {
+  --font: 'Atkinson Hyperlegible', sans-serif !important;
+  letter-spacing: 0.02em;
+  word-spacing: 0.04em;
+}
+
+html[data-font-size="85"] { font-size: 13.6px; }
+html[data-font-size="100"] { font-size: 16px; }
+html[data-font-size="115"] { font-size: 18.4px; }
+html[data-font-size="130"] { font-size: 20.8px; }
+
+[data-line-spacing="compact"] body { line-height: 1.35 !important; }
+[data-line-spacing="comfortable"] body { line-height: 1.55 !important; }
+[data-line-spacing="relaxed"] body { line-height: 1.85 !important; }
+
+/* ─── Reduced Motion Override ─── */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ─── Underline Links Override ─── */
+[data-underline-links="true"] a,
+[data-underline-links="true"] .tn-link,
+[data-underline-links="true"] .tn-menu-item {
+  text-decoration: underline !important;
+}
+
+/* ─── Visible Keyboard Focus Indicators ─── */
+:focus-visible {
+  outline: var(--focus-ring) !important;
+  outline-offset: var(--focus-offset) !important;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
+  outline: var(--focus-ring) !important;
+  outline-offset: var(--focus-offset) !important;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2459,9 +2592,474 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
   }
 }
 
+
+/* ─── Screen Reader Utilities & Skip Link ─── */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  background: var(--ink);
+  color: var(--canvas);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  z-index: 100000;
+  transition: top 0.15s ease;
+  text-decoration: none;
+  box-shadow: var(--shadow-elevated);
+}
+.skip-link:focus {
+  top: 12px;
+  outline: 2px solid var(--accent-indigo);
+  outline-offset: 2px;
+}
+
+/* ─── Top Nav Accessibility Enhancements ─── */
+.tn-search-kbd {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  color: var(--ink-faint);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  pointer-events: none;
+  font-family: var(--font-mono, monospace);
+  line-height: 1;
+}
+
+.tn-a11y-trigger {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--ink-muted);
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.tn-a11y-trigger:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+.tn-kbd-badge {
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+
+/* ─── Global Command Palette (⌘K) ─── */
+.cp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 28, 28, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  animation: fadeIn 120ms ease;
+}
+.cp-modal {
+  width: 620px;
+  max-width: 92vw;
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: cpSlideDown 150ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes cpSlideDown {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.cp-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--hairline);
+  gap: 12px;
+  background: var(--canvas);
+}
+.cp-header i {
+  color: var(--primary);
+  font-size: 16px;
+}
+.cp-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  color: var(--ink);
+  font-family: var(--font);
+  outline: none;
+}
+.cp-input::placeholder {
+  color: var(--ink-faint);
+}
+.cp-esc-badge {
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+.cp-body {
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+}
+.cp-group-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-faint);
+  padding: 8px 12px 4px;
+}
+.cp-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 100ms ease;
+  user-select: none;
+  font-size: 13.5px;
+  text-decoration: none !important;
+}
+.cp-item:hover, .cp-item.selected {
+  background: var(--surface-hover);
+}
+.cp-item.selected {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+.cp-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cp-item-icon {
+  width: 20px;
+  text-align: center;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.cp-item.selected .cp-item-icon {
+  color: var(--primary);
+}
+.cp-item-title {
+  font-weight: 500;
+}
+.cp-item-meta {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin-left: 6px;
+}
+.cp-item-shortcut {
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--font-mono, monospace);
+}
+.cp-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--canvas-soft);
+  border-top: 1px solid var(--hairline);
+  font-size: 11.5px;
+  color: var(--ink-muted);
+}
+.cp-footer-keys {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.cp-footer-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-footer-key kbd {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink);
+}
+
+/* ─── Accessibility & Ergonomics Drawer ─── */
+.a11y-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 28, 28, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10001;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 120ms ease;
+}
+.a11y-drawer {
+  width: 440px;
+  max-width: 90vw;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--hairline);
+  box-shadow: var(--shadow-overlay);
+  display: flex;
+  flex-direction: column;
+  animation: a11ySlideLeft 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+@keyframes a11ySlideLeft {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.a11y-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--canvas);
+}
+.a11y-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.a11y-title i {
+  color: var(--primary);
+}
+.a11y-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.a11y-close-btn:hover {
+  color: var(--ink);
+  background: var(--surface-hover);
+}
+.a11y-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.a11y-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.a11y-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ink-faint);
+}
+.a11y-segmented {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.a11y-segmented-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.a11y-segmented-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.a11y-segment-btn {
+  background: var(--canvas);
+  border: 1px solid var(--hairline);
+  color: var(--ink-secondary);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.a11y-segment-btn:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+.a11y-segment-btn.active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-active);
+  font-weight: 600;
+}
+.a11y-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.a11y-switch-label {
+  display: flex;
+  flex-direction: column;
+}
+.a11y-switch-name {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.a11y-switch-desc {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+}
+.a11y-toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--hairline-strong);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--transition);
+  flex-shrink: 0;
+}
+.a11y-toggle.active {
+  background: var(--primary);
+}
+.a11y-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: #ffffff;
+  border-radius: 50%;
+  transition: transform var(--transition);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.a11y-toggle.active::after {
+  transform: translateX(20px);
+}
+.a11y-shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.a11y-shortcuts-table tr {
+  border-bottom: 1px solid var(--hairline);
+}
+.a11y-shortcuts-table td {
+  padding: 7px 0;
+  color: var(--ink-secondary);
+}
+.a11y-shortcuts-table td:last-child {
+  text-align: right;
+}
+.a11y-shortcuts-table kbd {
+  background: var(--canvas-soft);
+  border: 1px solid var(--hairline);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink);
+  font-weight: 600;
+}
+.a11y-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--hairline);
+  background: var(--canvas-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.a11y-reset-btn {
+  background: transparent;
+  border: 1px solid var(--hairline);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.a11y-reset-btn:hover {
+  background: var(--surface-hover);
+  color: var(--ink);
+}
+
 </style>
 </head>
 <body>
+
+<a href="#main-content" class="skip-link">Skip to main content (Tab)</a>
 
 <!-- Sync Status Banner -->
 <div id="syncBanner"><i class="fas fa-cloud-upload-alt"></i> Syncing...</div>
@@ -2508,9 +3106,10 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     <button class="tn-new-btn" onclick="triggerGlobalNewAction()" title="New Note"><i class="fas fa-plus"></i></button>
   </div>
   <div class="tn-center">
-    <div class="tn-search">
+    <div class="tn-search" onclick="openCommandPalette()" style="cursor:pointer;" title="Search or press ⌘K">
       <i class="fas fa-search"></i>
-      <input type="text" id="searchInput" placeholder="Search everything..." oninput="handleSearch(this.value)">
+      <input type="text" id="searchInput" placeholder="Search or press ⌘K..." onfocus="openCommandPalette()" readonly style="cursor:pointer;">
+      <span class="tn-search-kbd">⌘K</span>
     </div>
   </div>
   <div class="tn-right">
@@ -2559,6 +3158,10 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
       <i class="fas fa-check-circle"></i>
       <span id="nav-todos-badge" style="display:none; position:absolute; top:-3px; right:-3px; background:#dc2626; color:#ffffff; font-size:9px; font-weight:700; border-radius:10px; padding:1px 5px; min-width:14px; text-align:center; line-height:1.2; box-shadow:0 1px 3px rgba(0,0,0,0.2);"></span>
     </a>
+    <button class="tn-a11y-trigger" id="topNavA11yBtn" onclick="toggleA11yDrawer()" title="Accessibility & Keyboard Shortcuts (?)" aria-label="Accessibility settings and keyboard shortcuts">
+      <i class="fas fa-universal-access"></i>
+      <span class="tn-kbd-badge">?</span>
+    </button>
     <div class="tn-profile-wrap">
       <div class="sb-user" id="sbUserInfo" onclick="openSettings()" style="cursor:pointer; padding:0; margin:0; border:none; background:transparent;"></div>
     </div>
@@ -3117,142 +3720,154 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
     </div>
   </div>
 
+  <!-- ─── Redesigned Habit Creation & Edit Modal (INSIDE modalOverlay) ─── -->
+  <div class="modal-card hidden" id="habitModal" style="max-width:580px;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--hairline); padding: 18px 24px; display:flex; justify-content:space-between; align-items:center;">
+      <h2 id="habitModalTitle" style="display:flex; align-items:center; gap:10px; margin:0; font-size:18px; font-weight:700;">
+        <span id="hModalIconPreview" style="display:inline-flex; width:32px; height:32px; border-radius:var(--radius-md); background:var(--primary); color:#ffffff; align-items:center; justify-content:center; font-size:15px;"><i class="fas fa-seedling"></i></span>
+        <span id="hModalHeadingText">Edit Habit</span>
+      </h2>
+      <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    
+    <div class="modal-body" style="max-height:75vh; overflow-y:auto; padding: 20px 24px;">
+      <!-- Habit Heading / Title -->
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Habit Heading / Name <span style="color:#dc2626">*</span></label>
+        <input type="text" class="form-input" id="habitName" placeholder="e.g. Daily LeetCode & DSA, Read 20 Pages, Morning Cardio..." style="font-size:15px; font-weight:600; padding:10px 14px; border-radius:var(--radius-md); border:1.5px solid var(--hairline); background:var(--canvas);">
+      </div>
+
+      <!-- Intention / Description -->
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Why do you want to evolve this habit? (Goal / Motivation)</label>
+        <textarea class="form-textarea" id="habitDesc" placeholder="e.g. Build deep problem-solving skills, stay consistent before interview rounds, and clear mental fatigue..." style="min-height:72px; border-radius:var(--radius-md); font-size:13px; padding:10px 12px; line-height:1.5;"></textarea>
+      </div>
+
+      <!-- Category & Frequency Row -->
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Category</label>
+          <select class="form-select" id="habitCategory" style="padding:10px 12px; border-radius:var(--radius-md); font-size:13px; width:100%;">
+            <option value="Health">🧘 Health & Wellness</option>
+            <option value="Fitness">🏋️ Fitness & Sports</option>
+            <option value="Productivity">⚡ Productivity</option>
+            <option value="Mindset">🧠 Mindset & Focus</option>
+            <option value="Learning">📚 Learning & Reading</option>
+            <option value="Career">💼 Career & Coding</option>
+            <option value="Creative">🎨 Creative & Arts</option>
+            <option value="Finance">💰 Finance</option>
+            <option value="Personal">🌱 Personal Life</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Frequency Schedule</label>
+          <select class="form-select" id="habitFrequency" onchange="handleHabitFrequencyChange(this.value)" style="padding:10px 12px; border-radius:var(--radius-md); font-size:13px; width:100%;">
+            <option value="daily">Every Day (7 days/week)</option>
+            <option value="weekdays">Weekdays Only (Mon-Fri)</option>
+            <option value="weekends">Weekends Only (Sat-Sun)</option>
+            <option value="custom">Custom Days Selection</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom Active Days Selector -->
+      <div class="form-group" id="habitCustomDaysWrap" style="display:none; background:var(--canvas-soft); padding:14px 16px; border-radius:var(--radius-md); border:1px solid var(--hairline); margin-bottom:16px;">
+        <label class="form-label" style="font-weight:600; font-size:12px; color:var(--ink-secondary); margin-bottom:8px;">Active Days for this habit</label>
+        <div style="display:flex; gap:8px; justify-content:space-between;">
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="1" checked> Mon</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="2" checked> Tue</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="3" checked> Wed</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="4" checked> Thu</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="5" checked> Fri</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="6" checked> Sat</label>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer; font-weight:600;"><input type="checkbox" class="habit-day-check" value="0" checked> Sun</label>
+        </div>
+      </div>
+
+      <!-- Target Count & Unit Row -->
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Daily Target</label>
+          <input type="number" class="form-input" id="habitTargetCount" value="1" min="1" style="padding:10px 12px; border-radius:var(--radius-md);">
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Unit / Metric</label>
+          <input type="text" class="form-input" id="habitUnit" value="times" placeholder="e.g. times, mins, pages, km" style="padding:10px 12px; border-radius:var(--radius-md);">
+        </div>
+      </div>
+
+      <!-- Reminder & Notification Row -->
+      <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap:14px; margin-bottom:16px;">
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;"><i class="fas fa-bell" style="color:var(--primary); margin-right:4px;"></i> Daily Reminder Time</label>
+          <input type="time" class="form-input" id="habitReminderTime" value="09:00" style="padding:10px 12px; border-radius:var(--radius-md);">
+        </div>
+        <div class="form-group" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:flex-end;">
+          <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; padding: 10px 14px; background:var(--canvas-soft); border-radius:var(--radius-md); border:1px solid var(--hairline);">
+            <input type="checkbox" id="habitReminderEnabled" checked> Browser Alert Reminder
+          </label>
+        </div>
+      </div>
+
+      <!-- Icon Picker -->
+      <div class="form-group" style="margin-bottom:16px;">
+        <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Habit Icon</label>
+        <div class="icon-picker-grid" id="habitIconPicker" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:8px;">
+          <!-- Icons injected -->
+        </div>
+      </div>
+
+      <!-- Color Picker -->
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label" style="font-weight:600; font-size:13px; color:var(--ink); margin-bottom:6px;">Theme Color</label>
+        <div class="color-picker-grid" id="habitColorPicker" style="display:grid; grid-template-columns:repeat(8, 1fr); gap:8px;">
+          <!-- Colors injected -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--hairline); display:flex; justify-content:space-between; align-items:center; background:var(--canvas-soft);">
+      <div>
+        <button id="btnDeleteHabitModal" onclick="handleDeleteHabitFromModal()" type="button" style="display:none; color:#dc2626; background:none; border:none; font-size:13px; font-weight:600; cursor:pointer; padding:6px 10px; border-radius:var(--radius-sm);"><i class="fas fa-trash-alt" style="margin-right:4px;"></i> Delete Habit</button>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="closeModal()" type="button" style="padding:9px 18px; background:var(--surface); color:var(--ink-secondary); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">Cancel</button>
+        <button onclick="saveHabit()" id="btnSaveHabit" type="button" style="padding:9px 24px; background:var(--primary); color:var(--on-primary); border:none; border-radius:var(--radius-full); font-size:13px; font-weight:600; cursor:pointer; box-shadow:var(--shadow-soft);"><i class="fas fa-check" style="margin-right:4px;"></i> Save Habit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Redesigned Habit Calendar History Modal (INSIDE modalOverlay) ─── -->
+  <div class="modal-card hidden" id="habitCalendarModal" style="max-width:520px;">
+    <div class="modal-header" style="border-bottom: 1px solid var(--hairline); padding: 18px 24px; display:flex; justify-content:space-between; align-items:center;">
+      <h2 id="habitCalModalTitle" style="display:flex; align-items:center; gap:8px; margin:0; font-size:17px;"><i class="fas fa-calendar-alt" style="color:var(--primary);margin-right:6px"></i>Habit History</h2>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button onclick="if(calModalHabitId) openHabitModal(calModalHabitId);" title="Edit this habit" style="background:var(--canvas-soft); border:1px solid var(--hairline); border-radius:var(--radius-md); padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; color:var(--ink-secondary);"><i class="fas fa-pen" style="margin-right:4px;"></i> Edit</button>
+        <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+    <div class="modal-body habit-calendar-modal-body" style="padding: 20px 24px;">
+      <div class="habit-cal-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <button class="habit-cal-nav-btn" onclick="changeHabitCalendarMonth(-1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="habit-cal-title" id="habitCalMonthYear" style="font-weight:700; font-size:16px;">September 2026</div>
+        <button class="habit-cal-nav-btn" onclick="changeHabitCalendarMonth(1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+
+      <div class="habit-cal-grid" id="habitCalGrid">
+        <!-- Days injected dynamically -->
+      </div>
+
+      <div id="habitCalSummary" style="margin-top:16px; padding:12px 16px; background:var(--canvas-soft); border-radius:var(--radius-md); font-size:13px; color:var(--ink-secondary); text-align:center; border:1px solid var(--hairline);">
+      </div>
+    </div>
+    <div class="modal-footer" style="padding: 14px 24px; border-top: 1px solid var(--hairline); background:var(--canvas-soft);">
+      <button onclick="closeModal()" style="width:100%; padding:9px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">Done</button>
+    </div>
+  </div>
+
 </div>
-
-<!-- ─── Habit Creation / Edit Modal ─── -->
-<div class="modal-card hidden" id="habitModal" style="max-width:540px;">
-  <div class="modal-header">
-    <h2 id="habitModalTitle"><i class="fas fa-seedling" style="color:var(--accent-green);margin-right:8px"></i><span id="hModalHeadingText">New Habit</span></h2>
-    <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="modal-body">
-    <div class="form-group">
-      <label class="form-label">Habit Name *</label>
-      <input type="text" class="form-input" id="habitName" placeholder="e.g., Morning Meditation, Read 30 Mins, 10k Steps">
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Intention / Why evolve this habit?</label>
-      <input type="text" class="form-input" id="habitDesc" placeholder="e.g., Clear mental headspace before starting deep work">
-    </div>
-
-    <div class="form-row" style="display:flex; gap:12px;">
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Category</label>
-        <select class="form-input" id="habitCategory">
-          <option value="Health">🧘 Health & Wellness</option>
-          <option value="Fitness">🏋️ Fitness & Sports</option>
-          <option value="Productivity">⚡ Productivity</option>
-          <option value="Mindset">🧠 Mindset & Focus</option>
-          <option value="Learning">📚 Learning & Reading</option>
-          <option value="Career">💼 Career & Coding</option>
-          <option value="Creative">🎨 Creative & Arts</option>
-          <option value="Finance">💰 Finance</option>
-          <option value="Personal">🌱 Personal Life</option>
-        </select>
-      </div>
-
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Frequency</label>
-        <select class="form-input" id="habitFrequency" onchange="handleHabitFrequencyChange(this.value)">
-          <option value="daily">Every Day</option>
-          <option value="weekdays">Weekdays (Mon-Fri)</option>
-          <option value="weekends">Weekends (Sat-Sun)</option>
-          <option value="custom">Custom Days</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Custom Target Days Selector (Hidden unless custom) -->
-    <div class="form-group" id="habitCustomDaysWrap" style="display:none;">
-      <label class="form-label">Active Days</label>
-      <div style="display:flex; gap:6px; justify-content:space-between;">
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="1" checked> Mon</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="2" checked> Tue</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="3" checked> Wed</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="4" checked> Thu</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="5" checked> Fri</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="6" checked> Sat</label>
-        <label style="display:flex; flex-direction:column; align-items:center; font-size:12px; cursor:pointer;"><input type="checkbox" class="habit-day-check" value="0" checked> Sun</label>
-      </div>
-    </div>
-
-    <div class="form-row" style="display:flex; gap:12px;">
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Target Count</label>
-        <input type="number" class="form-input" id="habitTargetCount" value="1" min="1">
-      </div>
-      <div class="form-group" style="flex:1;">
-        <label class="form-label">Unit</label>
-        <input type="text" class="form-input" id="habitUnit" value="times" placeholder="times, mins, pages, km">
-      </div>
-    </div>
-
-    <div class="form-row" style="display:flex; gap:12px;">
-      <div class="form-group" style="flex:1;">
-        <label class="form-label"><i class="fas fa-bell" style="color:var(--primary); margin-right:4px;"></i> Daily Reminder Time</label>
-        <input type="time" class="form-input" id="habitReminderTime" value="09:00">
-      </div>
-      <div class="form-group" style="flex:1; display:flex; flex-direction:column; justify-content:center; padding-top:18px;">
-        <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:500; cursor:pointer;">
-          <input type="checkbox" id="habitReminderEnabled" checked> Browser Notification
-        </label>
-      </div>
-    </div>
-
-    <!-- Icon Picker -->
-    <div class="form-group">
-      <label class="form-label">Habit Icon</label>
-      <div class="icon-picker-grid" id="habitIconPicker">
-        <!-- Injected icons -->
-      </div>
-    </div>
-
-    <!-- Color Picker -->
-    <div class="form-group">
-      <label class="form-label">Theme Color</label>
-      <div class="color-picker-grid" id="habitColorPicker">
-        <!-- Injected colors -->
-      </div>
-    </div>
-  </div>
-  <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
-    <div>
-      <button id="btnDeleteHabitModal" onclick="handleDeleteHabitFromModal()" style="display:none; color:var(--danger); background:none; border:none; font-size:13px; font-weight:500; cursor:pointer;"><i class="fas fa-trash"></i> Delete</button>
-    </div>
-    <div style="display:flex; gap:8px;">
-      <button onclick="closeModal()" style="padding:8px 20px; background:var(--canvas); color:var(--ink-secondary); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:14px; font-weight:500; cursor:pointer;">Cancel</button>
-      <button onclick="saveHabit()" id="btnSaveHabit" style="padding:8px 22px; background:var(--primary); color:var(--on-primary); border:none; border-radius:var(--radius-full); font-size:14px; font-weight:600; cursor:pointer;">Save Habit</button>
-    </div>
-  </div>
-</div>
-
-<!-- ─── Habit Calendar History Modal ─── -->
-<div class="modal-card hidden" id="habitCalendarModal" style="max-width:500px;">
-  <div class="modal-header">
-    <h2 id="habitCalModalTitle"><i class="fas fa-calendar-alt" style="color:var(--primary);margin-right:8px"></i>Habit History</h2>
-    <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-  </div>
-  <div class="modal-body habit-calendar-modal-body">
-    <div class="habit-cal-header">
-      <button class="habit-cal-nav-btn" onclick="changeHabitCalendarMonth(-1)"><i class="fas fa-chevron-left"></i></button>
-      <div class="habit-cal-title" id="habitCalMonthYear">September 2026</div>
-      <button class="habit-cal-nav-btn" onclick="changeHabitCalendarMonth(1)"><i class="fas fa-chevron-right"></i></button>
-    </div>
-
-    <div class="habit-cal-grid" id="habitCalGrid">
-      <!-- Days injected dynamically -->
-    </div>
-
-    <div id="habitCalSummary" style="margin-top:16px; padding:12px; background:var(--canvas-soft); border-radius:var(--radius-md); font-size:13px; color:var(--ink-secondary); text-align:center;">
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button onclick="closeModal()" style="width:100%; padding:9px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--radius-md); font-size:13px; font-weight:600; cursor:pointer;">Done</button>
-  </div>
-</div>
-
-
 <div class="toast-container" id="toastContainer"></div>
 
 
@@ -3277,6 +3892,141 @@ input:focus, textarea:focus, select:focus { box-shadow: var(--shadow-soft); bord
   <button id="chatToggle" onclick="toggleChat()"><i class="fas fa-comment-dots"></i></button>
 </div>
   
+
+<!-- ─── Global Command Palette (⌘K) ─── -->
+<div id="commandPaletteOverlay" class="cp-overlay" style="display:none;" onclick="if(event.target===this)closeCommandPalette()" role="dialog" aria-modal="true" aria-label="Global Command Palette">
+  <div class="cp-modal">
+    <div class="cp-header">
+      <i class="fas fa-terminal"></i>
+      <input type="text" id="cpInput" class="cp-input" placeholder="Type a command, jump to a view, or search notes..." autocomplete="off" oninput="handleCommandSearch(this.value)" onkeydown="handleCommandKeyDown(event)">
+      <span class="cp-esc-badge">ESC</span>
+    </div>
+    <div class="cp-body" id="cpList" role="listbox"></div>
+    <div class="cp-footer">
+      <div class="cp-footer-keys">
+        <span class="cp-footer-key"><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+        <span class="cp-footer-key"><kbd>↵</kbd> Select</span>
+        <span class="cp-footer-key"><kbd>ESC</kbd> Close</span>
+      </div>
+      <span style="font-size:11px; opacity:0.8;">Knowledge Vault v2.4</span>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Accessibility & Ergonomics Drawer ─── -->
+<div id="a11yDrawerOverlay" class="a11y-overlay" style="display:none;" onclick="if(event.target===this)closeA11yDrawer()" role="dialog" aria-modal="true" aria-label="Accessibility & Reading Ergonomics">
+  <div class="a11y-drawer">
+    <div class="a11y-header">
+      <div class="a11y-title">
+        <i class="fas fa-universal-access"></i>
+        <span>Accessibility & Ergonomics</span>
+      </div>
+      <button class="a11y-close-btn" onclick="closeA11yDrawer()" aria-label="Close accessibility drawer"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="a11y-body">
+      <!-- Section 1: Themes -->
+      <div class="a11y-section">
+        <div class="a11y-section-title">Color Theme & Contrast</div>
+        <div class="a11y-segmented">
+          <button class="a11y-segment-btn" data-a11y-theme-btn="warm" onclick="setA11yTheme('warm')">
+            <i class="fas fa-sun" style="color:#d97706;"></i> Warm Paper
+          </button>
+          <button class="a11y-segment-btn" data-a11y-theme-btn="high-contrast" onclick="setA11yTheme('high-contrast')">
+            <i class="fas fa-adjust" style="color:#000000;"></i> High Contrast (AAA)
+          </button>
+          <button class="a11y-segment-btn" data-a11y-theme-btn="dark-slate" onclick="setA11yTheme('dark-slate')">
+            <i class="fas fa-moon" style="color:#60a5fa;"></i> Dark Slate
+          </button>
+          <button class="a11y-segment-btn" data-a11y-theme-btn="oled" onclick="setA11yTheme('oled')">
+            <i class="fas fa-circle" style="color:#f59e0b;"></i> OLED Midnight
+          </button>
+        </div>
+      </div>
+
+      <!-- Section 2: Typography & Scaling -->
+      <div class="a11y-section">
+        <div class="a11y-section-title">Font Size Scale</div>
+        <div class="a11y-segmented-4">
+          <button class="a11y-segment-btn" data-a11y-font-btn="85" onclick="setA11yFontSize('85')">85%</button>
+          <button class="a11y-segment-btn" data-a11y-font-btn="100" onclick="setA11yFontSize('100')">100%</button>
+          <button class="a11y-segment-btn" data-a11y-font-btn="115" onclick="setA11yFontSize('115')">115%</button>
+          <button class="a11y-segment-btn" data-a11y-font-btn="130" onclick="setA11yFontSize('130')">130%</button>
+        </div>
+      </div>
+
+      <!-- Section 3: Line Spacing -->
+      <div class="a11y-section">
+        <div class="a11y-section-title">Line Spacing & Reading Cadence</div>
+        <div class="a11y-segmented-3">
+          <button class="a11y-segment-btn" data-a11y-spacing-btn="compact" onclick="setA11yLineSpacing('compact')">Compact</button>
+          <button class="a11y-segment-btn" data-a11y-spacing-btn="comfortable" onclick="setA11yLineSpacing('comfortable')">Comfortable</button>
+          <button class="a11y-segment-btn" data-a11y-spacing-btn="relaxed" onclick="setA11yLineSpacing('relaxed')">Relaxed</button>
+        </div>
+      </div>
+
+      <!-- Section 4: Cognitive & Reading Toggles -->
+      <div class="a11y-section">
+        <div class="a11y-section-title">Reading & Cognitive Ergonomics</div>
+        
+        <div class="a11y-switch-row" onclick="toggleA11yDyslexic()">
+          <div class="a11y-switch-label">
+            <span class="a11y-switch-name">Dyslexia-Friendly Font</span>
+            <span class="a11y-switch-desc">Use Atkinson Hyperlegible high-distinction typography</span>
+          </div>
+          <div class="a11y-toggle" id="a11yToggleDyslexic"></div>
+        </div>
+
+        <div class="a11y-switch-row" onclick="toggleA11yReducedMotion()">
+          <div class="a11y-switch-label">
+            <span class="a11y-switch-name">Reduce Motion & Animations</span>
+            <span class="a11y-switch-desc">Eliminates transition delays and UI movements</span>
+          </div>
+          <div class="a11y-toggle" id="a11yToggleMotion"></div>
+        </div>
+
+        <div class="a11y-switch-row" onclick="toggleA11yFocusRings()">
+          <div class="a11y-switch-label">
+            <span class="a11y-switch-name">Enhanced Focus Rings</span>
+            <span class="a11y-switch-desc">High-visibility 2px focus indicators for keyboard users</span>
+          </div>
+          <div class="a11y-toggle active" id="a11yToggleFocus"></div>
+        </div>
+
+        <div class="a11y-switch-row" onclick="toggleA11yUnderlineLinks()">
+          <div class="a11y-switch-label">
+            <span class="a11y-switch-name">Always Underline Links</span>
+            <span class="a11y-switch-desc">Adds underlines to all interactive links and nav items</span>
+          </div>
+          <div class="a11y-toggle" id="a11yToggleUnderline"></div>
+        </div>
+      </div>
+
+      <!-- Section 5: Keyboard Shortcuts Reference -->
+      <div class="a11y-section">
+        <div class="a11y-section-title">Keyboard Cheat Sheet</div>
+        <table class="a11y-shortcuts-table">
+          <tr><td>Global Command Palette</td><td><kbd>⌘ K</kbd> / <kbd>Ctrl K</kbd></td></tr>
+          <tr><td>Accessibility Center & Help</td><td><kbd>?</kbd></td></tr>
+          <tr><td>Close Dialog / Drawer</td><td><kbd>ESC</kbd></td></tr>
+          <tr><td>Create New Note</td><td><kbd>N</kbd></td></tr>
+          <tr><td>Create New Task</td><td><kbd>A</kbd></td></tr>
+          <tr><td>Habit Tracker View / New</td><td><kbd>H</kbd></td></tr>
+          <tr><td>Cycle Color Theme</td><td><kbd>⌥ C</kbd></td></tr>
+          <tr><td>Matrix Quadrant 1 - 4</td><td><kbd>1</kbd> - <kbd>4</kbd></td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="a11y-footer">
+      <button class="a11y-reset-btn" onclick="resetA11yDefaults()">Reset to Defaults</button>
+      <button onclick="closeA11yDrawer()" style="background:var(--primary); color:var(--on-primary); border:none; padding:7px 16px; border-radius:var(--radius-md); font-size:12.5px; font-weight:600; cursor:pointer;">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Screen Reader Live Announcer -->
+<div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
 <script>
 /* ═══════════════════════════════════════════════════════════════
    Knowledge Vault — Supabase Cloud Sync Edition
@@ -3330,6 +4080,408 @@ let currentUser = null;
 function initSupabase() {
   sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
+
+
+// ─── Accessibility & Ergonomics Suite ───
+const A11Y_STORAGE_KEY = 'kv_a11y_prefs_v2';
+let a11yPrefs = {
+  theme: 'warm',
+  fontSize: '100',
+  dyslexic: false,
+  lineSpacing: 'comfortable',
+  reducedMotion: false,
+  focusRings: true,
+  underlineLinks: false,
+  screenReaderAnnounce: true
+};
+
+function loadA11yPrefs() {
+  try {
+    const saved = localStorage.getItem(A11Y_STORAGE_KEY);
+    if (saved) {
+      a11yPrefs = { ...a11yPrefs, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.warn('Could not load accessibility preferences:', e);
+  }
+  applyA11yPrefs();
+}
+
+function saveA11yPrefs() {
+  try {
+    localStorage.setItem(A11Y_STORAGE_KEY, JSON.stringify(a11yPrefs));
+  } catch (e) {
+    console.warn('Could not save accessibility preferences:', e);
+  }
+}
+
+function applyA11yPrefs() {
+  const root = document.documentElement;
+  root.setAttribute('data-theme', a11yPrefs.theme || 'warm');
+  root.setAttribute('data-font-size', a11yPrefs.fontSize || '100');
+  root.setAttribute('data-dyslexic', a11yPrefs.dyslexic ? 'true' : 'false');
+  root.setAttribute('data-line-spacing', a11yPrefs.lineSpacing || 'comfortable');
+  root.setAttribute('data-reduced-motion', a11yPrefs.reducedMotion ? 'true' : 'false');
+  root.setAttribute('data-focus-rings', a11yPrefs.focusRings ? 'true' : 'false');
+  root.setAttribute('data-underline-links', a11yPrefs.underlineLinks ? 'true' : 'false');
+  updateA11yUIControls();
+}
+
+function setA11yTheme(theme) {
+  a11yPrefs.theme = theme;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Theme set to ' + theme.replace('-', ' '));
+}
+
+function setA11yFontSize(size) {
+  a11yPrefs.fontSize = size;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Font size set to ' + size + ' percent');
+}
+
+function toggleA11yDyslexic() {
+  a11yPrefs.dyslexic = !a11yPrefs.dyslexic;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Dyslexia friendly font ' + (a11yPrefs.dyslexic ? 'enabled' : 'disabled'));
+}
+
+function setA11yLineSpacing(spacing) {
+  a11yPrefs.lineSpacing = spacing;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Line spacing set to ' + spacing);
+}
+
+function toggleA11yReducedMotion() {
+  a11yPrefs.reducedMotion = !a11yPrefs.reducedMotion;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Reduced motion ' + (a11yPrefs.reducedMotion ? 'enabled' : 'disabled'));
+}
+
+function toggleA11yFocusRings() {
+  a11yPrefs.focusRings = !a11yPrefs.focusRings;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('High contrast focus rings ' + (a11yPrefs.focusRings ? 'enabled' : 'disabled'));
+}
+
+function toggleA11yUnderlineLinks() {
+  a11yPrefs.underlineLinks = !a11yPrefs.underlineLinks;
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Link underlines ' + (a11yPrefs.underlineLinks ? 'enabled' : 'disabled'));
+}
+
+function a11yAnnounce(message) {
+  if (!a11yPrefs.screenReaderAnnounce) return;
+  const el = document.getElementById('a11y-announcer');
+  if (el) {
+    el.textContent = '';
+    setTimeout(() => { el.textContent = message; }, 40);
+  }
+}
+
+function updateA11yUIControls() {
+  document.querySelectorAll('[data-a11y-theme-btn]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-a11y-theme-btn') === a11yPrefs.theme);
+  });
+  document.querySelectorAll('[data-a11y-font-btn]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-a11y-font-btn') === a11yPrefs.fontSize);
+  });
+  document.querySelectorAll('[data-a11y-spacing-btn]').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-a11y-spacing-btn') === a11yPrefs.lineSpacing);
+  });
+  const dyslexicToggle = document.getElementById('a11yToggleDyslexic');
+  if (dyslexicToggle) dyslexicToggle.classList.toggle('active', !!a11yPrefs.dyslexic);
+
+  const motionToggle = document.getElementById('a11yToggleMotion');
+  if (motionToggle) motionToggle.classList.toggle('active', !!a11yPrefs.reducedMotion);
+
+  const focusToggle = document.getElementById('a11yToggleFocus');
+  if (focusToggle) focusToggle.classList.toggle('active', !!a11yPrefs.focusRings);
+
+  const underlineToggle = document.getElementById('a11yToggleUnderline');
+  if (underlineToggle) underlineToggle.classList.toggle('active', !!a11yPrefs.underlineLinks);
+}
+
+function resetA11yDefaults() {
+  a11yPrefs = {
+    theme: 'warm',
+    fontSize: '100',
+    dyslexic: false,
+    lineSpacing: 'comfortable',
+    reducedMotion: false,
+    focusRings: true,
+    underlineLinks: false,
+    screenReaderAnnounce: true
+  };
+  saveA11yPrefs();
+  applyA11yPrefs();
+  a11yAnnounce('Accessibility settings reset to default');
+}
+
+function openA11yDrawer() {
+  const overlay = document.getElementById('a11yDrawerOverlay');
+  if (overlay) {
+    overlay.style.display = 'flex';
+    updateA11yUIControls();
+    a11yAnnounce('Accessibility settings and keyboard guide opened');
+    const closeBtn = overlay.querySelector('.a11y-close-btn');
+    if (closeBtn) closeBtn.focus();
+  }
+}
+
+function closeA11yDrawer() {
+  const overlay = document.getElementById('a11yDrawerOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function toggleA11yDrawer() {
+  const overlay = document.getElementById('a11yDrawerOverlay');
+  if (overlay && overlay.style.display !== 'none') {
+    closeA11yDrawer();
+  } else {
+    closeCommandPalette();
+    openA11yDrawer();
+  }
+}
+
+// ─── Global Command Palette (⌘K) ───
+let cpSelectedIndex = 0;
+let cpFilteredItems = [];
+
+const CP_COMMANDS = [
+  { id: 'view-workspace', title: 'Workspace Dashboard', meta: 'Jump to Notes & Custom Panels', icon: 'fa-cube', shortcut: 'G W', category: 'Navigation', action: () => switchView('all') },
+  { id: 'view-todos', title: 'Tasks & Eisenhower Matrix', meta: 'Prioritize by urgency & impact', icon: 'fa-check-circle', shortcut: 'G T', category: 'Navigation', action: () => switchView('todos') },
+  { id: 'view-habits', title: 'Habit Tracker & Consistency', meta: 'Track streaks and daily momentum', icon: 'fa-fire', shortcut: 'G H', category: 'Navigation', action: () => switchView('habits') },
+  { id: 'view-projects', title: 'Projects Overview', meta: 'All project entities and notes', icon: 'fa-project-diagram', shortcut: 'G P', category: 'Navigation', action: () => switchView('projects') },
+  { id: 'view-people', title: 'People Directory', meta: 'Contacts and network knowledge', icon: 'fa-user', shortcut: 'G U', category: 'Navigation', action: () => switchView('people') },
+  { id: 'view-companies', title: 'Companies & Organizations', meta: 'Entity knowledge and briefs', icon: 'fa-building', shortcut: 'G C', category: 'Navigation', action: () => switchView('companies') },
+  { id: 'view-tech', title: 'Technologies & Stacks', meta: 'Tools, libraries, and frameworks', icon: 'fa-microchip', shortcut: 'G M', category: 'Navigation', action: () => switchView('technologies') },
+  { id: 'view-recycle', title: 'Recycle Bin', meta: 'View deleted notes and trash', icon: 'fa-trash', shortcut: 'G R', category: 'Navigation', action: () => switchView('recycle') },
+
+  { id: 'act-new-note', title: 'Create New Note', meta: 'Add a thought, article, or knowledge item', icon: 'fa-plus', shortcut: 'N', category: 'Quick Actions', action: () => openNoteModal() },
+  { id: 'act-new-task', title: 'Create New Task (Q1 Urgent)', meta: 'Log task to Eisenhower Matrix', icon: 'fa-tasks', shortcut: 'A', category: 'Quick Actions', action: () => openTodoModal() },
+  { id: 'act-new-habit', title: 'Create New Habit', meta: 'Define target and reminder', icon: 'fa-calendar-plus', shortcut: 'H', category: 'Quick Actions', action: () => openHabitModal() },
+  { id: 'act-toggle-theme', title: 'Cycle Color Theme', meta: 'Warm Paper → High Contrast → Dark Slate → OLED', icon: 'fa-palette', shortcut: '⌥ C', category: 'Quick Actions', action: () => cycleTheme() },
+
+  { id: 'act-a11y', title: 'Open Accessibility Center & Keyboard Guide', meta: 'Contrast, font scale, motion, and cheat sheet', icon: 'fa-universal-access', shortcut: '?', category: 'Accessibility', action: () => openA11yDrawer() },
+  { id: 'act-settings', title: 'Open Settings', meta: 'API keys, database sync, and profile', icon: 'fa-cog', shortcut: '', category: 'System', action: () => openSettings() }
+];
+
+function cycleTheme() {
+  const themes = ['warm', 'high-contrast', 'dark-slate', 'oled'];
+  const curIdx = themes.indexOf(a11yPrefs.theme);
+  const nextTheme = themes[(curIdx + 1) % themes.length];
+  setA11yTheme(nextTheme);
+  toast('Theme switched to ' + nextTheme.replace('-', ' '), 'info');
+}
+
+function openCommandPalette() {
+  const overlay = document.getElementById('commandPaletteOverlay');
+  const input = document.getElementById('cpInput');
+  if (overlay && input) {
+    overlay.style.display = 'flex';
+    input.value = '';
+    cpSelectedIndex = 0;
+    renderCommandPaletteList('');
+    setTimeout(() => input.focus(), 50);
+    a11yAnnounce('Command palette opened. Type to filter commands.');
+  }
+}
+
+function closeCommandPalette() {
+  const overlay = document.getElementById('commandPaletteOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function toggleCommandPalette() {
+  const overlay = document.getElementById('commandPaletteOverlay');
+  if (overlay && overlay.style.display !== 'none') {
+    closeCommandPalette();
+  } else {
+    closeA11yDrawer();
+    openCommandPalette();
+  }
+}
+
+function renderCommandPaletteList(query) {
+  const listEl = document.getElementById('cpList');
+  if (!listEl) return;
+  const q = (query || '').toLowerCase().trim();
+
+  let items = [...CP_COMMANDS];
+  if (state.notes && state.notes.length > 0 && q) {
+    const matchingNotes = state.notes
+      .filter(n => n.status !== 'deleted' && (n.title.toLowerCase().includes(q) || (n.desc && n.desc.toLowerCase().includes(q))))
+      .slice(0, 5)
+      .map(n => ({
+        id: 'note-' + n.id,
+        title: n.title || 'Untitled Note',
+        meta: n.priority ? 'Priority: ' + n.priority : 'Note',
+        icon: 'fa-file-lines',
+        shortcut: '↵',
+        category: 'Notes',
+        action: () => showNoteDetail(n.id)
+      }));
+    items = [...matchingNotes, ...items];
+  }
+
+  if (q) {
+    cpFilteredItems = items.filter(item => 
+      item.title.toLowerCase().includes(q) || 
+      (item.meta && item.meta.toLowerCase().includes(q)) ||
+      item.category.toLowerCase().includes(q)
+    );
+  } else {
+    cpFilteredItems = items;
+  }
+
+  if (cpSelectedIndex >= cpFilteredItems.length) {
+    cpSelectedIndex = Math.max(0, cpFilteredItems.length - 1);
+  }
+
+  if (cpFilteredItems.length === 0) {
+    listEl.innerHTML = '<div style="padding:28px 16px; text-align:center; color:var(--ink-faint); font-size:13px;"><i class="fas fa-search" style="font-size:20px; margin-bottom:8px; opacity:0.5;"></i><br>No matching commands or notes found</div>';
+    return;
+  }
+
+  const groups = {};
+  cpFilteredItems.forEach((item, idx) => {
+    const cat = item.category || 'General';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push({ ...item, globalIdx: idx });
+  });
+
+  let html = '';
+  for (const [cat, catItems] of Object.entries(groups)) {
+    html += '<div class="cp-group-title">' + cat + '</div>';
+    catItems.forEach(item => {
+      const isSel = item.globalIdx === cpSelectedIndex;
+      html += `
+        <div class="cp-item ${isSel ? 'selected' : ''}" data-idx="${item.globalIdx}" onclick="executeCommandByIndex(${item.globalIdx})" role="option" aria-selected="${isSel}">
+          <div class="cp-item-left">
+            <i class="fas ${item.icon} cp-item-icon"></i>
+            <div>
+              <span class="cp-item-title">${escHtml(item.title)}</span>
+              ${item.meta ? '<span class="cp-item-meta">' + escHtml(item.meta) + '</span>' : ''}
+            </div>
+          </div>
+          ${item.shortcut ? '<span class="cp-item-shortcut">' + item.shortcut + '</span>' : ''}
+        </div>
+      `;
+    });
+  }
+  listEl.innerHTML = html;
+
+  const selEl = listEl.querySelector('.cp-item[data-idx="' + cpSelectedIndex + '"]');
+  if (selEl) selEl.scrollIntoView({ block: 'nearest' });
+}
+
+function handleCommandSearch(query) {
+  cpSelectedIndex = 0;
+  renderCommandPaletteList(query);
+}
+
+function handleCommandKeyDown(e) {
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (cpFilteredItems.length > 0) {
+      cpSelectedIndex = (cpSelectedIndex + 1) % cpFilteredItems.length;
+      renderCommandPaletteList(document.getElementById('cpInput').value);
+    }
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (cpFilteredItems.length > 0) {
+      cpSelectedIndex = (cpSelectedIndex - 1 + cpFilteredItems.length) % cpFilteredItems.length;
+      renderCommandPaletteList(document.getElementById('cpInput').value);
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (cpFilteredItems[cpSelectedIndex]) {
+      executeCommandByIndex(cpSelectedIndex);
+    }
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    closeCommandPalette();
+  }
+}
+
+function executeCommandByIndex(idx) {
+  const item = cpFilteredItems[idx];
+  closeCommandPalette();
+  if (item && typeof item.action === 'function') {
+    item.action();
+  }
+}
+
+// ─── Global Keyboard Shortcuts Listener ───
+window.addEventListener('keydown', (e) => {
+  // Command Palette: ⌘K or Ctrl+K
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    toggleCommandPalette();
+    return;
+  }
+
+  // Theme switch shortcut: Option+C / Alt+C
+  if (e.altKey && e.key.toLowerCase() === 'c') {
+    e.preventDefault();
+    cycleTheme();
+    return;
+  }
+
+  // Esc closes active overlays
+  if (e.key === 'Escape') {
+    const cpOverlay = document.getElementById('commandPaletteOverlay');
+    const a11yOverlay = document.getElementById('a11yDrawerOverlay');
+    if (cpOverlay && cpOverlay.style.display !== 'none') {
+      closeCommandPalette();
+      return;
+    }
+    if (a11yOverlay && a11yOverlay.style.display !== 'none') {
+      closeA11yDrawer();
+      return;
+    }
+    closeModal();
+    return;
+  }
+
+  // Ignore single-key shortcuts when typing in inputs/textareas/contenteditables
+  const target = e.target;
+  const isInput = target && (
+    target.tagName === 'INPUT' || 
+    target.tagName === 'TEXTAREA' || 
+    target.tagName === 'SELECT' || 
+    target.isContentEditable ||
+    target.closest('.modal-card')
+  );
+  if (isInput) return;
+
+  // Single-key shortcuts
+  if (e.key === '?') {
+    e.preventDefault();
+    toggleA11yDrawer();
+  } else if (e.key.toLowerCase() === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    openNoteModal();
+  } else if (e.key.toLowerCase() === 'a' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    openTodoModal();
+  } else if (e.key.toLowerCase() === 'h' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    if (state.currentView === 'habits') {
+      openHabitModal();
+    } else {
+      switchView('habits');
+    }
+  }
+});
+
 
 // ─── UUID ───
 function uuid() {
@@ -9866,6 +11018,7 @@ if ('serviceWorker' in navigator) {
 // Start Habit Reminder Scheduler
 initHabitNotificationScheduler();
 loadLocalHabitsCache();
+loadA11yPrefs();
 
 </script>
 </body>
