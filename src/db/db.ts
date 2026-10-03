@@ -26,6 +26,9 @@ export class NoteVaultDatabase extends Dexie {
   habits!: Table<HabitItem, string>;
   expenses!: Table<ExpenseItem, string>;
   news!: Table<NewsItem, string>;
+  panels!: Table<import('../types').Panel, string>;
+  panel_fields!: Table<import('../types').PanelField, string>;
+  panel_entries!: Table<import('../types').PanelEntry, string>;
 
   constructor() {
     super('NoteVaultDB');
@@ -40,7 +43,7 @@ export class NoteVaultDatabase extends Dexie {
       settings: 'key',
     });
 
-    this.version(2).stores({
+    this.version(3).stores({
       notebooks: 'id, driveFolderId, name, order, trashed',
       sections: 'id, driveFolderId, notebookId, name, order, trashed',
       pages: 'id, driveFileId, notebookId, sectionId, title, *tags, favorite, updated, localDirty, trashed, order',
@@ -52,6 +55,9 @@ export class NoteVaultDatabase extends Dexie {
       habits: 'id, title, category, frequency, streak, bestStreak, createdAt',
       expenses: 'id, amount, description, category, type, date, createdAt',
       news: 'id, title, category, source, publishedAt, isRead',
+      panels: 'id, user_id, name, sort_order, created_at',
+      panel_fields: 'id, panel_id, field_key, field_type, field_order',
+      panel_entries: 'id, panel_id, user_id, created_at, updated_at',
     });
   }
 }

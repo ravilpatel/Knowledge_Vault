@@ -1,6 +1,38 @@
 export type ViewMode = 'edit' | 'split' | 'preview';
 
-export type WorkspaceView = 'notebooks' | 'tasks' | 'habits' | 'finance' | 'intel';
+export type WorkspaceView = 'notebooks' | 'workspace' | 'tasks' | 'habits' | 'finance' | 'intel';
+
+export type FieldType = 'text' | 'textarea' | 'tags' | 'people_link' | 'url' | 'date' | 'select';
+
+export interface PanelField {
+  id: string;
+  panel_id: string;
+  field_key: string;
+  field_label: string;
+  field_type: FieldType;
+  field_order: number;
+  is_required: boolean;
+  options?: string[] | null;
+}
+
+export interface Panel {
+  id: string;
+  user_id?: string;
+  name: string;
+  icon?: string;
+  color?: string;
+  sort_order: number;
+  created_at?: string;
+}
+
+export interface PanelEntry {
+  id: string;
+  panel_id: string;
+  user_id?: string;
+  data: Record<string, any>;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export type SectionColor = 'peach' | 'sage' | 'lavender' | 'sky' | 'butter' | 'rose';
 

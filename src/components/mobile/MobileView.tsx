@@ -9,6 +9,7 @@ import { StatusPill } from '../StatusPill';
 import { TasksView } from '../../features/vault/TasksView';
 import { HabitsView } from '../../features/vault/HabitsView';
 import { FinanceView } from '../../features/vault/FinanceView';
+import { WorkspacePanelsView } from '../../features/vault/WorkspacePanelsView';
 import {
   Book,
   Folder,
@@ -22,6 +23,7 @@ import {
   CheckSquare,
   Flame,
   Wallet,
+  Layers,
 } from 'lucide-react';
 
 interface MobileViewProps {
@@ -115,6 +117,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
       <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden">
         {/* Module Content */}
         <div className="flex-1 overflow-hidden">
+          {currentView === 'workspace' && <WorkspacePanelsView />}
           {currentView === 'tasks' && <TasksView />}
           {currentView === 'habits' && <HabitsView />}
           {currentView === 'finance' && <FinanceView />}
@@ -128,6 +131,16 @@ export const MobileView: React.FC<MobileViewProps> = ({
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('workspace')}
+            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
+              currentView === 'workspace' ? 'text-brand-primary font-bold' : ''
+            }`}
+          >
+            <Layers className="w-5 h-5" />
+            <span>Workspace</span>
           </button>
 
           <button
@@ -430,6 +443,14 @@ export const MobileView: React.FC<MobileViewProps> = ({
           >
             <Book className="w-5 h-5" />
             <span>Notes</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('workspace')}
+            className="flex flex-col items-center gap-1 text-[10px] font-medium"
+          >
+            <Layers className="w-5 h-5" />
+            <span>Workspace</span>
           </button>
 
           <button

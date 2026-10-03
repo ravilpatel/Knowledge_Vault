@@ -9,7 +9,7 @@ import { WorkspaceLayout } from './WorkspaceLayout';
 import { useVaultStore } from '../features/vault/vaultStore';
 
 export const App: React.FC = () => {
-  const { user, isGuest } = useAuthStore();
+  const { user, isGuest, supabaseUser, initSupabaseAuth } = useAuthStore() as any;
   const { loadInitialData } = useNoteStore();
   const { loadVaultData } = useVaultStore();
 
@@ -37,8 +37,11 @@ export const App: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Bootstrap data and Google Auth
+  // Bootstrap data, Supabase Auth and Google Auth
   useEffect(() => {
+    if (initSupabaseAuth) {
+      initSupabaseAuth();
+    }
     loadInitialData();
     loadVaultData();
     initGoogleAuth();
@@ -46,12 +49,12 @@ export const App: React.FC = () => {
     if (user && !isGuest && navigator.onLine) {
       syncEngine.flushOutbox();
     }
-  }, [user?.accessToken]);
+  }, [user?.accessToken, supabaseUser?.id]);
 
   return (
     <div className="h-full w-full">
-      {/* If not authenticated and not in guest mode, display sign-in / onboarding */}
-      {!user && !isGuest ? (
+      {/* If not authenticated via Supabase and not in guest mode, display Supabase login */}
+      {!supabaseUser && !user && !isGuest ? (
         <SignInModal />
       ) : (
         <WorkspaceLayout isDark={isDark} onToggleTheme={toggleTheme} />

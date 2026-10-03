@@ -38,3 +38,17 @@ This document records architectural, design, and technical decisions made during
 - **M7 Polish & Accessibility:**
   - Dark mode support toggle with system preference sync.
   - Full keyboard shortcuts (`Ctrl/Cmd+K` for search, `Ctrl/Cmd+B` for sidebar toggle, etc.).
+
+---
+
+## 3. Hybrid Integration: Supabase Auth & Relational Workspace Panels + Google Drive Notes
+- **Context & Requirement:**
+  - User requested that the overall login feature be handled by Supabase.
+  - All notes must remain strictly stored and configured through Google Drive in the NoteVault OneNote hierarchy (`My Drive/NoteVault/` Markdown files).
+  - All custom workspace panels and previous Knowledge Vault features (Tasks, Habits, Finance, Intel) must connect to Supabase.
+- **Decision:**
+  - **Authentication:** Supabase Auth is adopted as the primary application gate, supporting Email/Password sign-in, account creation, password recovery, and Guest/Offline fallback.
+  - **Drive Token Connection:** Google Identity Services token is used to authorize Google Drive sync independently, preserving the locked decision of zero proprietary format or lock-in for notes.
+  - **Workspace Panels in Supabase:** Dynamic panels (`panels`), custom schema fields (`panel_fields`), and entries (`panel_entries`) are persisted directly to Supabase with PostgreSQL Row Level Security (RLS) while caching in Dexie IndexedDB (v3 schema) for instant offline responsiveness.
+  - **Strict Boundary:** Notes are NEVER written to Supabase; Workspace panel records are stored in Supabase with local Dexie caching.
+

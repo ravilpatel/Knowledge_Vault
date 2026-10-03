@@ -4,6 +4,7 @@ import { useNoteStore } from '../features/notes/noteStore';
 import { useSyncStore } from '../features/sync/syncStore';
 import { useVaultStore } from '../features/vault/vaultStore';
 import { syncEngine } from '../features/sync/syncEngine';
+import { signInWithGoogle } from '../features/auth/googleAuth';
 import { TrashView } from './TrashView';
 import {
   Settings,
@@ -31,9 +32,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isDark,
   onToggleTheme,
 }) => {
-  const { user, scopeMode, setScopeMode, signOut } = useAuthStore();
+  const { user, googleUser, scopeMode, setScopeMode, signOut } = useAuthStore() as any;
   const { notebooks, sections, pages, loadInitialData } = useNoteStore();
-  const { todos, habits, expenses, news } = useVaultStore();
+  const { todos, habits, expenses, news, panels, panelFields, panelEntries } = useVaultStore();
   const { status, pendingCount } = useSyncStore();
 
   const [activeTab, setActiveTab] = useState<'settings' | 'trash'>('settings');
@@ -67,11 +68,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleExportVault = () => {
     const exportData = {
-      vaultVersion: 2,
+      vaultVersion: 3,
       exportedAt: new Date().toISOString(),
       notebooks: notebooks.filter((n) => !n.trashed),
       sections: sections.filter((s) => !s.trashed),
       pages: pages.filter((p) => !p.trashed),
+      panels,
+      panelFields,
+      panelEntries,
       todos,
       habits,
       expenses,
@@ -84,7 +88,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `NoteVault-KnowledgeVault-Backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `KnowledgeVault-Complete-Backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -157,11 +161,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-sm">
-                      {user?.name ? user.name.charAt(0).toUpperCase() : 'G'}
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold">{user?.name || 'Local Guest'}</h4>
-                      <p className="text-[11px] text-ink-muted">{user?.email || 'Offline local mode'}</p>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-bold">{user?.name || 'Supabase User'}</h4>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 font-semibold border border-emerald-500/20">
+                          Supabase Auth
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-ink-muted">{user?.email || 'Logged in via Supabase'}</p>
                     </div>
                   </div>
 
@@ -177,8 +186,33 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
 
+                {/* Google Drive Status for NoteVault Notes */}
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle/60 dark:border-border-darkSubtle/60">
+                  <div>
+                    <span className="text-ink-muted">Notes Storage: </span>
+                    <span className="font-semibold text-ink-primary dark:text-ink-darkPrimary">
+                      {googleUser?.accessToken ? 'Google Drive (Connected)' : 'Google Drive (Not Connected)'}
+                    </span>
+                  </div>
+
+                  {!googleUser?.accessToken && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          await signInWithGoogle();
+                        } catch (err: any) {
+                          alert(`Google Drive sign-in: ${err.message || err}`);
+                        }
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-hover transition shadow-2xs"
+                    >
+                      Connect Google Drive
+                    </button>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-border-subtle/60 dark:border-border-darkSubtle/60">
-                  <span className="text-ink-muted">Sync Status:</span>
+                  <span className="text-ink-muted">Drive Outbox Sync:</span>
                   <span className="font-semibold capitalize text-brand-primary dark:text-brand-darkPrimary">
                     {status} ({pendingCount} pending)
                   </span>
@@ -315,6 +349,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <span className="text-[10px] text-ink-muted">Outbox Queue</span>
                   </div>
                   <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-indigo-600 dark:text-indigo-400">
+                      {panels.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Workspace Panels</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-sky-600 dark:text-sky-400">
+                      {panelEntries.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Panel Records</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
                     <span className="block text-base font-bold text-emerald-600 dark:text-emerald-400">
                       {todos.length}
                     </span>
@@ -325,18 +371,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       {habits.length}
                     </span>
                     <span className="text-[10px] text-ink-muted">Habits</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
-                    <span className="block text-base font-bold text-indigo-600 dark:text-indigo-400">
-                      {expenses.length}
-                    </span>
-                    <span className="text-[10px] text-ink-muted">Expenses</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
-                    <span className="block text-base font-bold text-sky-600 dark:text-sky-400">
-                      {news.length}
-                    </span>
-                    <span className="text-[10px] text-ink-muted">Intel Feeds</span>
                   </div>
                 </div>
               </div>

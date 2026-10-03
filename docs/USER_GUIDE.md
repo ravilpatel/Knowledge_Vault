@@ -1,10 +1,26 @@
-# NoteVault — User & Recovery Guide
+# NoteVault + Knowledge Vault — User & Recovery Guide
 
-NoteVault is a personal, Markdown-first notebook Progressive Web App (PWA) inspired by Microsoft OneNote's hierarchy (**Notebooks &rarr; Sections &rarr; Pages**) that stores everything directly in your personal Google Drive account in plain Markdown files and standard media attachments.
+NoteVault + Knowledge Vault is a personal knowledge and productivity Progressive Web App (PWA) that blends two specialized cloud tiers:
+1. **Google Drive** for Markdown notes, OneNote hierarchy (**Notebooks &rarr; Sections &rarr; Pages**), and media attachments.
+2. **Supabase** for user authentication and relational Workspace Panels & productivity modules (Tasks, Habits, Finance, Intel).
 
 ---
 
-## 1. Core Mental Model
+## 0. Authentication & Account Management
+
+### 0.1 Primary Login via Supabase Auth
+- **Email & Password**: Create an account or sign in securely with your email and password. Your session is securely preserved across browser visits.
+- **Forgot Password**: Use the built-in password reset link in the login dialog to receive a reset email.
+- **Guest / Offline Mode**: Click **"Continue as Guest (Offline)"** to use the application immediately without signing in. All notes and workspace records remain fully functional and saved to your local browser storage (IndexedDB).
+
+### 0.2 Connecting Google Drive
+- Notes synchronization requires a Google account with Drive permissions.
+- In **Settings &rarr; Preferences** or via the note sync banner, click **"Connect Google Drive"** to authorize access.
+- Once connected, your Google token coordinates background synchronization directly with your personal Google Drive (`My Drive/NoteVault/`).
+
+---
+
+## 1. Core Mental Model: Google Drive Notes
 
 ```
 My Drive/
@@ -106,30 +122,41 @@ NoteVault adheres to a strict data safety rule:
 
 In addition to the Google Drive Markdown notebook hierarchy, NoteVault integrates the core personal management modules from Knowledge Vault:
 
-### 🎯 7.1 Eisenhower Decision Matrix & Tasks
+### 🗂️ 7.1 Workspace Panels (Custom Relational Database via Supabase)
+- **Custom Panel Creation**: Create custom boards for Active Projects, Key Contacts, Research & Reading, Meeting Notes, or Inventory.
+- **Custom Schema Builder**: Define custom fields per panel:
+  - `Text`: Short single-line input.
+  - `Textarea`: Multi-line text for detailed notes or rich content.
+  - `Date`: Calendar dates for milestones and deadlines.
+  - `URL`: Clickable links for resources and external references.
+  - `Select`: Predefined single-select options.
+  - `Tags`: Categorization badges.
+- **Real-Time Sync**: Backed by Supabase tables (`panels`, `panel_fields`, `panel_entries`) with instant local Dexie v3 caching so the UI remains instantaneous even without an internet connection.
+
+### 🎯 7.2 Eisenhower Decision Matrix & Tasks
 - **Q1 (Urgent & Important - Do First)**: High impact deadlines and critical bugs.
 - **Q2 (Not Urgent & Important - Schedule & Focus)**: Strategic architecture, deep work, health, learning.
 - **Q3 (Urgent & Not Important - Delegate)**: Routine reviews, minor requests.
 - **Q4 (Not Urgent & Not Important - Eliminate / Backlog)**: Distractions and long-term bucket list items.
 - **Features**: Toggle completion, category filtering, overdue badges, quick quadrant reassignment dropdown, and dual layout (4-Quadrant Matrix or Linear List).
 
-### 🔥 7.2 Habits & Daily Streaks
+### 🔥 7.3 Habits & Daily Streaks
 - **7-Day Dynamic Window**: Visual checkoff circles for the past week up to today.
 - **Dynamic Streaks**: Automatically computes consecutive streak days and tracks personal all-time best streaks.
 - **Category & Color Coding**: Distinguish between Fitness, Productivity, Mindset, and Learning.
 - **Daily Progress**: Real-time progress bar showing today's completion percentage.
 
-### 💳 7.3 Finance & Expense Ledger
+### 💳 7.4 Finance & Expense Ledger
 - **Cashflow Metrics**: Instant calculation of Total Income, Total Expenses, and Net Balance formatted in ₹ INR.
 - **Reimbursable Claims**: Track business/consulting expenses marked for reimbursement with pending totals.
 - **Ledger & Filters**: Filter transactions by type (All / Income / Expense) and by Category.
 
-### 🌐 7.4 Intel & Policy Aggregator
+### 🌐 7.5 Intel & Policy Aggregator
 - **Curated Feeds**: Centralizes news from PIB India (Government notifications), Startup India, Policy Gazette, and AI/Tech publications.
 - **Search & Filter**: Keyword search across titles and summaries, plus category filtering.
 - **Read / Bookmark Status**: One-click toggling of read status to curate your personal intelligence digest.
 
-### 💾 7.5 Backup & Portability
-- All Knowledge Vault modules store data locally in **IndexedDB (Dexie v4)** for instant zero-latency offline access.
-- Use **Settings &rarr; Export JSON Backup** to download your complete Second Brain (Notebooks, Sections, Pages, Tasks, Habits, Expenses, and Intel bookmarks) in a single portable JSON file.
+### 💾 7.6 Backup & Portability
+- All Knowledge Vault modules store data locally in **IndexedDB (Dexie v3)** for instant zero-latency offline access.
+- Use **Settings &rarr; Export JSON Backup** to download your complete Second Brain (Workspace Panels, Custom Fields, Panel Entries, Notebooks, Sections, Pages, Tasks, Habits, Expenses, and Intel bookmarks) in a single portable JSON file (Schema Version 3).
 

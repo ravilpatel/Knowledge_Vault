@@ -3,37 +3,31 @@ import { User, Session } from '@supabase/supabase-js';
 import { getSupabase } from '../../lib/supabaseClient';
 import { UserProfile } from '../../types';
 
-interface AuthState {
-  // Supabase Auth (Primary)
+interface SupabaseAuthState {
   supabaseUser: User | null;
   session: Session | null;
+  isGuest: boolean;
   isLoading: boolean;
   authError: string | null;
-
-  // Google Drive Connection (for NoteVault notes)
-  user: UserProfile | null;
   googleUser: UserProfile | null;
-  isGuest: boolean;
-  isInitializing: boolean;
-  error: string | null;
   scopeMode: 'drive.file' | 'drive';
 
   // Actions
-  initSupabaseAuth: () => Promise<void>;
+  initAuth: () => Promise<void>;
   signInWithEmail: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
   signUpWithEmail: (email: string, pass: string, name?: string) => Promise<{ success: boolean; error?: string }>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  setGuest: (isGuest: boolean) => void;
-  setUser: (user: UserProfile | null) => void;
-  setError: (error: string | null) => void;
+  continueAsGuest: () => void;
+  setGoogleUser: (user: UserProfile | null) => void;
   setScopeMode: (mode: 'drive.file' | 'drive') => void;
+  clearError: () => void;
 }
 
-const GOOGLE_SESSION_KEY = 'notevault_auth_profile';
-const GUEST_STORAGE_KEY = 'notevault_guest_mode';
+const GOOGLE_SESSION_KEY = 'notevault_google_profile';
+const GUEST_KEY = 'notevault_guest_flag';
 
-function loadStoredGoogleUser(): UserProfile | null {
+function loadSavedGoogleUser(): UserProfile | null {
   try {
     if (typeof sessionStorage === 'undefined') return null;
     const raw = sessionStorage.getItem(GOOGLE_SESSION_KEY);
@@ -49,32 +43,19 @@ function loadStoredGoogleUser(): UserProfile | null {
   }
 }
 
-function loadStoredGuest(): boolean {
-  try {
-    if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem(GUEST_STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useSupabaseAuthStore = create<SupabaseAuthState>((set) => ({
   supabaseUser: null,
   session: null,
+  isGuest: typeof localStorage !== 'undefined' ? localStorage.getItem(GUEST_KEY) === 'true' : false,
   isLoading: true,
   authError: null,
-
-  googleUser: loadStoredGoogleUser(),
-  user: loadStoredGoogleUser(),
-  isGuest: loadStoredGuest(),
-  isInitializing: false,
-  error: null,
+  googleUser: loadSavedGoogleUser(),
   scopeMode:
     (typeof localStorage !== 'undefined'
       ? (localStorage.getItem('notevault_scope_mode') as 'drive.file' | 'drive')
       : null) || 'drive.file',
 
-  initSupabaseAuth: async () => {
+  initAuth: async () => {
     set({ isLoading: true });
     try {
       const sb = getSupabase();
@@ -83,17 +64,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.warn('Supabase getSession warning:', error.message);
       }
       if (data?.session) {
-        const u = data.session.user;
         set({
           session: data.session,
-          supabaseUser: u,
-          user: get().user || {
-            email: u.email || 'user@supabase.io',
-            name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
-            accessToken: '',
-            expiresAt: Date.now() + 3600000,
-            scope: 'supabase',
-          },
+          supabaseUser: data.session.user,
           isGuest: false,
           isLoading: false,
         });
@@ -101,20 +74,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ session: null, supabaseUser: null, isLoading: false });
       }
 
+      // Subscribe to changes
       sb.auth.onAuthStateChange((event, session) => {
         if (session) {
-          const u = session.user;
-          if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
+          if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_KEY);
           set({
             session,
-            supabaseUser: u,
-            user: get().user || {
-              email: u.email || 'user@supabase.io',
-              name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
-              accessToken: '',
-              expiresAt: Date.now() + 3600000,
-              scope: 'supabase',
-            },
+            supabaseUser: session.user,
             isGuest: false,
             isLoading: false,
             authError: null,
@@ -138,18 +104,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: false, authError: error.message });
         return { success: false, error: error.message };
       }
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-      const u = data.user;
+      if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_KEY);
       set({
         session: data.session,
-        supabaseUser: u,
-        user: get().user || {
-          email: u.email || email,
-          name: u.user_metadata?.name || email.split('@')[0],
-          accessToken: '',
-          expiresAt: Date.now() + 3600000,
-          scope: 'supabase',
-        },
+        supabaseUser: data.user,
         isGuest: false,
         isLoading: false,
         authError: null,
@@ -178,17 +136,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return { success: false, error: error.message };
       }
       if (data.session) {
-        const u = data.user!;
         set({
           session: data.session,
-          supabaseUser: u,
-          user: get().user || {
-            email: u.email || email,
-            name: name || email.split('@')[0],
-            accessToken: '',
-            expiresAt: Date.now() + 3600000,
-            scope: 'supabase',
-          },
+          supabaseUser: data.user,
           isGuest: false,
           isLoading: false,
           authError: null,
@@ -220,62 +170,41 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const sb = getSupabase();
       await sb.auth.signOut();
     } catch (err) {
-      console.warn('Supabase sign out:', err);
+      console.warn('Sign out error:', err);
     }
-    try {
-      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-    } catch {}
-    set({ session: null, supabaseUser: null, user: null, isGuest: false, authError: null, error: null });
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_KEY);
+    set({ session: null, supabaseUser: null, isGuest: false });
   },
 
-  setUser: (user) => {
+  continueAsGuest: () => {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(GUEST_KEY, 'true');
+    set({ isGuest: true, authError: null });
+  },
+
+  setGoogleUser: (user) => {
     try {
       if (user) {
-        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(GOOGLE_SESSION_KEY, JSON.stringify(user));
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-        set({ user, googleUser: user, isGuest: false, error: null });
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem(GOOGLE_SESSION_KEY, JSON.stringify(user));
+        }
       } else {
-        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
-        set({ user: null, googleUser: null });
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem(GOOGLE_SESSION_KEY);
+        }
       }
-    } catch {
-      set({ user, googleUser: user });
-    }
+    } catch {}
+    set({ googleUser: user });
   },
-
-  setGuest: (isGuest) => {
-    try {
-      if (isGuest) {
-        if (typeof localStorage !== 'undefined') localStorage.setItem(GUEST_STORAGE_KEY, 'true');
-        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
-        set({
-          isGuest: true,
-          user: {
-            email: 'offline.user@local.vault',
-            name: 'Local Guest',
-            accessToken: 'offline_token',
-            expiresAt: Date.now() + 86400000 * 365,
-            scope: 'local',
-          },
-          error: null,
-          authError: null,
-        });
-      } else {
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-        set({ isGuest: false, user: null });
-      }
-    } catch {
-      set({ isGuest });
-    }
-  },
-
-  setError: (error) => set({ error, authError: error }),
 
   setScopeMode: (scopeMode) => {
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.setItem('notevault_scope_mode', scopeMode);
-    } catch {}
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('notevault_scope_mode', scopeMode);
+    }
     set({ scopeMode });
   },
+
+  clearError: () => set({ authError: null }),
 }));
+
+// Compatibility proxy bridge so legacy note stores and googleAuth hooks continue working effortlessly
+export const useAuthStore = useSupabaseAuthStore;

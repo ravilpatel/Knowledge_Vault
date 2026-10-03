@@ -15,6 +15,7 @@ import { TasksView } from '../features/vault/TasksView';
 import { HabitsView } from '../features/vault/HabitsView';
 import { FinanceView } from '../features/vault/FinanceView';
 import { IntelView } from '../features/vault/IntelView';
+import { WorkspacePanelsView } from '../features/vault/WorkspacePanelsView';
 import {
   BookOpen,
   Search,
@@ -28,6 +29,7 @@ import {
   Flame,
   Wallet,
   Globe,
+  Layers,
 } from 'lucide-react';
 
 interface WorkspaceLayoutProps {
@@ -137,6 +139,18 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Notes</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('workspace')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'workspace'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="hidden md:inline">Workspace</span>
           </button>
 
           <button
@@ -251,6 +265,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         </div>
       )}
 
+      {currentView === 'workspace' && <WorkspacePanelsView />}
       {currentView === 'tasks' && <TasksView />}
       {currentView === 'habits' && <HabitsView />}
       {currentView === 'finance' && <FinanceView />}

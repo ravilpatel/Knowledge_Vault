@@ -1,50 +1,56 @@
-# NoteVault — Technical Architecture & Design Document
+# NoteVault + Knowledge Vault — Technical Architecture & Design Document
 
 ## 1. Architectural Overview
 
-NoteVault is a **client-only Progressive Web App (PWA)** that operates with **zero proprietary backends**. Google Drive REST API v3 is the exclusive remote persistence layer, and Dexie (IndexedDB) acts as the local offline data store.
+NoteVault + Knowledge Vault employs a **hybrid client-first architecture**:
+1. **Google Drive REST API v3**: Authoritative remote persistence for Markdown notes (`My Drive/NoteVault/`), `.notevault.json` manifests, and binary media attachments.
+2. **Supabase (PostgreSQL + Auth)**: Cloud backend for user authentication (JWT session management) and relational Workspace Panels (`panels`, `panel_fields`, `panel_entries`) as well as productivity modules (`todos`, `habits`, `expenses`, `news_items`).
+3. **Dexie.js (IndexedDB v3)**: Local client-side database caching all 11 tables for zero-latency instant offline capability.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │                        User Interface (React 18)                       │
-│  ┌──────────────────┬─────────────────┬──────────────────────────────┐ │
-│  │  NotebookRail    │    PageList     │          EditorPane          │ │
-│  │ (Notebook Tree,  │ (Filter, Sort,  │ (CodeMirror 6, Live Preview, │ │
-│  │  Tags, Favorites)│  Star Toggle)   │  FormattingToolbar, Attach)  │ │
-│  └──────────────────┴─────────────────┴──────────────────────────────┘ │
+│  ┌───────────────┬───────────────────────────────┬───────────────────┐ │
+│  │ Top Nav Bar   │ Notes / Workspace / Tasks /   │ Supabase User &   │ │
+│  │ Module Switch │ Habits / Finance / Intel      │ Drive Sync Status │ │
+│  └───────────────┴───────────────────────────────┴───────────────────┘ │
 └────────────────────────────────────┬───────────────────────────────────┘
                                      │
                  ┌───────────────────┴───────────────────┐
                  │                                       │
                  ▼                                       ▼
      ┌───────────────────────┐               ┌───────────────────────┐
-     │  Zustand Note Store   │               │   MiniSearch Engine   │
-     │   (UI & Active State) │               │ (Full-text & Ops)     │
+     │  Zustand State Stores │               │   MiniSearch Engine   │
+     │  (Notes, Vault/Panels,│               │ (Full-text & Ops for  │
+     │   Auth, Habits, etc.) │               │  Drive Notes)         │
      └───────────┬───────────┘               └───────────┬───────────┘
                  │                                       │
                  ▼                                       ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        Dexie.js (IndexedDB v4)                         │
+│                        Dexie.js (IndexedDB v3)                         │
 │  ┌───────────────┬──────────────┬──────────────┬────────────────────┐  │
 │  │   notebooks   │   sections   │    pages     │    attachments     │  │
 │  ├───────────────┼──────────────┼──────────────┼────────────────────┤  │
-│  │    outbox     │  syncState   │  searchIndex │                    │  │
+│  │    outbox     │  syncState   │  searchIndex │      settings      │  │
+│  ├───────────────┼──────────────┼──────────────┼────────────────────┤  │
+│  │    panels     │ panel_fields │panel_entries │ todos/habits/etc.  │  │
 │  └───────────────┴──────────────┴──────────────┴────────────────────┘  │
-└────────────────────────────────────┬───────────────────────────────────┘
-                                     │
-                      ┌──────────────┴──────────────┐
-                      │    Sync Engine & Outbox     │
-                      │  (Debounce 1.5s, Backoff)   │
-                      └──────────────┬──────────────┘
-                                     │ HTTPS
-                                     ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                    Google Drive REST API v3                            │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │ My Drive / NoteVault / Notebook / Section / Page.md              │  │
-│  │ Scope: drive.file (app-created) or drive (full access)           │  │
-│  └──────────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────────┘
+└───────────────────┬────────────────────────────────┬───────────────────┘
+                    │                                │
+     ┌──────────────┴──────────────┐  ┌──────────────┴──────────────┐
+     │  Drive Sync Engine & Outbox │  │  Supabase Client & Auth     │
+     │  (Debounce 1.5s, Backoff)   │  │  (PostgREST, RLS, Session)  │
+     └──────────────┬──────────────┘  └──────────────┬──────────────┘
+                    │ HTTPS                          │ HTTPS / WSS
+                    ▼                                ▼
+┌──────────────────────────────────────┐  ┌──────────────────────────────┐
+│       Google Drive REST API v3       │  │     Supabase Cloud Backend   │
+│ ┌──────────────────────────────────┐ │  │ ┌──────────────────────────┐ │
+│ │ My Drive / NoteVault / Notebooks │ │  │ │ Auth (Users, Sessions)   │ │
+│ │ Sections, Pages.md, Attachments  │ │  │ │ panels, panel_fields     │ │
+│ │ Scope: drive.file or drive       │ │  │ │ panel_entries, todos...  │ │
+│ └──────────────────────────────────┘ │  │ └──────────────────────────┘ │
+└──────────────────────────────────────┘  └──────────────────────────────┘
 ```
 
 ---
@@ -53,10 +59,12 @@ NoteVault is a **client-only Progressive Web App (PWA)** that operates with **ze
 
 | Module | Location | Description |
 |---|---|---|
-| **Data Layer (Dexie)** | `src/db/db.ts` | Multi-table IndexedDB storage with indexed keys for fast local reads, offline caching, and outbox persistence. |
-| **Data Contracts** | `src/types/index.ts` | Strictly-typed TypeScript interfaces for Notebooks, Sections, Pages, Attachments, Outbox items, and Sync conflicts. |
+| **Data Layer (Dexie)** | `src/db/db.ts` | Multi-table IndexedDB storage (11 tables, v3) with indexed keys for fast local reads, offline caching, and outbox persistence. |
+| **Data Contracts** | `src/types/index.ts` | Strictly-typed TypeScript interfaces for Panels, PanelFields, PanelEntries, Notebooks, Sections, Pages, Attachments, Outbox items, and Sync conflicts. |
 | **Markdown Front-Matter** | `src/lib/frontmatter.ts` | Parser and serializer ensuring round-trip integrity and 100% preservation of unknown custom YAML front-matter attributes. |
-| **Authentication** | `src/features/auth/` | Google Identity Services token client with guest offline mode fallback. |
+| **Authentication** | `src/features/auth/` | Supabase Auth (email/password, token refresh, guest mode) + Google OAuth token client for Drive permissions. |
+| **Supabase Client** | `src/lib/supabaseClient.ts` | Configured `@supabase/supabase-js` client connecting to PostgreSQL with localStorage fallback. |
+| **Workspace Store** | `src/features/vault/vaultStore.ts` | State store for dynamic panels, custom fields, and entries with bi-directional Supabase sync. |
 | **Drive Client** | `src/features/drive/driveClient.ts` | Direct browser-to-Drive REST API v3 client handling multipart uploads, version checks, binary file attachments, and trashed flags. |
 | **Sync Engine** | `src/features/sync/syncEngine.ts` | Bi-directional synchronization worker: queues local mutations to the outbox, flushes on online / visibility / interval, detects version conflicts, and performs full rebuilds from Drive. |
 | **Editor** | `src/features/editor/MarkdownEditor.tsx` | CodeMirror 6 markdown editor with syntax styling, line wrapping, dark theme, and drag-and-drop attachment upload. |
