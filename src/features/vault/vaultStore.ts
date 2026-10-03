@@ -17,11 +17,9 @@ import {
   CategoryItem,
   TagItem,
   HabitLog,
-  LegacyNote,
   UserSettings,
 } from '../../types';
 import { generateUUID } from '../../lib/id';
-import { useNoteStore } from '../notes/noteStore';
 
 interface VaultState {
   currentView: WorkspaceView;
@@ -40,7 +38,6 @@ interface VaultState {
   projects: ProjectEntity[];
   categories: CategoryItem[];
   tags: TagItem[];
-  legacyNotes: LegacyNote[];
   userSettings: UserSettings | null;
   isLoading: boolean;
   supabaseSyncStatus: 'synced' | 'syncing' | 'offline' | 'error';
@@ -107,9 +104,6 @@ interface VaultState {
   createProject: (proj: Omit<ProjectEntity, 'id' | 'created_at'>) => Promise<ProjectEntity>;
   updateProject: (id: string, updates: Partial<ProjectEntity>) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
-
-  // Legacy Notes Import
-  importLegacyNotesToNoteVault: () => Promise<{ count: number }>;
 }
 
 const safeSupabaseCall = async (queryPromise: PromiseLike<any>) => {
@@ -137,7 +131,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   projects: [],
   categories: [],
   tags: [],
-  legacyNotes: [],
   userSettings: null,
   isLoading: true,
   supabaseSyncStatus: 'synced',
@@ -170,7 +163,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         localProjects,
         localCategories,
         localTags,
-        localLegacyNotes,
         localUserSettings,
       ] = await Promise.all([
         db.panels.toArray(),
@@ -187,7 +179,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         db.projects.toArray(),
         db.categories.toArray(),
         db.tags.toArray(),
-        db.legacy_notes.toArray(),
         db.user_settings.toArray(),
       ]);
 
@@ -206,7 +197,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         projects: localProjects,
         categories: localCategories,
         tags: localTags,
-        legacyNotes: localLegacyNotes,
         userSettings: localUserSettings[0] || null,
       });
 
@@ -229,7 +219,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             projRes,
             catRes,
             tagRes,
-            notesRes,
             settsRes,
           ] = await Promise.allSettled([
             sb.from('panels').select('*').order('sort_order', { ascending: true }),
@@ -246,7 +235,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             sb.from('projects').select('*').order('created_at', { ascending: false }),
             sb.from('categories').select('*'),
             sb.from('tags').select('*'),
-            sb.from('notes').select('*').order('created_at', { ascending: false }),
             sb.from('user_settings').select('*').maybeSingle(),
           ]);
 
@@ -464,15 +452,6 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             if (remoteTags.length > 0) {
               await db.tags.bulkPut(remoteTags);
               set({ tags: remoteTags });
-            }
-          }
-
-          if (notesRes.status === 'fulfilled' && notesRes.value.data) {
-            const remoteNotes: LegacyNote[] = notesRes.value.data;
-            await db.legacy_notes.clear();
-            if (remoteNotes.length > 0) {
-              await db.legacy_notes.bulkPut(remoteNotes);
-              set({ legacyNotes: remoteNotes });
             }
           }
 
@@ -1295,36 +1274,5 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     const sb = getSupabase();
     safeSupabaseCall(sb.from('projects').delete().eq('id', id));
   },
-
-  // ─── Import Legacy Supabase Notes to NoteVault ────────────
-  importLegacyNotesToNoteVault: async () => {
-    const { legacyNotes } = get();
-    if (legacyNotes.length === 0) return { count: 0 };
-
-    const noteStore = useNoteStore.getState();
-    let targetNotebook = noteStore.notebooks.find((n) => n.name === 'Supabase Archive');
-    if (!targetNotebook) {
-      targetNotebook = await noteStore.createNotebook('Supabase Archive', '#4F46E5', 'archive');
-    }
-
-    let targetSection = noteStore.sections.find((s) => s.notebookId === targetNotebook!.id);
-    if (!targetSection) {
-      targetSection = await noteStore.createSection(targetNotebook!.id, 'Imported Notes', 'lavender');
-    }
-
-    for (const note of legacyNotes) {
-      const content = note.description || '';
-      const page = await noteStore.createPage(
-        targetNotebook!.id,
-        targetSection.id,
-        note.title || 'Untitled Note',
-        content
-      );
-      if (note.tags && note.tags.length > 0) {
-        await noteStore.setPageTags(page.id, note.tags);
-      }
-    }
-
-    return { count: legacyNotes.length };
-  },
 }));
+

@@ -112,23 +112,6 @@ export interface HabitLog {
   updated_at?: string;
 }
 
-export interface LegacyNote {
-  id: string;
-  user_id?: string;
-  title: string;
-  description?: string;
-  tags?: string[];
-  categories?: string[];
-  related_people?: string[];
-  related_companies?: string[];
-  related_technologies?: string[];
-  related_projects?: string[];
-  source?: string;
-  status?: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
 export interface UserSettings {
   id?: string;
   user_id?: string;

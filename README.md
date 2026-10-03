@@ -20,7 +20,6 @@ NoteVault & Knowledge Vault uses a purpose-built **hybrid cloud architecture** w
 | **Habits & Daily Streaks** | **Supabase** (`habits`, `habit_logs`) / Local DB | Dexie (`habits`, `habit_logs`) | Relational rows + dynamic streak calculation from logs |
 | **Finance Ledger** | **Supabase** (`expenses`) / Local DB | Dexie (`expenses`) | Relational rows + ₹ INR formatting |
 | **Intel & Policy Feeds** | **Supabase** (`news_items`) / Local DB | Dexie (`news_items`) | Relational rows + read status |
-| **Legacy Supabase Notes** | **Supabase** (`notes`) | Dexie (`legacy_notes`) | Relational rows + 1-click Google Drive bridge |
 | **Preferences & Settings** | **Supabase** (`user_settings`) | Dexie (`user_settings`) | SMTP, notifications, currency, news config |
 
 ---
@@ -50,10 +49,7 @@ NoteVault & Knowledge Vault uses a purpose-built **hybrid cloud architecture** w
   - 🏢 **Companies**: Organization profiles, industries, websites, key contacts.
   - 💼 **Projects**: Status tracking, descriptions, linked team members and companies.
   - ⚡ **Technologies**: Tech stack directory, categorizations, and active usages.
-- **Supabase Notes Migration Bridge**:
-  - Inspect all existing notes stored in Supabase (`notes` table).
-  - 1-click migration to auto-convert them into NoteVault Markdown files with YAML front-matter under a `Supabase Archive` notebook, synced straight to Google Drive.
-- **Instant Local + Cloud Sync**: Powered by Dexie IndexedDB v4 for instant zero-latency UI updates with background syncing across all 16 Supabase tables.
+- **Instant Local + Cloud Sync**: Powered by Dexie IndexedDB v4 for instant zero-latency UI updates with background syncing across all Supabase workspace tables.
 
 ### 📓 NoteVault (Notes & Knowledge Base via Google Drive)
 - 📓 **OneNote Mental Model**: Organizes notes hierarchically into **Notebooks &rarr; Sections (colored tabs) &rarr; Pages**.

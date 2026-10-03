@@ -26,15 +26,12 @@ import {
   Cpu,
   Star,
   User,
-  Download,
-  CheckCircle2,
 } from 'lucide-react';
 import {
   PeopleView,
   CompaniesView,
   ProjectsView,
   TechnologiesView,
-  LegacyNotesView,
 } from './DirectoryViews';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -67,7 +64,6 @@ export const WorkspacePanelsView: React.FC = () => {
     companies,
     technologies,
     projects,
-    legacyNotes,
     activePanelId,
     setActivePanelId,
     createPanel,
@@ -78,13 +74,10 @@ export const WorkspacePanelsView: React.FC = () => {
     createEntry,
     updateEntry,
     deleteEntry,
-    importLegacyNotesToNoteVault,
     supabaseSyncStatus,
   } = useVaultStore();
 
-  const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects' | 'technologies' | 'notes'>('panels');
-  const [isImporting, setIsImporting] = useState(false);
-  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects' | 'technologies'>('panels');
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>('grid');
 
@@ -376,129 +369,67 @@ export const WorkspacePanelsView: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto space-y-4">
         {!activePanelId && (
-          <>
-            {/* Supabase Legacy Notes Banner */}
-            {legacyNotes.length > 0 && subTab === 'panels' && (
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                  <span>
-                    Found <strong>{legacyNotes.length} legacy notes</strong> in Supabase. You can import them directly into your Google Drive NoteVault.
-                  </span>
-                </div>
-                <button
-                  onClick={async () => {
-                    setIsImporting(true);
-                    try {
-                      const res = await importLegacyNotesToNoteVault();
-                      setImportSuccess(`Imported ${res.count} notes into Google Drive!`);
-                    } catch (err: any) {
-                      alert('Import failed: ' + err.message);
-                    } finally {
-                      setIsImporting(false);
-                    }
-                  }}
-                  disabled={isImporting}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition disabled:opacity-50 text-xs flex-shrink-0 shadow-xs"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isImporting ? 'Importing...' : 'Import to Google Drive Notes'}</span>
-                </button>
-              </div>
-            )}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
+            <button
+              onClick={() => setSubTab('panels')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                subTab === 'panels'
+                  ? 'bg-brand-primary text-white shadow-xs'
+                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+              }`}
+            >
+              <FolderKanban className="w-3.5 h-3.5" />
+              <span>Custom Boards ({panels.length})</span>
+            </button>
 
-            {importSuccess && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between shadow-xs">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                  <span>{importSuccess}</span>
-                </div>
-                <button
-                  onClick={() => setImportSuccess(null)}
-                  className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-200 text-xs font-semibold"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
+            <button
+              onClick={() => setSubTab('people')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                subTab === 'people'
+                  ? 'bg-brand-primary text-white shadow-xs'
+                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>People & Contacts ({people.length})</span>
+            </button>
 
-            {/* Sub-tab Navigation */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
-              <button
-                onClick={() => setSubTab('panels')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                  subTab === 'panels'
-                    ? 'bg-brand-primary text-white shadow-xs'
-                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-                }`}
-              >
-                <FolderKanban className="w-3.5 h-3.5" />
-                <span>Custom Boards ({panels.length})</span>
-              </button>
+            <button
+              onClick={() => setSubTab('companies')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                subTab === 'companies'
+                  ? 'bg-brand-primary text-white shadow-xs'
+                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              <span>Companies ({companies.length})</span>
+            </button>
 
-              <button
-                onClick={() => setSubTab('people')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                  subTab === 'people'
-                    ? 'bg-brand-primary text-white shadow-xs'
-                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>People & Contacts ({people.length})</span>
-              </button>
+            <button
+              onClick={() => setSubTab('projects')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                subTab === 'projects'
+                  ? 'bg-brand-primary text-white shadow-xs'
+                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Projects ({projects.length})</span>
+            </button>
 
-              <button
-                onClick={() => setSubTab('companies')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                  subTab === 'companies'
-                    ? 'bg-brand-primary text-white shadow-xs'
-                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span>Companies ({companies.length})</span>
-              </button>
-
-              <button
-                onClick={() => setSubTab('projects')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                  subTab === 'projects'
-                    ? 'bg-brand-primary text-white shadow-xs'
-                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-                }`}
-              >
-                <Briefcase className="w-3.5 h-3.5" />
-                <span>Projects ({projects.length})</span>
-              </button>
-
-              <button
-                onClick={() => setSubTab('technologies')}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                  subTab === 'technologies'
-                    ? 'bg-brand-primary text-white shadow-xs'
-                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-                }`}
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>Technologies ({technologies.length})</span>
-              </button>
-
-              {legacyNotes.length > 0 && (
-                <button
-                  onClick={() => setSubTab('notes')}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                    subTab === 'notes'
-                      ? 'bg-amber-600 text-white shadow-xs'
-                      : 'text-amber-700 dark:text-amber-300 hover:bg-amber-500/10'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Supabase Notes ({legacyNotes.length})</span>
-                </button>
-              )}
-            </div>
-          </>
+            <button
+              onClick={() => setSubTab('technologies')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                subTab === 'technologies'
+                  ? 'bg-brand-primary text-white shadow-xs'
+                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+              }`}
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              <span>Technologies ({technologies.length})</span>
+            </button>
+          </div>
         )}
 
         {!activePanelId ? (
@@ -510,8 +441,6 @@ export const WorkspacePanelsView: React.FC = () => {
             <ProjectsView />
           ) : subTab === 'technologies' ? (
             <TechnologiesView />
-          ) : subTab === 'notes' ? (
-            <LegacyNotesView />
           ) : (
             /* Level 1: All Panels Pinned Grid */
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

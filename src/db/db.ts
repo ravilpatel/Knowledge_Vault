@@ -36,7 +36,6 @@ export class NoteVaultDatabase extends Dexie {
   categories!: Table<import('../types').CategoryItem, string>;
   tags!: Table<import('../types').TagItem, string>;
   habit_logs!: Table<import('../types').HabitLog, string>;
-  legacy_notes!: Table<import('../types').LegacyNote, string>;
   user_settings!: Table<import('../types').UserSettings, string>;
 
   constructor() {
@@ -91,7 +90,6 @@ export class NoteVaultDatabase extends Dexie {
       projects: 'id, user_id, name, created_at',
       categories: 'id, user_id, name',
       tags: 'id, user_id, name',
-      legacy_notes: 'id, user_id, title, created_at',
       user_settings: 'id, user_id',
     });
   }
