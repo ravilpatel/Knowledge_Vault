@@ -1,36 +1,121 @@
-# Knowledge Vault - Technical Analysis Report
+# NoteVault — Google Drive Markdown Notebook PWA
 
-## Overview and Purpose
+A OneNote-style, Markdown-first notebook Progressive Web App (PWA) that stores all notes and attachments directly in your own Google Drive account.
 
-**Knowledge Vault** is a comprehensive, cloud-synced personal knowledge management and productivity application. Functioning as a "second brain," the platform provides a unified digital workspace designed to capture, organize, and retrieve information seamlessly. 
-
-### Key Use Cases
-*   **Information Management:** Ideal for researchers, entrepreneurs, and professionals who need to maintain complex, interlinked notes alongside specific entities like people, companies, and technologies.
-*   **Task Prioritization:** Perfect for individuals relying on the Eisenhower Matrix methodology to prioritize tasks based on urgency and importance, complete with Telegram notifications.
-*   **Financial Tracking:** A built-in expense tracker for managing personal or project budgets, featuring automated monthly email reporting.
-*   **Intel Gathering:** Serves as a personalized news aggregator fetching updates on user-defined topics from sources like PIB India and Startup India.
-*   **Frictionless Data Entry:** Provides an AI-powered conversational interface (via Gemini) to seamlessly log tasks or expenses using natural language.
+Built with **React 18 + TypeScript + Vite + Tailwind CSS + Dexie (IndexedDB) + CodeMirror 6 + Google Drive REST API v3**. Designed with the **Tactile Productivity** design system via Stitch MCP.
 
 ---
 
-## Core Technical Functionalities
+## 🌟 Key Features
 
-*   **Relational Data Mapping:** Notes can be tagged, categorized, and bi-directionally linked to specific entities (People, Companies, Technologies, Projects) to create a web of knowledge.
-*   **Cloud Sync & Authentication:** Leverages Supabase (PostgreSQL) for user authentication and real-time database subscriptions, ensuring data is instantly synchronized across devices.
-*   **AI Integration:** Utilizes Supabase Edge Functions coupled with Gemini to provide an inline chat assistant that parses unstructured text into structured tasks and financial entries.
-*   **Automated Notifications:** Integrates SMTP for automated monthly financial reports and Telegram Bot APIs for immediate task reminders.
-*   **Offline-Ready (PWA):** Implemented as a Progressive Web App with a registered Service Worker caching the application shell and external assets for offline availability and device installability.
+- 📓 **OneNote Mental Model**: Organizes notes hierarchically into **Notebooks &rarr; Sections (colored tabs) &rarr; Pages**.
+- ✍️ **Markdown-First Editing**: CodeMirror 6 editor with live split preview, GFM checklists, syntax code blocks with copy buttons, GitHub-style alerts (`> [!NOTE]`), and Wiki links `[[Page Title]]`.
+- 📁 **Zero Proprietary Lock-In**: Notes are plain `.md` files with YAML front-matter stored in standard folders in your personal Google Drive. Even without NoteVault, your notes open in any text editor or Markdown app.
+- ⚡ **Full Offline Read/Write**: Dexie (IndexedDB v4) caches all notes and media attachments locally. Changes are debounced and queued in a local outbox.
+- 🔄 **Safe Background Sync & Conflict Reconciliation**: Bi-directional sync with Google Drive. If a conflict occurs, both versions are kept (`Title (conflict YYYY-MM-DD HH-mm).md`) and a side-by-side reconciliation dialog is provided.
+- 🛡️ **Zero-Loss Data Safety Guarantee**: Permanent file deletion is forbidden (`files.delete` is never called); deleted items move to Drive Trash (`trashed: true`) and can be restored anytime.
+- 🔍 **Instant Full-Text Search**: Offline MiniSearch index with query operator support (`tag:cooking`, `in:Recipes`, `is:favorite`) and highlighted search snippets.
+- 🖼️ **Attachments**: Drag-and-drop or paste images directly into notes. Files are saved in the notebook's `_attachments/` folder and linked with relative paths (`../_attachments/...`).
+- 📱 **Responsive PWA**: Full desktop 3-pane layout and mobile stack drill-down with installable PWA service worker.
 
 ---
 
-## UI and UX Techniques
+## 🛠️ Tech Stack
 
-The application is built as a Vanilla JavaScript Single Page Application (SPA), heavily emphasizing speed and user experience without relying on heavy frontend frameworks.
+- **Framework:** React 18, TypeScript (Strict Mode), Vite 5
+- **Styling:** Tailwind CSS, Lucide Icons, Plus Jakarta Sans / Inter / JetBrains Mono typography
+- **Local Data Layer:** Dexie.js (IndexedDB v4)
+- **Editor:** CodeMirror 6 (`@codemirror/lang-markdown`, `@codemirror/theme-one-dark`)
+- **Search:** MiniSearch (local full-text index persisted to IndexedDB)
+- **Cloud Storage:** Google Identity Services (token model) + Google Drive REST API v3 + Google Picker API
+- **PWA:** `vite-plugin-pwa` (Workbox offline precaching of app shell)
+- **Testing:** Vitest + `fake-indexeddb`
 
-*   **Notion-Inspired Design Tokens:** Uses a robust set of CSS variables (`--canvas`, `--surface`, `--primary`, `--ink-muted`) to enforce a clean, minimalist, and consistent aesthetic resembling modern productivity tools like Notion.
-*   **Contextual Overlays & Modals:** Data entry (creating notes, tasks, settings) is handled via slide-up modals. This non-destructive UX technique allows users to perform actions without losing the context of their current view.
-*   **Responsive & Adaptive Layout:** Employs CSS Grid and Flexbox for fluid layouts. Media queries gracefully degrade the UI for mobile devices by transforming the persistent sidebar into a swipeable/toggleable off-canvas drawer and converting data grids into single-column lists.
-*   **Semantic Badging & Color Coding:** Uses specific color palettes mapped to entity types and categories (e.g., Pink for People, Teal for Companies) alongside FontAwesome icons to enhance scannability and reduce cognitive load.
-*   **Immediate Visual Feedback:** Incorporates CSS animations (`180ms ease` transitions, `slideUp`, `fadeIn`), real-time toast notifications, and dynamic sync banners to keep the user informed of background network operations and save states.
-*   **Floating Action Buttons (FAB):** A persistent chat widget and quick-capture FAB are anchored to the bottom corner, ensuring that frictionless data entry is always accessible regardless of scroll position.
-*   **Empty States:** Well-designed empty states with descriptive icons and clear calls-to-action (CTAs) guide the user on what to do when a view (like a tag filter or a new quadrant) has no data.
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js 18+ and npm
+- A Google Cloud account (for Google Drive sync) or test offline immediately in **Guest Mode**.
+
+### 2. Installation
+```bash
+git clone https://github.com/your-username/notevault.git
+cd notevault
+npm install
+```
+
+### 3. Configure Google Cloud Console (OAuth 2.0 Client)
+
+To connect NoteVault with your personal Google Drive:
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project (e.g. `NoteVault-Personal`).
+3. Enable the following APIs in **APIs & Services &rarr; Library**:
+   - **Google Drive API**
+   - **Google Picker API**
+4. Configure the **OAuth consent screen**:
+   - User Type: **External**
+   - App name: `NoteVault`
+   - User support email: your email
+   - Scopes: add `https://www.googleapis.com/auth/drive.file` and `userinfo.profile`
+   - **Test users:** Add your Google email address under **Test users** (important for apps in Testing mode).
+5. Create OAuth Credentials in **APIs & Services &rarr; Credentials**:
+   - Click **Create Credentials &rarr; OAuth client ID**.
+   - Application type: **Web application**.
+   - Name: `NoteVault Web Client`.
+   - **Authorized JavaScript origins:**
+     - `http://localhost:5173`
+     - `http://localhost:4173` (for production preview)
+     - `https://your-production-domain.com` (if deployed)
+6. Copy your **Client ID** (it looks like `123456789-abc.apps.googleusercontent.com`).
+
+### 4. Set Environment Variables
+
+Create a `.env` file in the root directory:
+```env
+VITE_GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
+```
+
+> **Guest Mode**: If you do not configure a Client ID immediately, you can click **Continue Offline in Guest Mode** on the login screen to write and organize notes locally using IndexedDB.
+
+### 5. Run Development Server
+```bash
+npm run dev
+```
+Open `http://localhost:5173` in your browser.
+
+---
+
+## 🧪 Testing & Verification
+
+Run the automated test suite with Vitest:
+```bash
+npm test
+```
+
+Build the production PWA bundle (type-checks with `tsc` and bundles with Vite):
+```bash
+npm run build
+```
+
+Preview the production build locally:
+```bash
+npm run preview
+```
+
+---
+
+## 📖 Documentation & Architecture
+
+- [UI Screen Mapping (Stitch MCP)](docs/ui-map.md)
+- [Design Decisions Log](docs/DECISIONS.md)
+- [User & Recovery Guide](docs/USER_GUIDE.md)
+- [Technical Architecture](docs/architecture.md)
+
+---
+
+## 📄 License
+
+MIT License. Designed and engineered for personal data ownership and peace of mind.

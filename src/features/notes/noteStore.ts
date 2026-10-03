@@ -1,0 +1,663 @@
+import { create } from 'zustand';
+import { db } from '../../db/db';
+import {
+  NotebookRecord,
+  SectionRecord,
+  PageRecord,
+  SectionColor,
+  ViewMode,
+} from '../../types';
+import { generateUUID } from '../../lib/id';
+import { parsePageMarkdown, serializePageMarkdown } from '../../lib/frontmatter';
+import { syncEngine } from '../sync/syncEngine';
+
+interface NoteState {
+  notebooks: NotebookRecord[];
+  sections: SectionRecord[];
+  pages: PageRecord[];
+
+  activeNotebookId: string | null;
+  activeSectionId: string | null;
+  activePageId: string | null;
+
+  viewMode: ViewMode;
+  showFavoritesOnly: boolean;
+  selectedTag: string | null;
+  showTrashView: boolean;
+  searchQuery: string;
+
+  isLoading: boolean;
+
+  // Actions
+  loadInitialData: () => Promise<void>;
+  setActiveNotebook: (id: string | null) => void;
+  setActiveSection: (id: string | null) => void;
+  setActivePage: (id: string | null) => void;
+  setViewMode: (mode: ViewMode) => void;
+  setShowFavoritesOnly: (show: boolean) => void;
+  setSelectedTag: (tag: string | null) => void;
+  setShowTrashView: (show: boolean) => void;
+  setSearchQuery: (query: string) => void;
+
+  // Notebook mutations
+  createNotebook: (name: string, color?: string, icon?: string) => Promise<NotebookRecord>;
+  renameNotebook: (id: string, name: string) => Promise<void>;
+  trashNotebook: (id: string) => Promise<void>;
+  restoreNotebook: (id: string) => Promise<void>;
+  reorderNotebooks: (orderedIds: string[]) => Promise<void>;
+
+  // Section mutations
+  createSection: (notebookId: string, name: string, color?: SectionColor) => Promise<SectionRecord>;
+  renameSection: (id: string, name: string) => Promise<void>;
+  changeSectionColor: (id: string, color: SectionColor) => Promise<void>;
+  trashSection: (id: string) => Promise<void>;
+  restoreSection: (id: string) => Promise<void>;
+  reorderSections: (orderedIds: string[]) => Promise<void>;
+
+  // Page mutations
+  createPage: (notebookId: string, sectionId: string, title?: string, content?: string) => Promise<PageRecord>;
+  updatePageContent: (id: string, content: string) => Promise<void>;
+  updatePageTitle: (id: string, title: string) => Promise<void>;
+  togglePageFavorite: (id: string) => Promise<void>;
+  setPageTags: (id: string, tags: string[]) => Promise<void>;
+  trashPage: (id: string) => Promise<void>;
+  restorePage: (id: string) => Promise<void>;
+  reorderPages: (orderedIds: string[]) => Promise<void>;
+  movePage: (pageId: string, targetSectionId: string, targetNotebookId: string) => Promise<void>;
+}
+
+export const useNoteStore = create<NoteState>((set, get) => ({
+  notebooks: [],
+  sections: [],
+  pages: [],
+
+  activeNotebookId: null,
+  activeSectionId: null,
+  activePageId: null,
+
+  viewMode: 'split',
+  showFavoritesOnly: false,
+  selectedTag: null,
+  showTrashView: false,
+  searchQuery: '',
+
+  isLoading: true,
+
+  loadInitialData: async () => {
+    set({ isLoading: true });
+    try {
+      const notebooks = await db.notebooks.toArray();
+      const sections = await db.sections.toArray();
+      const pages = await db.pages.toArray();
+
+      if (notebooks.length === 0) {
+        // Initialize default starter notebook and section if completely empty
+        const defaultNbId = generateUUID();
+        const defaultSecId = generateUUID();
+        const defaultPageId = generateUUID();
+
+        const defaultNb: NotebookRecord = {
+          id: defaultNbId,
+          name: 'Personal',
+          color: '#4F7CAC',
+          icon: 'book',
+          order: 0,
+          sectionOrder: [defaultSecId],
+          trashed: false,
+        };
+
+        const defaultSec: SectionRecord = {
+          id: defaultSecId,
+          notebookId: defaultNbId,
+          name: 'Recipes',
+          color: 'peach',
+          order: 0,
+          pageOrder: [defaultPageId],
+          trashed: false,
+        };
+
+        const initialContent = `# Classic Roman Carbonara 🍝\n\n> "Simplicity is the ultimate sophistication." — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n\n## Technique Steps\n1. Render guanciale over medium-low heat until crisp and deep amber.\n2. Whisk egg yolks with pecorino and abundant black pepper into a thick paste.\n3. Cook pasta in salted boiling water until al dente (*riserva l'acqua di cottura*).\n4. Toss pasta with rendered fat, temper with pasta water, fold in egg cream off heat.\n\n> [!NOTE]\n> Authentic Roman carbonara contains no heavy cream. The glossy sauce forms naturally from emulsifying hot starchy cooking water with the rich egg-pecorino paste.\n`;
+
+        const initialFrontMatter = {
+          id: defaultPageId,
+          title: 'Pasta Notes',
+          tags: ['cooking', 'italian', 'dinner'],
+          favorite: true,
+          created: new Date().toISOString(),
+          updated: new Date().toISOString(),
+        };
+
+        const rawMarkdown = serializePageMarkdown(initialFrontMatter, initialContent);
+
+        const defaultPg: PageRecord = {
+          id: defaultPageId,
+          notebookId: defaultNbId,
+          sectionId: defaultSecId,
+          title: 'Pasta Notes',
+          tags: ['cooking', 'italian', 'dinner'],
+          favorite: true,
+          content: initialContent,
+          rawMarkdown,
+          created: initialFrontMatter.created,
+          updated: initialFrontMatter.updated,
+          localDirty: true,
+          trashed: false,
+          order: 0,
+        };
+
+        await db.notebooks.put(defaultNb);
+        await db.sections.put(defaultSec);
+        await db.pages.put(defaultPg);
+
+        // Queue outbox items for sync
+        await syncEngine.queueOutbox('create_notebook', defaultNbId, defaultNbId, undefined, { name: defaultNb.name });
+        await syncEngine.queueOutbox('create_section', defaultSecId, defaultNbId, defaultSecId, { name: defaultSec.name, color: defaultSec.color });
+        await syncEngine.queueOutbox('create_page', defaultPageId, defaultNbId, defaultSecId, {
+          title: defaultPg.title,
+          rawMarkdown: defaultPg.rawMarkdown,
+        });
+
+        set({
+          notebooks: [defaultNb],
+          sections: [defaultSec],
+          pages: [defaultPg],
+          activeNotebookId: defaultNbId,
+          activeSectionId: defaultSecId,
+          activePageId: defaultPageId,
+          isLoading: false,
+        });
+        return;
+      }
+
+      // Sort according to order
+      notebooks.sort((a, b) => a.order - b.order);
+      sections.sort((a, b) => a.order - b.order);
+      pages.sort((a, b) => a.order - b.order);
+
+      const activeNb = notebooks.find((n) => !n.trashed);
+      const activeSec = activeNb ? sections.find((s) => s.notebookId === activeNb.id && !s.trashed) : null;
+      const activePg = activeSec ? pages.find((p) => p.sectionId === activeSec.id && !p.trashed) : null;
+
+      set({
+        notebooks,
+        sections,
+        pages,
+        activeNotebookId: activeNb ? activeNb.id : null,
+        activeSectionId: activeSec ? activeSec.id : null,
+        activePageId: activePg ? activePg.id : null,
+        isLoading: false,
+      });
+    } catch (err) {
+      console.error('Failed to load local notes database:', err);
+      set({ isLoading: false });
+    }
+  },
+
+  setActiveNotebook: (id) => {
+    const { sections, pages } = get();
+    const activeSec = sections.find((s) => s.notebookId === id && !s.trashed);
+    const activePg = activeSec ? pages.find((p) => p.sectionId === activeSec.id && !p.trashed) : null;
+    set({
+      activeNotebookId: id,
+      activeSectionId: activeSec ? activeSec.id : null,
+      activePageId: activePg ? activePg.id : null,
+      showTrashView: false,
+    });
+  },
+
+  setActiveSection: (id) => {
+    const { pages } = get();
+    const activePg = pages.find((p) => p.sectionId === id && !p.trashed);
+    set({
+      activeSectionId: id,
+      activePageId: activePg ? activePg.id : null,
+      showTrashView: false,
+    });
+  },
+
+  setActivePage: (id) => set({ activePageId: id, showTrashView: false }),
+  setViewMode: (viewMode) => set({ viewMode }),
+  setShowFavoritesOnly: (show) => set({ showFavoritesOnly: show, showTrashView: false, selectedTag: null }),
+  setSelectedTag: (tag) => set({ selectedTag: tag, showTrashView: false, showFavoritesOnly: false }),
+  setShowTrashView: (show) => set({ showTrashView: show }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+
+  // Notebook operations
+  createNotebook: async (name, color = '#4F46E5', icon = 'book') => {
+    const { notebooks } = get();
+    const newNotebook: NotebookRecord = {
+      id: generateUUID(),
+      name: name.trim() || 'New Notebook',
+      color,
+      icon,
+      order: notebooks.length,
+      sectionOrder: [],
+      trashed: false,
+    };
+
+    await db.notebooks.put(newNotebook);
+    await syncEngine.queueOutbox('create_notebook', newNotebook.id, newNotebook.id, undefined, { name: newNotebook.name });
+
+    set((state) => ({
+      notebooks: [...state.notebooks, newNotebook],
+      activeNotebookId: newNotebook.id,
+      activeSectionId: null,
+      activePageId: null,
+    }));
+
+    return newNotebook;
+  },
+
+  renameNotebook: async (id, name) => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+
+    await db.notebooks.update(id, { name: cleanName });
+    await syncEngine.queueOutbox('rename_notebook', id, id, undefined, { name: cleanName });
+
+    set((state) => ({
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, name: cleanName } : n)),
+    }));
+  },
+
+  trashNotebook: async (id) => {
+    await db.notebooks.update(id, { trashed: true });
+    await syncEngine.queueOutbox('trash_notebook', id, id, undefined, { trashed: true });
+
+    const remaining = get().notebooks.filter((n) => n.id !== id && !n.trashed);
+    const nextNb = remaining[0] || null;
+
+    set((state) => ({
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: true } : n)),
+      activeNotebookId: nextNb ? nextNb.id : null,
+    }));
+  },
+
+  restoreNotebook: async (id) => {
+    await db.notebooks.update(id, { trashed: false });
+    set((state) => ({
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: false } : n)),
+    }));
+  },
+
+  reorderNotebooks: async (orderedIds) => {
+    const updated = get().notebooks.map((nb) => {
+      const idx = orderedIds.indexOf(nb.id);
+      return idx !== -1 ? { ...nb, order: idx } : nb;
+    });
+    for (const nb of updated) {
+      await db.notebooks.update(nb.id, { order: nb.order });
+    }
+    set({ notebooks: updated });
+  },
+
+  // Section operations
+  createSection: async (notebookId, name, color = 'peach') => {
+    const { sections, notebooks } = get();
+    const nbSections = sections.filter((s) => s.notebookId === notebookId);
+
+    const newSection: SectionRecord = {
+      id: generateUUID(),
+      notebookId,
+      name: name.trim() || 'New Section',
+      color,
+      order: nbSections.length,
+      pageOrder: [],
+      trashed: false,
+    };
+
+    await db.sections.put(newSection);
+
+    // Update notebook's section order
+    const parentNb = notebooks.find((n) => n.id === notebookId);
+    if (parentNb) {
+      const newSecOrder = [...parentNb.sectionOrder, newSection.id];
+      await db.notebooks.update(notebookId, { sectionOrder: newSecOrder });
+    }
+
+    await syncEngine.queueOutbox('create_section', newSection.id, notebookId, newSection.id, {
+      name: newSection.name,
+      color: newSection.color,
+    });
+
+    set((state) => ({
+      sections: [...state.sections, newSection],
+      activeSectionId: newSection.id,
+      activePageId: null,
+    }));
+
+    return newSection;
+  },
+
+  renameSection: async (id, name) => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+
+    const sec = get().sections.find((s) => s.id === id);
+    if (!sec) return;
+
+    await db.sections.update(id, { name: cleanName });
+    await syncEngine.queueOutbox('rename_section', id, sec.notebookId, id, { name: cleanName });
+
+    set((state) => ({
+      sections: state.sections.map((s) => (s.id === id ? { ...s, name: cleanName } : s)),
+    }));
+  },
+
+  changeSectionColor: async (id, color) => {
+    const sec = get().sections.find((s) => s.id === id);
+    if (!sec) return;
+
+    await db.sections.update(id, { color });
+    await syncEngine.queueOutbox('update_meta', id, sec.notebookId, id, { color });
+
+    set((state) => ({
+      sections: state.sections.map((s) => (s.id === id ? { ...s, color } : s)),
+    }));
+  },
+
+  trashSection: async (id) => {
+    const sec = get().sections.find((s) => s.id === id);
+    if (!sec) return;
+
+    await db.sections.update(id, { trashed: true });
+    await syncEngine.queueOutbox('trash_section', id, sec.notebookId, id, { trashed: true });
+
+    const remainingSecs = get().sections.filter((s) => s.notebookId === sec.notebookId && s.id !== id && !s.trashed);
+    const nextSec = remainingSecs[0] || null;
+
+    set((state) => ({
+      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: true } : s)),
+      activeSectionId: nextSec ? nextSec.id : null,
+    }));
+  },
+
+  restoreSection: async (id) => {
+    await db.sections.update(id, { trashed: false });
+    set((state) => ({
+      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: false } : s)),
+    }));
+  },
+
+  reorderSections: async (orderedIds) => {
+    const updated = get().sections.map((s) => {
+      const idx = orderedIds.indexOf(s.id);
+      return idx !== -1 ? { ...s, order: idx } : s;
+    });
+    for (const s of updated) {
+      await db.sections.update(s.id, { order: s.order });
+    }
+    set({ sections: updated });
+  },
+
+  // Page operations
+  createPage: async (notebookId, sectionId, title = 'Untitled Page', content = '') => {
+    const { pages, sections } = get();
+    const secPages = pages.filter((p) => p.sectionId === sectionId);
+
+    const pageId = generateUUID();
+    const now = new Date().toISOString();
+
+    const frontMatter = {
+      id: pageId,
+      title: title.trim(),
+      tags: [],
+      favorite: false,
+      created: now,
+      updated: now,
+    };
+
+    const rawMarkdown = serializePageMarkdown(frontMatter, content);
+
+    const newPage: PageRecord = {
+      id: pageId,
+      notebookId,
+      sectionId,
+      title: frontMatter.title,
+      tags: [],
+      favorite: false,
+      content,
+      rawMarkdown,
+      created: now,
+      updated: now,
+      localDirty: true,
+      trashed: false,
+      order: secPages.length,
+    };
+
+    await db.pages.put(newPage);
+
+    // Update section page order
+    const parentSec = sections.find((s) => s.id === sectionId);
+    if (parentSec) {
+      const newPageOrder = [...parentSec.pageOrder, pageId];
+      await db.sections.update(sectionId, { pageOrder: newPageOrder });
+    }
+
+    await syncEngine.queueOutbox('create_page', pageId, notebookId, sectionId, {
+      title: newPage.title,
+      rawMarkdown: newPage.rawMarkdown,
+    });
+
+    set((state) => ({
+      pages: [...state.pages, newPage],
+      activePageId: pageId,
+    }));
+
+    return newPage;
+  },
+
+  updatePageContent: async (id, content) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (!page) return;
+
+    const now = new Date().toISOString();
+    const parsed = parsePageMarkdown(page.rawMarkdown, page.title);
+
+    const updatedFrontMatter = {
+      ...parsed.frontMatter,
+      ...(page.customFrontMatter || {}),
+      id: page.id,
+      title: page.title,
+      tags: page.tags,
+      favorite: page.favorite,
+      updated: now,
+    };
+
+    const rawMarkdown = serializePageMarkdown(updatedFrontMatter, content);
+
+    await db.pages.update(id, {
+      content,
+      rawMarkdown,
+      updated: now,
+      localDirty: true,
+    });
+
+    await syncEngine.queueOutbox('update_page', id, page.notebookId, page.sectionId, {
+      title: page.title,
+      rawMarkdown,
+      updated: now,
+    });
+
+    set((state) => ({
+      pages: state.pages.map((p) =>
+        p.id === id ? { ...p, content, rawMarkdown, updated: now, localDirty: true } : p
+      ),
+    }));
+  },
+
+  updatePageTitle: async (id, title) => {
+    const cleanTitle = title.trim() || 'Untitled';
+    const page = get().pages.find((p) => p.id === id);
+    if (!page || page.title === cleanTitle) return;
+
+    const now = new Date().toISOString();
+    const parsed = parsePageMarkdown(page.rawMarkdown, cleanTitle);
+
+    const updatedFrontMatter = {
+      ...parsed.frontMatter,
+      ...(page.customFrontMatter || {}),
+      id: page.id,
+      title: cleanTitle,
+      tags: page.tags,
+      favorite: page.favorite,
+      updated: now,
+    };
+
+    const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
+
+    await db.pages.update(id, {
+      title: cleanTitle,
+      rawMarkdown,
+      updated: now,
+      localDirty: true,
+    });
+
+    await syncEngine.queueOutbox('rename_page', id, page.notebookId, page.sectionId, {
+      title: cleanTitle,
+      rawMarkdown,
+      updated: now,
+    });
+
+    set((state) => ({
+      pages: state.pages.map((p) =>
+        p.id === id ? { ...p, title: cleanTitle, rawMarkdown, updated: now, localDirty: true } : p
+      ),
+    }));
+  },
+
+  togglePageFavorite: async (id) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (!page) return;
+
+    const newFavorite = !page.favorite;
+    const now = new Date().toISOString();
+    const parsed = parsePageMarkdown(page.rawMarkdown, page.title);
+
+    const updatedFrontMatter = {
+      ...parsed.frontMatter,
+      ...(page.customFrontMatter || {}),
+      id: page.id,
+      title: page.title,
+      tags: page.tags,
+      favorite: newFavorite,
+      updated: now,
+    };
+
+    const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
+
+    await db.pages.update(id, {
+      favorite: newFavorite,
+      rawMarkdown,
+      updated: now,
+      localDirty: true,
+    });
+
+    await syncEngine.queueOutbox('update_page', id, page.notebookId, page.sectionId, {
+      title: page.title,
+      rawMarkdown,
+      updated: now,
+    });
+
+    set((state) => ({
+      pages: state.pages.map((p) =>
+        p.id === id ? { ...p, favorite: newFavorite, rawMarkdown, updated: now, localDirty: true } : p
+      ),
+    }));
+  },
+
+  setPageTags: async (id, tags) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (!page) return;
+
+    const now = new Date().toISOString();
+    const parsed = parsePageMarkdown(page.rawMarkdown, page.title);
+
+    const updatedFrontMatter = {
+      ...parsed.frontMatter,
+      ...(page.customFrontMatter || {}),
+      id: page.id,
+      title: page.title,
+      tags,
+      favorite: page.favorite,
+      updated: now,
+    };
+
+    const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
+
+    await db.pages.update(id, {
+      tags,
+      rawMarkdown,
+      updated: now,
+      localDirty: true,
+    });
+
+    await syncEngine.queueOutbox('update_page', id, page.notebookId, page.sectionId, {
+      title: page.title,
+      rawMarkdown,
+      updated: now,
+    });
+
+    set((state) => ({
+      pages: state.pages.map((p) =>
+        p.id === id ? { ...p, tags, rawMarkdown, updated: now, localDirty: true } : p
+      ),
+    }));
+  },
+
+  trashPage: async (id) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (!page) return;
+
+    await db.pages.update(id, { trashed: true });
+    await syncEngine.queueOutbox('trash_page', id, page.notebookId, page.sectionId, { trashed: true });
+
+    const secPages = get().pages.filter((p) => p.sectionId === page.sectionId && p.id !== id && !p.trashed);
+    const nextPg = secPages[0] || null;
+
+    set((state) => ({
+      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: true } : p)),
+      activePageId: nextPg ? nextPg.id : null,
+    }));
+  },
+
+  restorePage: async (id) => {
+    await db.pages.update(id, { trashed: false });
+    set((state) => ({
+      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: false } : p)),
+    }));
+  },
+
+  reorderPages: async (orderedIds) => {
+    const updated = get().pages.map((p) => {
+      const idx = orderedIds.indexOf(p.id);
+      return idx !== -1 ? { ...p, order: idx } : p;
+    });
+    for (const p of updated) {
+      await db.pages.update(p.id, { order: p.order });
+    }
+    set({ pages: updated });
+  },
+
+  movePage: async (pageId, targetSectionId, targetNotebookId) => {
+    const page = get().pages.find((p) => p.id === pageId);
+    if (!page) return;
+
+    await db.pages.update(pageId, {
+      sectionId: targetSectionId,
+      notebookId: targetNotebookId,
+      localDirty: true,
+    });
+
+    await syncEngine.queueOutbox('move_page', pageId, targetNotebookId, targetSectionId, {
+      oldSectionId: page.sectionId,
+      newSectionId: targetSectionId,
+    });
+
+    set((state) => ({
+      pages: state.pages.map((p) =>
+        p.id === pageId ? { ...p, sectionId: targetSectionId, notebookId: targetNotebookId, localDirty: true } : p
+      ),
+    }));
+  },
+}));
