@@ -1,0 +1,110 @@
+[
+  {
+    "id": "05d30bb1-146f-46b8-a80d-0b5c982ab04a",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Dr. Maya Sharma",
+    "organisation": "Anthropic",
+    "designation": "Principal Research Scientist",
+    "contact_info": "maya.sharma@anthropic.com",
+    "notes": "Co-author on agentic alignment and structured tool-calling benchmarks.",
+    "related_companies": [
+      "3010cbe4-ce6b-415f-a1d4-2c7f9cd326df"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "eb10c124-26c7-4c41-8742-8ff39c290a20"
+    ],
+    "created_at": "2026-10-03T19:07:08.845415+00:00",
+    "updated_at": "2026-10-03T19:07:08.845415+00:00"
+  },
+  {
+    "id": "6261dc0b-488f-4696-b0cc-629b042fede9",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Rohan Varma",
+    "organisation": "Supabase",
+    "designation": "Systems Architect",
+    "contact_info": "rohan.varma@supabase.io",
+    "notes": "Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.",
+    "related_companies": [
+      "1659c501-e004-4799-bbef-9a7abb03b547"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+    ],
+    "created_at": "2026-10-03T19:07:08.845415+00:00",
+    "updated_at": "2026-10-03T19:07:08.845415+00:00"
+  },
+  {
+    "id": "99ea4a19-0a2a-46c0-98fe-352bcba6553e",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Dr. Maya Sharma",
+    "organisation": "Anthropic",
+    "designation": "Principal Research Scientist",
+    "contact_info": "maya.sharma@anthropic.com",
+    "notes": "Co-author on agentic alignment and structured tool-calling benchmarks.",
+    "related_companies": [
+      "27f25b54-24ef-469a-a4bd-67c49d657a9f"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "9f4e532d-9125-4ab3-95c0-dcebd3a668bc"
+    ],
+    "created_at": "2026-10-03T19:06:54.842021+00:00",
+    "updated_at": "2026-10-03T19:06:54.842021+00:00"
+  },
+  {
+    "id": "72ca8f00-b059-43a7-b6e5-c7641ada17b2",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Rohan Varma",
+    "organisation": "Supabase",
+    "designation": "Systems Architect",
+    "contact_info": "rohan.varma@supabase.io",
+    "notes": "Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.",
+    "related_companies": [
+      "e553b082-f4ac-4f83-9922-2d518480e9f6"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "6b50b40b-026e-44ae-abe9-df5068964451"
+    ],
+    "created_at": "2026-10-03T19:06:54.842021+00:00",
+    "updated_at": "2026-10-03T19:06:54.842021+00:00"
+  },
+  {
+    "id": "2f72df3b-a81c-4cf4-a323-bab95bd227d5",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Elena Rostova",
+    "organisation": "Vercel",
+    "designation": "VP of Product Engineering",
+    "contact_info": "elena.r@vercel.com",
+    "notes": "Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.",
+    "related_companies": [
+      "6833d306-c0d2-48f5-85cf-715b37013928"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "6b50b40b-026e-44ae-abe9-df5068964451"
+    ],
+    "created_at": "2026-10-03T19:06:54.842021+00:00",
+    "updated_at": "2026-10-03T19:06:54.842021+00:00"
+  },
+  {
+    "id": "7b7ab2d7-9dad-483d-8087-df9ed8ef38f8",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Elena Rostova",
+    "organisation": "Vercel",
+    "designation": "VP of Product Engineering",
+    "contact_info": "elena.r@vercel.com",
+    "notes": "Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.",
+    "related_companies": [
+      "3e15eda9-f59c-40d3-82bf-f7dee2254dfd"
+    ],
+    "related_technologies": [],
+    "related_projects": [
+      "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+    ],
+    "created_at": "2026-10-03T19:07:08.845415+00:00",
+    "updated_at": "2026-10-03T19:07:08.845415+00:00"
+  }
+]

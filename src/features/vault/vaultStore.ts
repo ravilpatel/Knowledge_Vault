@@ -738,6 +738,149 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         await db.expenses.bulkPut(sampleExpenses);
         set({ expenses: sampleExpenses });
       }
+
+      if (get().projects.length === 0) {
+        const sampleProjects: ProjectEntity[] = [
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'NoteVault + Knowledge Vault 2.0 PWA',
+            status: 'Active',
+            description:
+              'Unified personal knowledge ecosystem combining OneNote-style Google Drive Markdown notes with Supabase-powered Workspace Panels, Eisenhower tasks, and habit streaks.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Autonomous Knowledge Graph & Neural Search',
+            status: 'Planning',
+            description:
+              'Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.',
+            created_at: new Date().toISOString(),
+          },
+        ];
+        await db.projects.bulkPut(sampleProjects);
+        set({ projects: sampleProjects });
+        if (userId) {
+          safeSupabaseCall(
+            sb.from('projects').upsert(
+              sampleProjects.map((p) => ({
+                ...p,
+                status: p.status?.toLowerCase() || 'active',
+              }))
+            )
+          );
+        }
+      }
+
+      if (get().companies.length === 0) {
+        const sampleCompanies: CompanyEntity[] = [
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Anthropic',
+            industry: 'Artificial Intelligence',
+            website: 'https://anthropic.com',
+            description: 'AI safety and research company pioneering constitutional LLMs and Claude.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Supabase',
+            industry: 'Cloud Infrastructure / Database',
+            website: 'https://supabase.com',
+            description: 'Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Vercel',
+            industry: 'Developer Experience / Edge Computing',
+            website: 'https://vercel.com',
+            description: 'Frontend cloud platform powering Next.js and high-performance serverless web apps.',
+            created_at: new Date().toISOString(),
+          },
+        ];
+        await db.companies.bulkPut(sampleCompanies);
+        set({ companies: sampleCompanies });
+        if (userId) {
+          safeSupabaseCall(sb.from('companies').upsert(sampleCompanies));
+        }
+      }
+
+      if (get().people.length === 0) {
+        const samplePeople: PersonEntity[] = [
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Dr. Maya Sharma',
+            organisation: 'Anthropic',
+            designation: 'Principal Research Scientist',
+            contact_info: 'maya.sharma@anthropic.com',
+            notes: 'Co-author on agentic alignment and structured tool-calling benchmarks.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Rohan Varma',
+            organisation: 'Supabase',
+            designation: 'Systems Architect',
+            contact_info: 'rohan.varma@supabase.io',
+            notes: 'Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Elena Rostova',
+            organisation: 'Vercel',
+            designation: 'VP of Product Engineering',
+            contact_info: 'elena.r@vercel.com',
+            notes: 'Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.',
+            created_at: new Date().toISOString(),
+          },
+        ];
+        await db.people.bulkPut(samplePeople);
+        set({ people: samplePeople });
+        if (userId) {
+          safeSupabaseCall(sb.from('people').upsert(samplePeople));
+        }
+      }
+
+      if (get().technologies.length === 0) {
+        const sampleTech: TechnologyEntity[] = [
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'React 18 & TypeScript',
+            description: 'Modern frontend SPA architecture with strict typing and concurrent features.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Dexie.js (IndexedDB v4)',
+            description: 'Client-side relational database caching 11 tables for zero-latency instant offline capability.',
+            created_at: new Date().toISOString(),
+          },
+          {
+            id: generateUUID(),
+            user_id: userId,
+            name: 'Supabase PostgreSQL & Auth',
+            description: 'Cloud backend with Row Level Security, pg_cron, and Auth.',
+            created_at: new Date().toISOString(),
+          },
+        ];
+        await db.technologies.bulkPut(sampleTech);
+        set({ technologies: sampleTech });
+        if (userId) {
+          safeSupabaseCall(sb.from('technologies').upsert(sampleTech));
+        }
+      }
     } finally {
       set({ isLoading: false });
     }

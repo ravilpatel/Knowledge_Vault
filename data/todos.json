@@ -1,0 +1,133 @@
+[
+  {
+    "id": "e795ac60-7ada-4274-89a6-0e04b1bd728d",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Review Q4 Architecture Specifications with Supabase Team",
+    "description": "Verify Postgres Row Level Security policies and Dexie IndexedDB v4 migration.",
+    "urgent": true,
+    "important": true,
+    "due_date": "2026-10-04",
+    "completed": false,
+    "completed_at": null,
+    "notify_telegram": false,
+    "created_at": "2026-10-03T19:07:09.117115+00:00",
+    "updated_at": "2026-10-03T19:07:09.117115+00:00",
+    "status": "todo",
+    "priority": "p1",
+    "project_id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+    "tags": [
+      "Architecture",
+      "Supabase",
+      "P1",
+      "Engineering"
+    ],
+    "subtasks": [
+      {
+        "id": "st-1",
+        "text": "Audit RLS security policies on all tables",
+        "completed": true
+      },
+      {
+        "id": "st-2",
+        "text": "Confirm Dexie outbox retry and conflict handling",
+        "completed": false
+      }
+    ],
+    "recurrence": "none",
+    "due_time": null,
+    "estimated_minutes": null,
+    "order_index": 0
+  },
+  {
+    "id": "ddf5d35a-124a-482e-bebe-a4aca168971f",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Design Habit Heatmap & Streaks Visualization Component",
+    "description": "Implement GitHub-style green activity grid with 365-day streak counter.",
+    "urgent": false,
+    "important": true,
+    "due_date": "2026-10-10",
+    "completed": false,
+    "completed_at": null,
+    "notify_telegram": false,
+    "created_at": "2026-10-03T19:07:09.117115+00:00",
+    "updated_at": "2026-10-03T19:07:09.117115+00:00",
+    "status": "todo",
+    "priority": "p2",
+    "project_id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+    "tags": [
+      "UI",
+      "Habits",
+      "Frontend",
+      "Productivity"
+    ],
+    "subtasks": [
+      {
+        "id": "st-3",
+        "text": "Create SVG 7-column day matrix",
+        "completed": false
+      },
+      {
+        "id": "st-4",
+        "text": "Connect streak calculation to habit_logs",
+        "completed": false
+      }
+    ],
+    "recurrence": "none",
+    "due_time": null,
+    "estimated_minutes": null,
+    "order_index": 0
+  },
+  {
+    "id": "d6dd030f-0a18-4be8-94d8-4135803394e9",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Draft Partner Integration Agreement with Anthropic Team",
+    "description": "Coordinate with Dr. Maya Sharma regarding model endpoint API usage limits.",
+    "urgent": true,
+    "important": false,
+    "due_date": "2026-10-04",
+    "completed": false,
+    "completed_at": null,
+    "notify_telegram": false,
+    "created_at": "2026-10-03T19:07:09.117115+00:00",
+    "updated_at": "2026-10-03T19:07:09.117115+00:00",
+    "status": "todo",
+    "priority": "p3",
+    "project_id": "eb10c124-26c7-4c41-8742-8ff39c290a20",
+    "tags": [
+      "Legal",
+      "Anthropic",
+      "Partnerships"
+    ],
+    "subtasks": [],
+    "recurrence": "none",
+    "due_time": null,
+    "estimated_minutes": null,
+    "order_index": 0
+  },
+  {
+    "id": "7d2f3a61-bb53-4686-bf11-b775358a5029",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Archive Obsolete Deprecated Web Worker References",
+    "description": "Clean up legacy/ directory leftovers and obsolete test scripts.",
+    "urgent": false,
+    "important": false,
+    "due_date": null,
+    "completed": true,
+    "completed_at": "2026-10-03T19:07:08.378+00:00",
+    "notify_telegram": false,
+    "created_at": "2026-10-03T19:07:09.117115+00:00",
+    "updated_at": "2026-10-03T19:07:09.117115+00:00",
+    "status": "done",
+    "priority": "p4",
+    "project_id": null,
+    "tags": [
+      "Cleanup",
+      "Maintenance"
+    ],
+    "subtasks": [],
+    "recurrence": "none",
+    "due_time": null,
+    "estimated_minutes": null,
+    "order_index": 0
+  }
+]

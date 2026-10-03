@@ -1,0 +1,46 @@
+[
+  {
+    "id": "6b50b40b-026e-44ae-abe9-df5068964451",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "NoteVault + Knowledge Vault 2.0 PWA",
+    "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+    "status": "active",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-03T19:06:54.674656+00:00",
+    "updated_at": "2026-10-03T19:06:54.674656+00:00"
+  },
+  {
+    "id": "9f4e532d-9125-4ab3-95c0-dcebd3a668bc",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Autonomous Knowledge Graph & Neural Search",
+    "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+    "status": "planning",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-03T19:06:54.674656+00:00",
+    "updated_at": "2026-10-03T19:06:54.674656+00:00"
+  },
+  {
+    "id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "NoteVault + Knowledge Vault 2.0 PWA",
+    "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+    "status": "active",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-03T19:07:08.493224+00:00",
+    "updated_at": "2026-10-03T19:07:08.493224+00:00"
+  },
+  {
+    "id": "eb10c124-26c7-4c41-8742-8ff39c290a20",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Autonomous Knowledge Graph & Neural Search",
+    "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+    "status": "planning",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-03T19:07:08.493224+00:00",
+    "updated_at": "2026-10-03T19:07:08.493224+00:00"
+  }
+]

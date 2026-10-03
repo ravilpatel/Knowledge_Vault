@@ -1,0 +1,823 @@
+{
+  "metadata": {
+    "exportedAt": "2026-10-03T19:07:52.027Z",
+    "supabaseUrl": "https://cmpklimagrwwzfjvqzqe.supabase.co",
+    "userId": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "counts": {
+      "projects": 4,
+      "people": 6,
+      "companies": 6,
+      "habits": 6,
+      "habitLogs": 14,
+      "todos": 4,
+      "panels": 1,
+      "panelEntries": 0,
+      "technologies": 6
+    }
+  },
+  "projects": [
+    {
+      "id": "6b50b40b-026e-44ae-abe9-df5068964451",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "NoteVault + Knowledge Vault 2.0 PWA",
+      "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+      "status": "active",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-03T19:06:54.674656+00:00",
+      "updated_at": "2026-10-03T19:06:54.674656+00:00"
+    },
+    {
+      "id": "9f4e532d-9125-4ab3-95c0-dcebd3a668bc",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Autonomous Knowledge Graph & Neural Search",
+      "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+      "status": "planning",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-03T19:06:54.674656+00:00",
+      "updated_at": "2026-10-03T19:06:54.674656+00:00"
+    },
+    {
+      "id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "NoteVault + Knowledge Vault 2.0 PWA",
+      "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+      "status": "active",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-03T19:07:08.493224+00:00",
+      "updated_at": "2026-10-03T19:07:08.493224+00:00"
+    },
+    {
+      "id": "eb10c124-26c7-4c41-8742-8ff39c290a20",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Autonomous Knowledge Graph & Neural Search",
+      "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+      "status": "planning",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-03T19:07:08.493224+00:00",
+      "updated_at": "2026-10-03T19:07:08.493224+00:00"
+    }
+  ],
+  "people": [
+    {
+      "id": "05d30bb1-146f-46b8-a80d-0b5c982ab04a",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dr. Maya Sharma",
+      "organisation": "Anthropic",
+      "designation": "Principal Research Scientist",
+      "contact_info": "maya.sharma@anthropic.com",
+      "notes": "Co-author on agentic alignment and structured tool-calling benchmarks.",
+      "related_companies": [
+        "3010cbe4-ce6b-415f-a1d4-2c7f9cd326df"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "eb10c124-26c7-4c41-8742-8ff39c290a20"
+      ],
+      "created_at": "2026-10-03T19:07:08.845415+00:00",
+      "updated_at": "2026-10-03T19:07:08.845415+00:00"
+    },
+    {
+      "id": "6261dc0b-488f-4696-b0cc-629b042fede9",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Rohan Varma",
+      "organisation": "Supabase",
+      "designation": "Systems Architect",
+      "contact_info": "rohan.varma@supabase.io",
+      "notes": "Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.",
+      "related_companies": [
+        "1659c501-e004-4799-bbef-9a7abb03b547"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+      ],
+      "created_at": "2026-10-03T19:07:08.845415+00:00",
+      "updated_at": "2026-10-03T19:07:08.845415+00:00"
+    },
+    {
+      "id": "99ea4a19-0a2a-46c0-98fe-352bcba6553e",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dr. Maya Sharma",
+      "organisation": "Anthropic",
+      "designation": "Principal Research Scientist",
+      "contact_info": "maya.sharma@anthropic.com",
+      "notes": "Co-author on agentic alignment and structured tool-calling benchmarks.",
+      "related_companies": [
+        "27f25b54-24ef-469a-a4bd-67c49d657a9f"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "9f4e532d-9125-4ab3-95c0-dcebd3a668bc"
+      ],
+      "created_at": "2026-10-03T19:06:54.842021+00:00",
+      "updated_at": "2026-10-03T19:06:54.842021+00:00"
+    },
+    {
+      "id": "72ca8f00-b059-43a7-b6e5-c7641ada17b2",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Rohan Varma",
+      "organisation": "Supabase",
+      "designation": "Systems Architect",
+      "contact_info": "rohan.varma@supabase.io",
+      "notes": "Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.",
+      "related_companies": [
+        "e553b082-f4ac-4f83-9922-2d518480e9f6"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "6b50b40b-026e-44ae-abe9-df5068964451"
+      ],
+      "created_at": "2026-10-03T19:06:54.842021+00:00",
+      "updated_at": "2026-10-03T19:06:54.842021+00:00"
+    },
+    {
+      "id": "2f72df3b-a81c-4cf4-a323-bab95bd227d5",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Elena Rostova",
+      "organisation": "Vercel",
+      "designation": "VP of Product Engineering",
+      "contact_info": "elena.r@vercel.com",
+      "notes": "Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.",
+      "related_companies": [
+        "6833d306-c0d2-48f5-85cf-715b37013928"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "6b50b40b-026e-44ae-abe9-df5068964451"
+      ],
+      "created_at": "2026-10-03T19:06:54.842021+00:00",
+      "updated_at": "2026-10-03T19:06:54.842021+00:00"
+    },
+    {
+      "id": "7b7ab2d7-9dad-483d-8087-df9ed8ef38f8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Elena Rostova",
+      "organisation": "Vercel",
+      "designation": "VP of Product Engineering",
+      "contact_info": "elena.r@vercel.com",
+      "notes": "Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.",
+      "related_companies": [
+        "3e15eda9-f59c-40d3-82bf-f7dee2254dfd"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+      ],
+      "created_at": "2026-10-03T19:07:08.845415+00:00",
+      "updated_at": "2026-10-03T19:07:08.845415+00:00"
+    }
+  ],
+  "companies": [
+    {
+      "id": "27f25b54-24ef-469a-a4bd-67c49d657a9f",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Anthropic",
+      "industry": "Artificial Intelligence",
+      "website": "https://anthropic.com",
+      "description": "AI safety and research company pioneering constitutional LLMs and Claude.",
+      "related_people": [],
+      "related_projects": [
+        "9f4e532d-9125-4ab3-95c0-dcebd3a668bc"
+      ],
+      "created_at": "2026-10-03T19:06:54.76346+00:00",
+      "updated_at": "2026-10-03T19:06:54.76346+00:00"
+    },
+    {
+      "id": "e553b082-f4ac-4f83-9922-2d518480e9f6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase",
+      "industry": "Cloud Infrastructure / Database",
+      "website": "https://supabase.com",
+      "description": "Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.",
+      "related_people": [],
+      "related_projects": [
+        "6b50b40b-026e-44ae-abe9-df5068964451"
+      ],
+      "created_at": "2026-10-03T19:06:54.76346+00:00",
+      "updated_at": "2026-10-03T19:06:54.76346+00:00"
+    },
+    {
+      "id": "6833d306-c0d2-48f5-85cf-715b37013928",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Vercel",
+      "industry": "Developer Experience / Edge Computing",
+      "website": "https://vercel.com",
+      "description": "Frontend cloud platform powering Next.js and high-performance serverless web apps.",
+      "related_people": [],
+      "related_projects": [
+        "6b50b40b-026e-44ae-abe9-df5068964451"
+      ],
+      "created_at": "2026-10-03T19:06:54.76346+00:00",
+      "updated_at": "2026-10-03T19:06:54.76346+00:00"
+    },
+    {
+      "id": "3010cbe4-ce6b-415f-a1d4-2c7f9cd326df",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Anthropic",
+      "industry": "Artificial Intelligence",
+      "website": "https://anthropic.com",
+      "description": "AI safety and research company pioneering constitutional LLMs and Claude.",
+      "related_people": [],
+      "related_projects": [
+        "eb10c124-26c7-4c41-8742-8ff39c290a20"
+      ],
+      "created_at": "2026-10-03T19:07:08.764153+00:00",
+      "updated_at": "2026-10-03T19:07:08.764153+00:00"
+    },
+    {
+      "id": "1659c501-e004-4799-bbef-9a7abb03b547",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase",
+      "industry": "Cloud Infrastructure / Database",
+      "website": "https://supabase.com",
+      "description": "Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.",
+      "related_people": [],
+      "related_projects": [
+        "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+      ],
+      "created_at": "2026-10-03T19:07:08.764153+00:00",
+      "updated_at": "2026-10-03T19:07:08.764153+00:00"
+    },
+    {
+      "id": "3e15eda9-f59c-40d3-82bf-f7dee2254dfd",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Vercel",
+      "industry": "Developer Experience / Edge Computing",
+      "website": "https://vercel.com",
+      "description": "Frontend cloud platform powering Next.js and high-performance serverless web apps.",
+      "related_people": [],
+      "related_projects": [
+        "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+      ],
+      "created_at": "2026-10-03T19:07:08.764153+00:00",
+      "updated_at": "2026-10-03T19:07:08.764153+00:00"
+    }
+  ],
+  "habits": [
+    {
+      "id": "b86db689-b186-4323-b82d-42b224eb51a3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Daily Deep Work Block (90m)",
+      "description": "Uninterrupted focus session with notifications disabled.",
+      "category": "Productivity",
+      "color": "#4F46E5",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "session",
+      "reminder_time": "09:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 0,
+      "created_at": "2026-10-03T19:06:54.914559+00:00",
+      "updated_at": "2026-10-03T19:06:54.914559+00:00"
+    },
+    {
+      "id": "6e51b30d-0b4b-4ee7-8e70-34007ecc36a6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "30-Minute Research & Paper Reading",
+      "description": "Read papers on AI architectures, distributed databases, or systems design.",
+      "category": "Learning",
+      "color": "#0284C7",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_count": 1,
+      "unit": "reading",
+      "reminder_time": "19:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 1,
+      "created_at": "2026-10-03T19:06:54.914559+00:00",
+      "updated_at": "2026-10-03T19:06:54.914559+00:00"
+    },
+    {
+      "id": "66c4cafc-b912-4a6a-9e19-96228b81ddf2",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Physical Conditioning & Cardio",
+      "description": "Zone 2 cardio or strength session.",
+      "category": "Fitness",
+      "color": "#10B981",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "workout",
+      "reminder_time": "07:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 2,
+      "created_at": "2026-10-03T19:06:54.914559+00:00",
+      "updated_at": "2026-10-03T19:06:54.914559+00:00"
+    },
+    {
+      "id": "bc25d2c7-c4ee-4bcd-b93d-b08bf91313d6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Daily Deep Work Block (90m)",
+      "description": "Uninterrupted focus session with notifications disabled.",
+      "category": "Productivity",
+      "color": "#4F46E5",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "session",
+      "reminder_time": "09:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 0,
+      "created_at": "2026-10-03T19:07:08.918895+00:00",
+      "updated_at": "2026-10-03T19:07:08.918895+00:00"
+    },
+    {
+      "id": "78b3abf9-9fba-4121-800c-ff9bf36eb570",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "30-Minute Research & Paper Reading",
+      "description": "Read papers on AI architectures, distributed databases, or systems design.",
+      "category": "Learning",
+      "color": "#0284C7",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_count": 1,
+      "unit": "reading",
+      "reminder_time": "19:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 1,
+      "created_at": "2026-10-03T19:07:08.918895+00:00",
+      "updated_at": "2026-10-03T19:07:08.918895+00:00"
+    },
+    {
+      "id": "f60d5e0e-28e6-43b3-a90c-3c1a62234eb8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Physical Conditioning & Cardio",
+      "description": "Zone 2 cardio or strength session.",
+      "category": "Fitness",
+      "color": "#10B981",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "workout",
+      "reminder_time": "07:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 2,
+      "created_at": "2026-10-03T19:07:08.918895+00:00",
+      "updated_at": "2026-10-03T19:07:08.918895+00:00"
+    }
+  ],
+  "habitLogs": [
+    {
+      "id": "49052d94-2c14-4702-8b25-3d14502a2f9d",
+      "habit_id": "b86db689-b186-4323-b82d-42b224eb51a3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "d8579064-fdee-4689-8602-c71a05d1a7a9",
+      "habit_id": "b86db689-b186-4323-b82d-42b224eb51a3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "17951362-1731-4327-9856-4f27d6acf2c7",
+      "habit_id": "b86db689-b186-4323-b82d-42b224eb51a3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-01",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "a3bb3570-fbfd-403d-bf7a-8205a85bc128",
+      "habit_id": "6e51b30d-0b4b-4ee7-8e70-34007ecc36a6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "0532ce78-a16b-4138-bb32-cf42061ed6f4",
+      "habit_id": "6e51b30d-0b4b-4ee7-8e70-34007ecc36a6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "3b2c743b-acca-4387-9a73-19d7137937dd",
+      "habit_id": "66c4cafc-b912-4a6a-9e19-96228b81ddf2",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "21ba015a-c6b3-4e12-8c21-be80f5b29700",
+      "habit_id": "66c4cafc-b912-4a6a-9e19-96228b81ddf2",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:06:54.998218+00:00",
+      "updated_at": "2026-10-03T19:06:54.998218+00:00"
+    },
+    {
+      "id": "e8e3303c-a4ac-4e64-a557-577266e80879",
+      "habit_id": "bc25d2c7-c4ee-4bcd-b93d-b08bf91313d6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "52414898-00a2-419c-8542-6cb2b52a1e8c",
+      "habit_id": "bc25d2c7-c4ee-4bcd-b93d-b08bf91313d6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "9925da29-710c-4473-b954-c99fc540ac7e",
+      "habit_id": "bc25d2c7-c4ee-4bcd-b93d-b08bf91313d6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-01",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "cab5546c-54ed-4611-b4ae-295498c8f131",
+      "habit_id": "78b3abf9-9fba-4121-800c-ff9bf36eb570",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "93972531-4e32-4851-94a5-21253564ddd2",
+      "habit_id": "78b3abf9-9fba-4121-800c-ff9bf36eb570",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "115efdba-c591-4a56-8c29-fc82c651451c",
+      "habit_id": "f60d5e0e-28e6-43b3-a90c-3c1a62234eb8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "2b4ccbdd-0b6c-490f-a97b-5ae4e2480b2e",
+      "habit_id": "f60d5e0e-28e6-43b3-a90c-3c1a62234eb8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-03T19:07:09.047942+00:00",
+      "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    }
+  ],
+  "todos": [
+    {
+      "id": "e795ac60-7ada-4274-89a6-0e04b1bd728d",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Review Q4 Architecture Specifications with Supabase Team",
+      "description": "Verify Postgres Row Level Security policies and Dexie IndexedDB v4 migration.",
+      "urgent": true,
+      "important": true,
+      "due_date": "2026-10-04",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-03T19:07:09.117115+00:00",
+      "updated_at": "2026-10-03T19:07:09.117115+00:00",
+      "status": "todo",
+      "priority": "p1",
+      "project_id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+      "tags": [
+        "Architecture",
+        "Supabase",
+        "P1",
+        "Engineering"
+      ],
+      "subtasks": [
+        {
+          "id": "st-1",
+          "text": "Audit RLS security policies on all tables",
+          "completed": true
+        },
+        {
+          "id": "st-2",
+          "text": "Confirm Dexie outbox retry and conflict handling",
+          "completed": false
+        }
+      ],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0
+    },
+    {
+      "id": "ddf5d35a-124a-482e-bebe-a4aca168971f",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Design Habit Heatmap & Streaks Visualization Component",
+      "description": "Implement GitHub-style green activity grid with 365-day streak counter.",
+      "urgent": false,
+      "important": true,
+      "due_date": "2026-10-10",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-03T19:07:09.117115+00:00",
+      "updated_at": "2026-10-03T19:07:09.117115+00:00",
+      "status": "todo",
+      "priority": "p2",
+      "project_id": "453ebfb8-d47c-4a70-9fc0-ea9d5401e808",
+      "tags": [
+        "UI",
+        "Habits",
+        "Frontend",
+        "Productivity"
+      ],
+      "subtasks": [
+        {
+          "id": "st-3",
+          "text": "Create SVG 7-column day matrix",
+          "completed": false
+        },
+        {
+          "id": "st-4",
+          "text": "Connect streak calculation to habit_logs",
+          "completed": false
+        }
+      ],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0
+    },
+    {
+      "id": "d6dd030f-0a18-4be8-94d8-4135803394e9",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Draft Partner Integration Agreement with Anthropic Team",
+      "description": "Coordinate with Dr. Maya Sharma regarding model endpoint API usage limits.",
+      "urgent": true,
+      "important": false,
+      "due_date": "2026-10-04",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-03T19:07:09.117115+00:00",
+      "updated_at": "2026-10-03T19:07:09.117115+00:00",
+      "status": "todo",
+      "priority": "p3",
+      "project_id": "eb10c124-26c7-4c41-8742-8ff39c290a20",
+      "tags": [
+        "Legal",
+        "Anthropic",
+        "Partnerships"
+      ],
+      "subtasks": [],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0
+    },
+    {
+      "id": "7d2f3a61-bb53-4686-bf11-b775358a5029",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Archive Obsolete Deprecated Web Worker References",
+      "description": "Clean up legacy/ directory leftovers and obsolete test scripts.",
+      "urgent": false,
+      "important": false,
+      "due_date": null,
+      "completed": true,
+      "completed_at": "2026-10-03T19:07:08.378+00:00",
+      "notify_telegram": false,
+      "created_at": "2026-10-03T19:07:09.117115+00:00",
+      "updated_at": "2026-10-03T19:07:09.117115+00:00",
+      "status": "done",
+      "priority": "p4",
+      "project_id": null,
+      "tags": [
+        "Cleanup",
+        "Maintenance"
+      ],
+      "subtasks": [],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0
+    }
+  ],
+  "panels": [
+    {
+      "id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Notes",
+      "icon": "fa-file-alt",
+      "color": "#4F46E5",
+      "sort_order": 0,
+      "created_at": "2026-10-03T19:06:54.083856+00:00"
+    }
+  ],
+  "panelFields": [
+    {
+      "id": "d49255bd-a541-42e8-a269-eb07184f72ba",
+      "panel_id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "field_key": "title",
+      "field_label": "Title",
+      "field_type": "text",
+      "field_order": 1,
+      "is_required": true,
+      "options": []
+    },
+    {
+      "id": "4737970f-5c30-4a04-b1d5-ec94ec91449a",
+      "panel_id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "field_key": "description",
+      "field_label": "Description",
+      "field_type": "textarea",
+      "field_order": 2,
+      "is_required": false,
+      "options": []
+    },
+    {
+      "id": "3fc32b6f-260b-4bbb-bd66-58389927c523",
+      "panel_id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "field_key": "tags",
+      "field_label": "Tags",
+      "field_type": "tags",
+      "field_order": 3,
+      "is_required": false,
+      "options": []
+    },
+    {
+      "id": "2beb39ad-de25-4b4e-92af-93a62576b169",
+      "panel_id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "field_key": "people",
+      "field_label": "People",
+      "field_type": "people_link",
+      "field_order": 4,
+      "is_required": false,
+      "options": []
+    },
+    {
+      "id": "fa35236e-2803-41be-83b7-c3bd0e5e44d8",
+      "panel_id": "54dd66d8-95df-4938-94df-12bd4aa4046b",
+      "field_key": "links",
+      "field_label": "Links",
+      "field_type": "url",
+      "field_order": 5,
+      "is_required": false,
+      "options": []
+    }
+  ],
+  "panelEntries": [],
+  "technologies": [
+    {
+      "id": "22c45d5d-b7e2-4b1a-ac2d-f8bde7bbf179",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "React 18 & TypeScript",
+      "description": "Frontend framework with strict type checking and concurrent rendering.",
+      "created_at": "2026-10-03T19:06:55.164036+00:00",
+      "updated_at": "2026-10-03T19:06:55.164036+00:00"
+    },
+    {
+      "id": "a416fc68-9308-4daf-873b-1a612a0680f7",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase PostgreSQL & Auth",
+      "description": "Cloud database with Row Level Security (RLS) and JWT auth token persistence.",
+      "created_at": "2026-10-03T19:06:55.164036+00:00",
+      "updated_at": "2026-10-03T19:06:55.164036+00:00"
+    },
+    {
+      "id": "ac9558c1-c111-4eaf-b315-585d476ee86a",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dexie.js (IndexedDB v4)",
+      "description": "Client-side relational database caching 11 tables for zero-latency instant offline capability.",
+      "created_at": "2026-10-03T19:06:55.164036+00:00",
+      "updated_at": "2026-10-03T19:06:55.164036+00:00"
+    },
+    {
+      "id": "ca61bdac-5bc5-4d59-a5f8-e006ea2f7a7a",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "React 18 & TypeScript",
+      "description": "Frontend framework with strict type checking and concurrent rendering.",
+      "created_at": "2026-10-03T19:07:09.202781+00:00",
+      "updated_at": "2026-10-03T19:07:09.202781+00:00"
+    },
+    {
+      "id": "0a07f051-f3b3-4609-9f77-10d8a1ec3ee3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase PostgreSQL & Auth",
+      "description": "Cloud database with Row Level Security (RLS) and JWT auth token persistence.",
+      "created_at": "2026-10-03T19:07:09.202781+00:00",
+      "updated_at": "2026-10-03T19:07:09.202781+00:00"
+    },
+    {
+      "id": "86291c7f-07f4-4eb0-8551-cdcf612f598e",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dexie.js (IndexedDB v4)",
+      "description": "Client-side relational database caching 11 tables for zero-latency instant offline capability.",
+      "created_at": "2026-10-03T19:07:09.202781+00:00",
+      "updated_at": "2026-10-03T19:07:09.202781+00:00"
+    }
+  ]
+}

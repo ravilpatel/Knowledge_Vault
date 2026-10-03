@@ -1,0 +1,86 @@
+[
+  {
+    "id": "27f25b54-24ef-469a-a4bd-67c49d657a9f",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Anthropic",
+    "industry": "Artificial Intelligence",
+    "website": "https://anthropic.com",
+    "description": "AI safety and research company pioneering constitutional LLMs and Claude.",
+    "related_people": [],
+    "related_projects": [
+      "9f4e532d-9125-4ab3-95c0-dcebd3a668bc"
+    ],
+    "created_at": "2026-10-03T19:06:54.76346+00:00",
+    "updated_at": "2026-10-03T19:06:54.76346+00:00"
+  },
+  {
+    "id": "e553b082-f4ac-4f83-9922-2d518480e9f6",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Supabase",
+    "industry": "Cloud Infrastructure / Database",
+    "website": "https://supabase.com",
+    "description": "Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.",
+    "related_people": [],
+    "related_projects": [
+      "6b50b40b-026e-44ae-abe9-df5068964451"
+    ],
+    "created_at": "2026-10-03T19:06:54.76346+00:00",
+    "updated_at": "2026-10-03T19:06:54.76346+00:00"
+  },
+  {
+    "id": "6833d306-c0d2-48f5-85cf-715b37013928",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Vercel",
+    "industry": "Developer Experience / Edge Computing",
+    "website": "https://vercel.com",
+    "description": "Frontend cloud platform powering Next.js and high-performance serverless web apps.",
+    "related_people": [],
+    "related_projects": [
+      "6b50b40b-026e-44ae-abe9-df5068964451"
+    ],
+    "created_at": "2026-10-03T19:06:54.76346+00:00",
+    "updated_at": "2026-10-03T19:06:54.76346+00:00"
+  },
+  {
+    "id": "3010cbe4-ce6b-415f-a1d4-2c7f9cd326df",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Anthropic",
+    "industry": "Artificial Intelligence",
+    "website": "https://anthropic.com",
+    "description": "AI safety and research company pioneering constitutional LLMs and Claude.",
+    "related_people": [],
+    "related_projects": [
+      "eb10c124-26c7-4c41-8742-8ff39c290a20"
+    ],
+    "created_at": "2026-10-03T19:07:08.764153+00:00",
+    "updated_at": "2026-10-03T19:07:08.764153+00:00"
+  },
+  {
+    "id": "1659c501-e004-4799-bbef-9a7abb03b547",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Supabase",
+    "industry": "Cloud Infrastructure / Database",
+    "website": "https://supabase.com",
+    "description": "Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.",
+    "related_people": [],
+    "related_projects": [
+      "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+    ],
+    "created_at": "2026-10-03T19:07:08.764153+00:00",
+    "updated_at": "2026-10-03T19:07:08.764153+00:00"
+  },
+  {
+    "id": "3e15eda9-f59c-40d3-82bf-f7dee2254dfd",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Vercel",
+    "industry": "Developer Experience / Edge Computing",
+    "website": "https://vercel.com",
+    "description": "Frontend cloud platform powering Next.js and high-performance serverless web apps.",
+    "related_people": [],
+    "related_projects": [
+      "453ebfb8-d47c-4a70-9fc0-ea9d5401e808"
+    ],
+    "created_at": "2026-10-03T19:07:08.764153+00:00",
+    "updated_at": "2026-10-03T19:07:08.764153+00:00"
+  }
+]
