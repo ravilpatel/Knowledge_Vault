@@ -21,7 +21,21 @@ import {
   List,
   Edit2,
   X,
+  Building2,
+  Briefcase,
+  Cpu,
+  Star,
+  User,
+  Download,
+  CheckCircle2,
 } from 'lucide-react';
+import {
+  PeopleView,
+  CompaniesView,
+  ProjectsView,
+  TechnologiesView,
+  LegacyNotesView,
+} from './DirectoryViews';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   FolderKanban,
@@ -49,6 +63,11 @@ export const WorkspacePanelsView: React.FC = () => {
     panels,
     panelFields,
     panelEntries,
+    people,
+    companies,
+    technologies,
+    projects,
+    legacyNotes,
     activePanelId,
     setActivePanelId,
     createPanel,
@@ -59,9 +78,13 @@ export const WorkspacePanelsView: React.FC = () => {
     createEntry,
     updateEntry,
     deleteEntry,
+    importLegacyNotesToNoteVault,
     supabaseSyncStatus,
   } = useVaultStore();
 
+  const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects' | 'technologies' | 'notes'>('panels');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>('grid');
 
@@ -351,10 +374,147 @@ export const WorkspacePanelsView: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto space-y-4">
+        {!activePanelId && (
+          <>
+            {/* Supabase Legacy Notes Banner */}
+            {legacyNotes.length > 0 && subTab === 'panels' && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <span>
+                    Found <strong>{legacyNotes.length} legacy notes</strong> in Supabase. You can import them directly into your Google Drive NoteVault.
+                  </span>
+                </div>
+                <button
+                  onClick={async () => {
+                    setIsImporting(true);
+                    try {
+                      const res = await importLegacyNotesToNoteVault();
+                      setImportSuccess(`Imported ${res.count} notes into Google Drive!`);
+                    } catch (err: any) {
+                      alert('Import failed: ' + err.message);
+                    } finally {
+                      setIsImporting(false);
+                    }
+                  }}
+                  disabled={isImporting}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 text-white font-semibold hover:bg-amber-700 transition disabled:opacity-50 text-xs flex-shrink-0 shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{isImporting ? 'Importing...' : 'Import to Google Drive Notes'}</span>
+                </button>
+              </div>
+            )}
+
+            {importSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <span>{importSuccess}</span>
+                </div>
+                <button
+                  onClick={() => setImportSuccess(null)}
+                  className="text-emerald-700 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-200 text-xs font-semibold"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+
+            {/* Sub-tab Navigation */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
+              <button
+                onClick={() => setSubTab('panels')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                  subTab === 'panels'
+                    ? 'bg-brand-primary text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+                }`}
+              >
+                <FolderKanban className="w-3.5 h-3.5" />
+                <span>Custom Boards ({panels.length})</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('people')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                  subTab === 'people'
+                    ? 'bg-brand-primary text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>People & Contacts ({people.length})</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('companies')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                  subTab === 'companies'
+                    ? 'bg-brand-primary text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Companies ({companies.length})</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('projects')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                  subTab === 'projects'
+                    ? 'bg-brand-primary text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+                }`}
+              >
+                <Briefcase className="w-3.5 h-3.5" />
+                <span>Projects ({projects.length})</span>
+              </button>
+
+              <button
+                onClick={() => setSubTab('technologies')}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                  subTab === 'technologies'
+                    ? 'bg-brand-primary text-white shadow-xs'
+                    : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+                }`}
+              >
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Technologies ({technologies.length})</span>
+              </button>
+
+              {legacyNotes.length > 0 && (
+                <button
+                  onClick={() => setSubTab('notes')}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
+                    subTab === 'notes'
+                      ? 'bg-amber-600 text-white shadow-xs'
+                      : 'text-amber-700 dark:text-amber-300 hover:bg-amber-500/10'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Supabase Notes ({legacyNotes.length})</span>
+                </button>
+              )}
+            </div>
+          </>
+        )}
+
         {!activePanelId ? (
-          /* Level 1: All Panels Pinned Grid */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          subTab === 'people' ? (
+            <PeopleView />
+          ) : subTab === 'companies' ? (
+            <CompaniesView />
+          ) : subTab === 'projects' ? (
+            <ProjectsView />
+          ) : subTab === 'technologies' ? (
+            <TechnologiesView />
+          ) : subTab === 'notes' ? (
+            <LegacyNotesView />
+          ) : (
+            /* Level 1: All Panels Pinned Grid */
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {panels.map((panel) => {
               const IconComp = ICON_MAP[panel.icon || 'Folder'] || Folder;
               const count = panelEntries.filter((e) => e.panel_id === panel.id).length;
@@ -437,6 +597,7 @@ export const WorkspacePanelsView: React.FC = () => {
               );
             })}
           </div>
+          )
         ) : (
           /* Level 2: Selected Panel Entries View */
           <div className="h-full flex flex-col">
@@ -486,7 +647,7 @@ export const WorkspacePanelsView: React.FC = () => {
                       <div className="space-y-1.5 text-xs text-ink-secondary dark:text-ink-darkSecondary">
                         {activeFields.slice(1).map((field) => {
                           const val = entry.data[field.field_key];
-                          if (!val) return null;
+                          if (val === undefined || val === null || val === '') return null;
 
                           return (
                             <div key={field.id} className="text-[11px] leading-relaxed">
@@ -515,6 +676,44 @@ export const WorkspacePanelsView: React.FC = () => {
                                 <span className="inline-block px-2 py-0.5 rounded-full bg-brand-light dark:bg-brand-primary/10 text-brand-primary dark:text-brand-darkPrimary text-[10px] font-semibold">
                                   {String(val)}
                                 </span>
+                              ) : field.field_type === 'tags' ? (
+                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                  {String(val)
+                                    .split(',')
+                                    .map((t) => t.trim())
+                                    .filter(Boolean)
+                                    .map((tag, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-1.5 py-0.5 rounded bg-surface-subtle dark:bg-surface-subtleDark text-[10px] text-ink-muted border border-border-subtle/50"
+                                      >
+                                        #{tag}
+                                      </span>
+                                    ))}
+                                </div>
+                              ) : field.field_type === 'rating' ? (
+                                <div className="flex items-center gap-0.5 text-amber-500 mt-0.5">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`w-3 h-3 ${star <= Number(val) ? 'fill-current' : 'opacity-25'}`}
+                                    />
+                                  ))}
+                                </div>
+                              ) : field.field_type === 'people_link' ? (
+                                <span className="inline-flex items-center gap-1 text-brand-primary font-medium">
+                                  <User className="w-3 h-3" />
+                                  <span>
+                                    {people.find((p) => p.id === val || p.name === val)?.name || String(val)}
+                                  </span>
+                                </span>
+                              ) : field.field_type === 'projects_link' ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                                  <Briefcase className="w-3 h-3" />
+                                  <span>
+                                    {projects.find((pr) => pr.id === val || pr.name === val)?.name || String(val)}
+                                  </span>
+                                </span>
                               ) : (
                                 <span className="text-ink-primary dark:text-ink-darkPrimary">
                                   {String(val)}
@@ -535,7 +734,7 @@ export const WorkspacePanelsView: React.FC = () => {
             ) : (
               /* Table View */
               <div className="overflow-x-auto border border-border-subtle dark:border-border-darkSubtle rounded-2xl bg-surface dark:bg-surface-dark shadow-xs">
-                <table className="w-full text-left text-xs divide-y divide-border-subtle dark:divide-border-darkSubtle">
+                <table className="w-full text-left text-xs divide-y border-border-subtle dark:divide-border-darkSubtle">
                   <thead className="bg-surface-subtle dark:bg-surface-subtleDark font-bold text-ink-muted">
                     <tr>
                       {activeFields.map((f) => (
@@ -554,9 +753,16 @@ export const WorkspacePanelsView: React.FC = () => {
                       >
                         {activeFields.map((f) => {
                           const val = entry.data[f.field_key];
+                          if (val === undefined || val === null || val === '') {
+                            return (
+                              <td key={f.id} className="p-3 text-ink-muted">
+                                —
+                              </td>
+                            );
+                          }
                           return (
                             <td key={f.id} className="p-3 max-w-[200px] truncate text-ink-primary dark:text-ink-darkPrimary">
-                              {f.field_type === 'url' && val ? (
+                              {f.field_type === 'url' ? (
                                 <a
                                   href={String(val)}
                                   target="_blank"
@@ -566,8 +772,42 @@ export const WorkspacePanelsView: React.FC = () => {
                                   <span className="truncate">{String(val)}</span>
                                   <ExternalLink className="w-3 h-3 flex-shrink-0" />
                                 </a>
+                              ) : f.field_type === 'tags' ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {String(val)
+                                    .split(',')
+                                    .map((t) => t.trim())
+                                    .filter(Boolean)
+                                    .map((t, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="px-1.5 py-0.5 rounded bg-surface-subtle dark:bg-surface-subtleDark text-[10px] text-ink-muted border border-border-subtle/50"
+                                      >
+                                        #{t}
+                                      </span>
+                                    ))}
+                                </div>
+                              ) : f.field_type === 'rating' ? (
+                                <div className="flex items-center gap-0.5 text-amber-500">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`w-3 h-3 ${star <= Number(val) ? 'fill-current' : 'opacity-25'}`}
+                                    />
+                                  ))}
+                                </div>
+                              ) : f.field_type === 'people_link' ? (
+                                <span className="inline-flex items-center gap-1 text-brand-primary font-medium">
+                                  <User className="w-3 h-3" />
+                                  <span>{people.find((p) => p.id === val || p.name === val)?.name || String(val)}</span>
+                                </span>
+                              ) : f.field_type === 'projects_link' ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                                  <Briefcase className="w-3 h-3" />
+                                  <span>{projects.find((pr) => pr.id === val || pr.name === val)?.name || String(val)}</span>
+                                </span>
                               ) : (
-                                String(val || '—')
+                                String(val)
                               )}
                             </td>
                           );
@@ -705,6 +945,9 @@ export const WorkspacePanelsView: React.FC = () => {
                       <option value="url">URL Link</option>
                       <option value="select">Dropdown Select</option>
                       <option value="tags">Tags</option>
+                      <option value="people_link">Person Link</option>
+                      <option value="projects_link">Project Link</option>
+                      <option value="rating">Rating (1-5 Stars)</option>
                     </select>
                   </div>
 
@@ -805,17 +1048,86 @@ export const WorkspacePanelsView: React.FC = () => {
                     ) : field.field_type === 'select' && field.options ? (
                       <select
                         value={val}
+                        required={field.is_required}
                         onChange={(e) =>
                           setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
                         }
                         className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none"
                       >
+                        <option value="">Select option...</option>
                         {field.options.map((opt) => (
                           <option key={opt} value={opt}>
                             {opt}
                           </option>
                         ))}
                       </select>
+                    ) : field.field_type === 'people_link' ? (
+                      <select
+                        value={val}
+                        required={field.is_required}
+                        onChange={(e) =>
+                          setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none"
+                      >
+                        <option value="">-- Select Person --</option>
+                        {people.map((p) => (
+                          <option key={p.id} value={p.name}>
+                            {p.name} {p.designation ? `(${p.designation})` : p.organisation ? `(${p.organisation})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.field_type === 'projects_link' ? (
+                      <select
+                        value={val}
+                        required={field.is_required}
+                        onChange={(e) =>
+                          setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none"
+                      >
+                        <option value="">-- Select Project --</option>
+                        {projects.map((pr) => (
+                          <option key={pr.id} value={pr.name}>
+                            {pr.name} ({pr.status})
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.field_type === 'rating' ? (
+                      <div className="flex items-center gap-1 py-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() =>
+                              setEntryFormData({ ...entryFormData, [field.field_key]: star })
+                            }
+                            className="p-1 rounded-lg hover:bg-surface-subtle transition"
+                          >
+                            <Star
+                              className={`w-5 h-5 ${
+                                star <= Number(val || 0)
+                                  ? 'text-amber-500 fill-amber-500'
+                                  : 'text-ink-muted/30 hover:text-amber-400'
+                              }`}
+                            />
+                          </button>
+                        ))}
+                        <span className="text-xs text-ink-muted ml-2 font-medium">
+                          {val ? `${val} / 5` : 'Unrated'}
+                        </span>
+                      </div>
+                    ) : field.field_type === 'tags' ? (
+                      <input
+                        type="text"
+                        required={field.is_required}
+                        value={val}
+                        placeholder="Tags comma-separated: tech, design, priority"
+                        onChange={(e) =>
+                          setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20"
+                      />
                     ) : (
                       <input
                         type={

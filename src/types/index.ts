@@ -2,7 +2,16 @@ export type ViewMode = 'edit' | 'split' | 'preview';
 
 export type WorkspaceView = 'notebooks' | 'workspace' | 'tasks' | 'habits' | 'finance' | 'intel';
 
-export type FieldType = 'text' | 'textarea' | 'tags' | 'people_link' | 'url' | 'date' | 'select';
+export type FieldType =
+  | 'text'
+  | 'textarea'
+  | 'tags'
+  | 'people_link'
+  | 'projects_link'
+  | 'url'
+  | 'date'
+  | 'select'
+  | 'rating';
 
 export interface PanelField {
   id: string;
@@ -22,6 +31,8 @@ export interface Panel {
   icon?: string;
   color?: string;
   sort_order: number;
+  archive_tab_name?: string;
+  dashboard_hidden?: boolean;
   created_at?: string;
 }
 
@@ -31,6 +42,107 @@ export interface PanelEntry {
   user_id?: string;
   data: Record<string, any>;
   created_at?: string;
+  updated_at?: string;
+}
+
+export interface PersonEntity {
+  id: string;
+  user_id?: string;
+  name: string;
+  organisation?: string;
+  designation?: string;
+  contact_info?: string;
+  notes?: string;
+  related_companies?: string[];
+  related_technologies?: string[];
+  related_projects?: string[];
+  created_at?: string;
+}
+
+export interface CompanyEntity {
+  id: string;
+  user_id?: string;
+  name: string;
+  industry?: string;
+  website?: string;
+  description?: string;
+  related_people?: string[];
+  related_projects?: string[];
+  created_at?: string;
+}
+
+export interface TechnologyEntity {
+  id: string;
+  user_id?: string;
+  name: string;
+  description?: string;
+  created_at?: string;
+}
+
+export interface ProjectEntity {
+  id: string;
+  user_id?: string;
+  name: string;
+  status?: string;
+  description?: string;
+  created_at?: string;
+}
+
+export interface CategoryItem {
+  id: string;
+  user_id?: string;
+  name: string;
+}
+
+export interface TagItem {
+  id: string;
+  user_id?: string;
+  name: string;
+}
+
+export interface HabitLog {
+  id: string;
+  habit_id: string;
+  user_id?: string;
+  date: string; // YYYY-MM-DD
+  completed: boolean;
+  count?: number;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface LegacyNote {
+  id: string;
+  user_id?: string;
+  title: string;
+  description?: string;
+  tags?: string[];
+  categories?: string[];
+  related_people?: string[];
+  related_companies?: string[];
+  related_technologies?: string[];
+  related_projects?: string[];
+  source?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserSettings {
+  id?: string;
+  user_id?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_user?: string;
+  smtp_from?: string;
+  notify_email?: string;
+  telegram_bot_token?: string;
+  telegram_chat_id?: string;
+  finance_currency?: string;
+  news_enabled?: boolean;
+  news_topics?: string;
+  finance_report_day?: number;
   updated_at?: string;
 }
 

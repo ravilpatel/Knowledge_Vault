@@ -10,8 +10,18 @@ import {
   Panel,
   PanelField,
   PanelEntry,
+  PersonEntity,
+  CompanyEntity,
+  TechnologyEntity,
+  ProjectEntity,
+  CategoryItem,
+  TagItem,
+  HabitLog,
+  LegacyNote,
+  UserSettings,
 } from '../../types';
 import { generateUUID } from '../../lib/id';
+import { useNoteStore } from '../notes/noteStore';
 
 interface VaultState {
   currentView: WorkspaceView;
@@ -21,8 +31,17 @@ interface VaultState {
   panelEntries: PanelEntry[];
   todos: TodoItem[];
   habits: HabitItem[];
+  habitLogs: HabitLog[];
   expenses: ExpenseItem[];
   news: NewsItem[];
+  people: PersonEntity[];
+  companies: CompanyEntity[];
+  technologies: TechnologyEntity[];
+  projects: ProjectEntity[];
+  categories: CategoryItem[];
+  tags: TagItem[];
+  legacyNotes: LegacyNote[];
+  userSettings: UserSettings | null;
   isLoading: boolean;
   supabaseSyncStatus: 'synced' | 'syncing' | 'offline' | 'error';
 
@@ -68,6 +87,29 @@ interface VaultState {
 
   // News Actions
   toggleNewsRead: (id: string) => Promise<void>;
+
+  // People Actions
+  createPerson: (person: Omit<PersonEntity, 'id' | 'created_at'>) => Promise<PersonEntity>;
+  updatePerson: (id: string, updates: Partial<PersonEntity>) => Promise<void>;
+  deletePerson: (id: string) => Promise<void>;
+
+  // Company Actions
+  createCompany: (company: Omit<CompanyEntity, 'id' | 'created_at'>) => Promise<CompanyEntity>;
+  updateCompany: (id: string, updates: Partial<CompanyEntity>) => Promise<void>;
+  deleteCompany: (id: string) => Promise<void>;
+
+  // Technology Actions
+  createTechnology: (tech: Omit<TechnologyEntity, 'id' | 'created_at'>) => Promise<TechnologyEntity>;
+  updateTechnology: (id: string, updates: Partial<TechnologyEntity>) => Promise<void>;
+  deleteTechnology: (id: string) => Promise<void>;
+
+  // Project Actions
+  createProject: (proj: Omit<ProjectEntity, 'id' | 'created_at'>) => Promise<ProjectEntity>;
+  updateProject: (id: string, updates: Partial<ProjectEntity>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+
+  // Legacy Notes Import
+  importLegacyNotesToNoteVault: () => Promise<{ count: number }>;
 }
 
 const safeSupabaseCall = async (queryPromise: PromiseLike<any>) => {
@@ -86,8 +128,17 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   panelEntries: [],
   todos: [],
   habits: [],
+  habitLogs: [],
   expenses: [],
   news: [],
+  people: [],
+  companies: [],
+  technologies: [],
+  projects: [],
+  categories: [],
+  tags: [],
+  legacyNotes: [],
+  userSettings: null,
   isLoading: true,
   supabaseSyncStatus: 'synced',
 
@@ -104,13 +155,41 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       const userId = session?.user?.id;
 
       // 1. Load from local Dexie first for instant display
-      let localPanels = await db.panels.toArray();
-      let localFields = await db.panel_fields.toArray();
-      let localEntries = await db.panel_entries.toArray();
-      let localTodos = await db.todos.toArray();
-      let localHabits = await db.habits.toArray();
-      let localExpenses = await db.expenses.toArray();
-      let localNews = await db.news.toArray();
+      const [
+        localPanels,
+        localFields,
+        localEntries,
+        localTodos,
+        localHabits,
+        localHabitLogs,
+        localExpenses,
+        localNews,
+        localPeople,
+        localCompanies,
+        localTechnologies,
+        localProjects,
+        localCategories,
+        localTags,
+        localLegacyNotes,
+        localUserSettings,
+      ] = await Promise.all([
+        db.panels.toArray(),
+        db.panel_fields.toArray(),
+        db.panel_entries.toArray(),
+        db.todos.toArray(),
+        db.habits.toArray(),
+        db.habit_logs.toArray(),
+        db.expenses.toArray(),
+        db.news.toArray(),
+        db.people.toArray(),
+        db.companies.toArray(),
+        db.technologies.toArray(),
+        db.projects.toArray(),
+        db.categories.toArray(),
+        db.tags.toArray(),
+        db.legacy_notes.toArray(),
+        db.user_settings.toArray(),
+      ]);
 
       set({
         panels: localPanels,
@@ -118,30 +197,150 @@ export const useVaultStore = create<VaultState>((set, get) => ({
         panelEntries: localEntries,
         todos: localTodos,
         habits: localHabits,
+        habitLogs: localHabitLogs,
         expenses: localExpenses,
         news: localNews,
+        people: localPeople,
+        companies: localCompanies,
+        technologies: localTechnologies,
+        projects: localProjects,
+        categories: localCategories,
+        tags: localTags,
+        legacyNotes: localLegacyNotes,
+        userSettings: localUserSettings[0] || null,
       });
 
-      // 2. If online and authenticated with Supabase, pull remote data
+      // 2. If online and authenticated with Supabase, pull all remote tables
       if (navigator.onLine && userId) {
         set({ supabaseSyncStatus: 'syncing' });
         try {
-          const [pRes, fRes, eRes, tRes, hRes, nRes] = await Promise.allSettled([
+          const [
+            pRes,
+            fRes,
+            eRes,
+            tRes,
+            hRes,
+            hlRes,
+            expRes,
+            nRes,
+            peopRes,
+            compRes,
+            techRes,
+            projRes,
+            catRes,
+            tagRes,
+            notesRes,
+            settsRes,
+          ] = await Promise.allSettled([
             sb.from('panels').select('*').order('sort_order', { ascending: true }),
             sb.from('panel_fields').select('*').order('field_order', { ascending: true }),
             sb.from('panel_entries').select('*').order('created_at', { ascending: false }),
-            sb.from('todos').select('*'),
-            sb.from('habits').select('*'),
-            sb.from('news_items').select('*'),
+            sb.from('todos').select('*').order('created_at', { ascending: false }),
+            sb.from('habits').select('*').order('sort_order', { ascending: true }),
+            sb.from('habit_logs').select('*'),
+            sb.from('expenses').select('*').order('date', { ascending: false }),
+            sb.from('news_items').select('*').order('fetched_at', { ascending: false }),
+            sb.from('people').select('*').order('created_at', { ascending: false }),
+            sb.from('companies').select('*').order('created_at', { ascending: false }),
+            sb.from('technologies').select('*').order('created_at', { ascending: false }),
+            sb.from('projects').select('*').order('created_at', { ascending: false }),
+            sb.from('categories').select('*'),
+            sb.from('tags').select('*'),
+            sb.from('notes').select('*').order('created_at', { ascending: false }),
+            sb.from('user_settings').select('*').maybeSingle(),
           ]);
 
-          if (pRes.status === 'fulfilled' && pRes.value.data) {
-            const remotePanels = pRes.value.data;
-            if (remotePanels.length > 0) {
-              await db.panels.clear();
-              await db.panels.bulkPut(remotePanels);
-              set({ panels: remotePanels });
+          // Habit Logs & Habits Sync
+          let fetchedLogs: HabitLog[] = [];
+          if (hlRes.status === 'fulfilled' && hlRes.value.data) {
+            fetchedLogs = hlRes.value.data.map((r: any) => ({
+              id: r.id,
+              habit_id: r.habit_id,
+              user_id: r.user_id,
+              date: r.date,
+              completed: r.completed !== false,
+              count: r.count || 1,
+              notes: r.notes || '',
+              created_at: r.created_at,
+              updated_at: r.updated_at,
+            }));
+            await db.habit_logs.clear();
+            if (fetchedLogs.length > 0) {
+              await db.habit_logs.bulkPut(fetchedLogs);
             }
+            set({ habitLogs: fetchedLogs });
+          }
+
+          if (hRes.status === 'fulfilled' && hRes.value.data) {
+            const remoteHabits: HabitItem[] = hRes.value.data.map((r: any) => {
+              const matchingLogs = fetchedLogs.filter(
+                (l) => l.habit_id === r.id && l.completed !== false
+              );
+              const completedDates = matchingLogs.map((l) => l.date);
+
+              let streak = 0;
+              const checkDate = new Date();
+              while (true) {
+                const dStr = checkDate.toISOString().slice(0, 10);
+                if (completedDates.includes(dStr)) {
+                  streak++;
+                  checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                  break;
+                }
+              }
+
+              return {
+                id: r.id,
+                title: r.name || r.title,
+                description: r.description || '',
+                category: r.category || 'Personal',
+                frequency: r.frequency || 'daily',
+                color: r.color || '#4F46E5',
+                streak,
+                bestStreak: streak,
+                completedDates,
+                createdAt: r.created_at || new Date().toISOString(),
+              };
+            });
+            if (remoteHabits.length > 0) {
+              await db.habits.clear();
+              await db.habits.bulkPut(remoteHabits);
+              set({ habits: remoteHabits });
+            }
+          }
+
+          // Panels & Config Sync
+          let fetchedPanels: Panel[] = [];
+          if (pRes.status === 'fulfilled' && pRes.value.data) {
+            fetchedPanels = pRes.value.data;
+          }
+
+          if (eRes.status === 'fulfilled' && eRes.value.data) {
+            const rawEntries = eRes.value.data;
+            const configs = rawEntries.filter((e: any) => e.data && e.data._is_panel_config);
+            fetchedPanels.forEach((p) => {
+              const conf = configs.find((c: any) => c.panel_id === p.id);
+              if (conf) {
+                p.archive_tab_name = conf.data.archive_tab_name;
+                p.dashboard_hidden = conf.data.dashboard_hidden;
+              }
+            });
+
+            const cleanEntries: PanelEntry[] = rawEntries.filter(
+              (e: any) => !e.data || !e.data._is_panel_config
+            );
+            if (cleanEntries.length > 0) {
+              await db.panel_entries.clear();
+              await db.panel_entries.bulkPut(cleanEntries);
+              set({ panelEntries: cleanEntries });
+            }
+          }
+
+          if (fetchedPanels.length > 0) {
+            await db.panels.clear();
+            await db.panels.bulkPut(fetchedPanels);
+            set({ panels: fetchedPanels });
           }
 
           if (fRes.status === 'fulfilled' && fRes.value.data) {
@@ -153,27 +352,19 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             }
           }
 
-          if (eRes.status === 'fulfilled' && eRes.value.data) {
-            const remoteEntries = eRes.value.data;
-            if (remoteEntries.length > 0) {
-              await db.panel_entries.clear();
-              await db.panel_entries.bulkPut(remoteEntries);
-              set({ panelEntries: remoteEntries });
-            }
-          }
-
+          // Todos Sync
           if (tRes.status === 'fulfilled' && tRes.value.data) {
-            const remoteTodos = tRes.value.data.map((r: any) => ({
+            const remoteTodos: TodoItem[] = tRes.value.data.map((r: any) => ({
               id: r.id,
               title: r.title,
               description: r.description || '',
               urgent: !!r.urgent,
               important: !!r.important,
               dueDate: r.due_date || undefined,
-              completed: !!r.completed,
+              completed: !!r.completed || r.status === 'done',
               completedAt: r.completed_at || undefined,
               category: r.category || 'General',
-              priority: r.priority || 'medium',
+              priority: (r.priority === 'p1' ? 'high' : r.priority === 'p2' ? 'medium' : 'low') as 'low' | 'medium' | 'high',
               createdAt: r.created_at || new Date().toISOString(),
             }));
             if (remoteTodos.length > 0) {
@@ -183,26 +374,26 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             }
           }
 
-          if (hRes.status === 'fulfilled' && hRes.value.data) {
-            const remoteHabits = hRes.value.data.map((r: any) => ({
+          // Expenses Sync
+          if (expRes.status === 'fulfilled' && expRes.value.data) {
+            const remoteExpenses: ExpenseItem[] = expRes.value.data.map((r: any) => ({
               id: r.id,
-              title: r.name || r.title,
-              description: r.description || '',
-              category: r.category || 'Personal',
-              frequency: r.frequency || 'daily',
-              color: r.color || '#4F46E5',
-              streak: 0,
-              bestStreak: 0,
-              completedDates: [],
+              amount: Number(r.amount) || 0,
+              description: r.description || 'Expense',
+              category: r.category || 'General',
+              type: (Number(r.amount) < 0 ? 'expense' : 'expense') as 'expense' | 'income',
+              reimbursable: !!r.reimbursable,
+              date: r.date || new Date().toISOString().slice(0, 10),
               createdAt: r.created_at || new Date().toISOString(),
             }));
-            if (remoteHabits.length > 0) {
-              await db.habits.clear();
-              await db.habits.bulkPut(remoteHabits);
-              set({ habits: remoteHabits });
+            if (remoteExpenses.length > 0) {
+              await db.expenses.clear();
+              await db.expenses.bulkPut(remoteExpenses);
+              set({ expenses: remoteExpenses });
             }
           }
 
+          // News Sync
           if (nRes.status === 'fulfilled' && nRes.value.data) {
             const remoteNews = nRes.value.data.map((r: any) => ({
               id: r.id,
@@ -219,6 +410,77 @@ export const useVaultStore = create<VaultState>((set, get) => ({
               await db.news.bulkPut(remoteNews);
               set({ news: remoteNews });
             }
+          }
+
+          // People, Companies, Tech, Projects, Categories, Tags Sync
+          if (peopRes.status === 'fulfilled' && peopRes.value.data) {
+            const remotePeople: PersonEntity[] = peopRes.value.data;
+            await db.people.clear();
+            if (remotePeople.length > 0) {
+              await db.people.bulkPut(remotePeople);
+              set({ people: remotePeople });
+            }
+          }
+
+          if (compRes.status === 'fulfilled' && compRes.value.data) {
+            const remoteCompanies: CompanyEntity[] = compRes.value.data;
+            await db.companies.clear();
+            if (remoteCompanies.length > 0) {
+              await db.companies.bulkPut(remoteCompanies);
+              set({ companies: remoteCompanies });
+            }
+          }
+
+          if (techRes.status === 'fulfilled' && techRes.value.data) {
+            const remoteTech: TechnologyEntity[] = techRes.value.data;
+            await db.technologies.clear();
+            if (remoteTech.length > 0) {
+              await db.technologies.bulkPut(remoteTech);
+              set({ technologies: remoteTech });
+            }
+          }
+
+          if (projRes.status === 'fulfilled' && projRes.value.data) {
+            const remoteProjects: ProjectEntity[] = projRes.value.data;
+            await db.projects.clear();
+            if (remoteProjects.length > 0) {
+              await db.projects.bulkPut(remoteProjects);
+              set({ projects: remoteProjects });
+            }
+          }
+
+          if (catRes.status === 'fulfilled' && catRes.value.data) {
+            const remoteCats: CategoryItem[] = catRes.value.data;
+            await db.categories.clear();
+            if (remoteCats.length > 0) {
+              await db.categories.bulkPut(remoteCats);
+              set({ categories: remoteCats });
+            }
+          }
+
+          if (tagRes.status === 'fulfilled' && tagRes.value.data) {
+            const remoteTags: TagItem[] = tagRes.value.data;
+            await db.tags.clear();
+            if (remoteTags.length > 0) {
+              await db.tags.bulkPut(remoteTags);
+              set({ tags: remoteTags });
+            }
+          }
+
+          if (notesRes.status === 'fulfilled' && notesRes.value.data) {
+            const remoteNotes: LegacyNote[] = notesRes.value.data;
+            await db.legacy_notes.clear();
+            if (remoteNotes.length > 0) {
+              await db.legacy_notes.bulkPut(remoteNotes);
+              set({ legacyNotes: remoteNotes });
+            }
+          }
+
+          if (settsRes.status === 'fulfilled' && settsRes.value.data) {
+            const remoteSetts: UserSettings = settsRes.value.data;
+            await db.user_settings.clear();
+            await db.user_settings.put(remoteSetts);
+            set({ userSettings: remoteSetts });
           }
 
           set({ supabaseSyncStatus: 'synced' });
@@ -892,5 +1154,177 @@ export const useVaultStore = create<VaultState>((set, get) => ({
 
     const sb = getSupabase();
     safeSupabaseCall(sb.from('news_items').update({ is_read: isRead }).eq('id', id));
+  },
+
+  // ─── People Actions ──────────────────────────────────────
+  createPerson: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const id = generateUUID();
+    const newPerson: PersonEntity = {
+      ...item,
+      id,
+      user_id: session?.user?.id,
+      created_at: new Date().toISOString(),
+    };
+    await db.people.put(newPerson);
+    set((state) => ({ people: [newPerson, ...state.people] }));
+    safeSupabaseCall(sb.from('people').insert(newPerson));
+    return newPerson;
+  },
+
+  updatePerson: async (id, updates) => {
+    await db.people.update(id, updates);
+    set((state) => ({
+      people: state.people.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('people').update(updates).eq('id', id));
+  },
+
+  deletePerson: async (id) => {
+    await db.people.delete(id);
+    set((state) => ({ people: state.people.filter((p) => p.id !== id) }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('people').delete().eq('id', id));
+  },
+
+  // ─── Company Actions ─────────────────────────────────────
+  createCompany: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const id = generateUUID();
+    const newCompany: CompanyEntity = {
+      ...item,
+      id,
+      user_id: session?.user?.id,
+      created_at: new Date().toISOString(),
+    };
+    await db.companies.put(newCompany);
+    set((state) => ({ companies: [newCompany, ...state.companies] }));
+    safeSupabaseCall(sb.from('companies').insert(newCompany));
+    return newCompany;
+  },
+
+  updateCompany: async (id, updates) => {
+    await db.companies.update(id, updates);
+    set((state) => ({
+      companies: state.companies.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('companies').update(updates).eq('id', id));
+  },
+
+  deleteCompany: async (id) => {
+    await db.companies.delete(id);
+    set((state) => ({ companies: state.companies.filter((c) => c.id !== id) }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('companies').delete().eq('id', id));
+  },
+
+  // ─── Technology Actions ──────────────────────────────────
+  createTechnology: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const id = generateUUID();
+    const newTech: TechnologyEntity = {
+      ...item,
+      id,
+      user_id: session?.user?.id,
+      created_at: new Date().toISOString(),
+    };
+    await db.technologies.put(newTech);
+    set((state) => ({ technologies: [newTech, ...state.technologies] }));
+    safeSupabaseCall(sb.from('technologies').insert(newTech));
+    return newTech;
+  },
+
+  updateTechnology: async (id, updates) => {
+    await db.technologies.update(id, updates);
+    set((state) => ({
+      technologies: state.technologies.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+    }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('technologies').update(updates).eq('id', id));
+  },
+
+  deleteTechnology: async (id) => {
+    await db.technologies.delete(id);
+    set((state) => ({ technologies: state.technologies.filter((t) => t.id !== id) }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('technologies').delete().eq('id', id));
+  },
+
+  // ─── Project Actions ─────────────────────────────────────
+  createProject: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const id = generateUUID();
+    const newProject: ProjectEntity = {
+      ...item,
+      id,
+      user_id: session?.user?.id,
+      created_at: new Date().toISOString(),
+    };
+    await db.projects.put(newProject);
+    set((state) => ({ projects: [newProject, ...state.projects] }));
+    safeSupabaseCall(sb.from('projects').insert(newProject));
+    return newProject;
+  },
+
+  updateProject: async (id, updates) => {
+    await db.projects.update(id, updates);
+    set((state) => ({
+      projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('projects').update(updates).eq('id', id));
+  },
+
+  deleteProject: async (id) => {
+    await db.projects.delete(id);
+    set((state) => ({ projects: state.projects.filter((p) => p.id !== id) }));
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('projects').delete().eq('id', id));
+  },
+
+  // ─── Import Legacy Supabase Notes to NoteVault ────────────
+  importLegacyNotesToNoteVault: async () => {
+    const { legacyNotes } = get();
+    if (legacyNotes.length === 0) return { count: 0 };
+
+    const noteStore = useNoteStore.getState();
+    let targetNotebook = noteStore.notebooks.find((n) => n.name === 'Supabase Archive');
+    if (!targetNotebook) {
+      targetNotebook = await noteStore.createNotebook('Supabase Archive', '#4F46E5', 'archive');
+    }
+
+    let targetSection = noteStore.sections.find((s) => s.notebookId === targetNotebook!.id);
+    if (!targetSection) {
+      targetSection = await noteStore.createSection(targetNotebook!.id, 'Imported Notes', 'lavender');
+    }
+
+    for (const note of legacyNotes) {
+      const content = note.description || '';
+      const page = await noteStore.createPage(
+        targetNotebook!.id,
+        targetSection.id,
+        note.title || 'Untitled Note',
+        content
+      );
+      if (note.tags && note.tags.length > 0) {
+        await noteStore.setPageTags(page.id, note.tags);
+      }
+    }
+
+    return { count: legacyNotes.length };
   },
 }));

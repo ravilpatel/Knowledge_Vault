@@ -15,10 +15,13 @@ NoteVault & Knowledge Vault uses a purpose-built **hybrid cloud architecture** w
 | **User Identity & Login** | **Supabase Auth** | LocalStorage / Session | JWT tokens, secure session |
 | **Notes & Notebooks** | **Google Drive** (`My Drive/NoteVault/`) | Dexie (`notebooks`, `sections`, `pages`) | Plain `.md` + YAML front-matter, relative attachments |
 | **Workspace Custom Panels** | **Supabase** (`panels`, `panel_fields`, `panel_entries`) | Dexie (`panels`, `panel_fields`, `panel_entries`) | Relational JSON schema & custom fields |
+| **Directory Entities** | **Supabase** (`people`, `companies`, `projects`, `technologies`) | Dexie (`people`, `companies`, `projects`, `technologies`) | Relational entities with bi-directional links |
 | **Tasks & Eisenhower Matrix** | **Supabase** (`todos`) / Local DB | Dexie (`todos`) | Relational rows |
-| **Habits & Daily Streaks** | **Supabase** (`habits`, `habit_logs`) / Local DB | Dexie (`habits`, `habit_logs`) | Relational rows + 7-day log grid |
+| **Habits & Daily Streaks** | **Supabase** (`habits`, `habit_logs`) / Local DB | Dexie (`habits`, `habit_logs`) | Relational rows + dynamic streak calculation from logs |
 | **Finance Ledger** | **Supabase** (`expenses`) / Local DB | Dexie (`expenses`) | Relational rows + ₹ INR formatting |
 | **Intel & Policy Feeds** | **Supabase** (`news_items`) / Local DB | Dexie (`news_items`) | Relational rows + read status |
+| **Legacy Supabase Notes** | **Supabase** (`notes`) | Dexie (`legacy_notes`) | Relational rows + 1-click Google Drive bridge |
+| **Preferences & Settings** | **Supabase** (`user_settings`) | Dexie (`user_settings`) | SMTP, notifications, currency, news config |
 
 ---
 
@@ -30,7 +33,7 @@ NoteVault & Knowledge Vault uses a purpose-built **hybrid cloud architecture** w
 - **Guest / Offline Mode**: Instant one-click access without logging in; works 100% offline via local Dexie IndexedDB.
 - **Linked Google Account**: Connect your Google account anytime to unlock seamless background sync to Google Drive.
 
-### 🗂️ Workspace Panels (Custom Relational Database via Supabase)
+### 🗂️ Workspace Panels & Directory (Custom Relational Database via Supabase)
 - **Dynamic Custom Panels**: Create custom tracking boards (e.g. Active Projects, Research & Reading, Key Contacts, Inventory, Meeting Notes).
 - **Custom Schema Builder**: Define custom fields per panel:
   - `Text` (single line text)
@@ -39,7 +42,18 @@ NoteVault & Knowledge Vault uses a purpose-built **hybrid cloud architecture** w
   - `URL` (clickable web links)
   - `Select` (custom single-choice dropdowns)
   - `Tags` (multi-tag badges)
-- **Instant Local + Cloud Sync**: Powered by Dexie IndexedDB v3 for instant zero-latency UI updates with background syncing to Supabase tables.
+  - `Person Link` (relational link to People directory)
+  - `Project Link` (relational link to Projects directory)
+  - `Rating` (1 to 5 star rating)
+- **Directory Entities Management**:
+  - 👥 **People**: Contact records, roles/designations, organizations, linked projects & technologies.
+  - 🏢 **Companies**: Organization profiles, industries, websites, key contacts.
+  - 💼 **Projects**: Status tracking, descriptions, linked team members and companies.
+  - ⚡ **Technologies**: Tech stack directory, categorizations, and active usages.
+- **Supabase Notes Migration Bridge**:
+  - Inspect all existing notes stored in Supabase (`notes` table).
+  - 1-click migration to auto-convert them into NoteVault Markdown files with YAML front-matter under a `Supabase Archive` notebook, synced straight to Google Drive.
+- **Instant Local + Cloud Sync**: Powered by Dexie IndexedDB v4 for instant zero-latency UI updates with background syncing across all 16 Supabase tables.
 
 ### 📓 NoteVault (Notes & Knowledge Base via Google Drive)
 - 📓 **OneNote Mental Model**: Organizes notes hierarchically into **Notebooks &rarr; Sections (colored tabs) &rarr; Pages**.
