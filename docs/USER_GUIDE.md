@@ -99,3 +99,37 @@ NoteVault adheres to a strict data safety rule:
 - **Permanent Deletes Are Forbidden**: NoteVault never calls `files.delete`.
 - **Soft Deletion**: Moving a note, section, or notebook to trash sets `trashed: true` in Google Drive.
 - **Restoration**: You can view and restore any deleted item at any time from **Settings &rarr; Trash & Recovery**.
+
+---
+
+## 7. Knowledge Vault Modules (Second Brain Ecosystem)
+
+In addition to the Google Drive Markdown notebook hierarchy, NoteVault integrates the core personal management modules from Knowledge Vault:
+
+### 🎯 7.1 Eisenhower Decision Matrix & Tasks
+- **Q1 (Urgent & Important - Do First)**: High impact deadlines and critical bugs.
+- **Q2 (Not Urgent & Important - Schedule & Focus)**: Strategic architecture, deep work, health, learning.
+- **Q3 (Urgent & Not Important - Delegate)**: Routine reviews, minor requests.
+- **Q4 (Not Urgent & Not Important - Eliminate / Backlog)**: Distractions and long-term bucket list items.
+- **Features**: Toggle completion, category filtering, overdue badges, quick quadrant reassignment dropdown, and dual layout (4-Quadrant Matrix or Linear List).
+
+### 🔥 7.2 Habits & Daily Streaks
+- **7-Day Dynamic Window**: Visual checkoff circles for the past week up to today.
+- **Dynamic Streaks**: Automatically computes consecutive streak days and tracks personal all-time best streaks.
+- **Category & Color Coding**: Distinguish between Fitness, Productivity, Mindset, and Learning.
+- **Daily Progress**: Real-time progress bar showing today's completion percentage.
+
+### 💳 7.3 Finance & Expense Ledger
+- **Cashflow Metrics**: Instant calculation of Total Income, Total Expenses, and Net Balance formatted in ₹ INR.
+- **Reimbursable Claims**: Track business/consulting expenses marked for reimbursement with pending totals.
+- **Ledger & Filters**: Filter transactions by type (All / Income / Expense) and by Category.
+
+### 🌐 7.4 Intel & Policy Aggregator
+- **Curated Feeds**: Centralizes news from PIB India (Government notifications), Startup India, Policy Gazette, and AI/Tech publications.
+- **Search & Filter**: Keyword search across titles and summaries, plus category filtering.
+- **Read / Bookmark Status**: One-click toggling of read status to curate your personal intelligence digest.
+
+### 💾 7.5 Backup & Portability
+- All Knowledge Vault modules store data locally in **IndexedDB (Dexie v4)** for instant zero-latency offline access.
+- Use **Settings &rarr; Export JSON Backup** to download your complete Second Brain (Notebooks, Sections, Pages, Tasks, Habits, Expenses, and Intel bookmarks) in a single portable JSON file.
+

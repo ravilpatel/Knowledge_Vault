@@ -6,6 +6,10 @@ import {
   AttachmentRecord,
   OutboxItem,
   SyncStateRecord,
+  TodoItem,
+  HabitItem,
+  ExpenseItem,
+  NewsItem,
 } from '../types';
 
 export class NoteVaultDatabase extends Dexie {
@@ -16,6 +20,12 @@ export class NoteVaultDatabase extends Dexie {
   outbox!: Table<OutboxItem, number>;
   syncState!: Table<SyncStateRecord, string>;
   settings!: Table<{ key: string; value: any }, string>;
+
+  // Knowledge Vault Feature Tables
+  todos!: Table<TodoItem, string>;
+  habits!: Table<HabitItem, string>;
+  expenses!: Table<ExpenseItem, string>;
+  news!: Table<NewsItem, string>;
 
   constructor() {
     super('NoteVaultDB');
@@ -28,6 +38,20 @@ export class NoteVaultDatabase extends Dexie {
       outbox: '++id, action, entityId, notebookId, sectionId, createdAt, retryCount',
       syncState: 'id',
       settings: 'key',
+    });
+
+    this.version(2).stores({
+      notebooks: 'id, driveFolderId, name, order, trashed',
+      sections: 'id, driveFolderId, notebookId, name, order, trashed',
+      pages: 'id, driveFileId, notebookId, sectionId, title, *tags, favorite, updated, localDirty, trashed, order',
+      attachments: 'id, notebookId, driveFileId, filename, relativePath',
+      outbox: '++id, action, entityId, notebookId, sectionId, createdAt, retryCount',
+      syncState: 'id',
+      settings: 'key',
+      todos: 'id, title, urgent, important, completed, dueDate, category, createdAt',
+      habits: 'id, title, category, frequency, streak, bestStreak, createdAt',
+      expenses: 'id, amount, description, category, type, date, createdAt',
+      news: 'id, title, category, source, publishedAt, isRead',
     });
   }
 }

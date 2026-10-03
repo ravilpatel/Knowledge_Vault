@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useNoteStore } from '../../features/notes/noteStore';
+import { useVaultStore } from '../../features/vault/vaultStore';
 import { formatRelativeTime } from '../../lib/date';
 import { SectionColor } from '../../types';
 import { MarkdownEditor } from '../../features/editor/MarkdownEditor';
 import { PreviewPane } from '../PreviewPane';
 import { StatusPill } from '../StatusPill';
+import { TasksView } from '../../features/vault/TasksView';
+import { HabitsView } from '../../features/vault/HabitsView';
+import { FinanceView } from '../../features/vault/FinanceView';
 import {
   Book,
   Folder,
@@ -15,6 +19,9 @@ import {
   Settings,
   Edit3,
   Eye,
+  CheckSquare,
+  Flame,
+  Wallet,
 } from 'lucide-react';
 
 interface MobileViewProps {
@@ -56,6 +63,8 @@ export const MobileView: React.FC<MobileViewProps> = ({
     updatePageContent,
     togglePageFavorite,
   } = useNoteStore();
+
+  const { currentView, setCurrentView } = useVaultStore();
 
   const [currentLevel, setCurrentLevel] = useState<MobileLevel>(
     activePageId ? 'editor' : activeSectionId ? 'pages' : activeNotebookId ? 'sections' : 'notebooks'
@@ -100,6 +109,69 @@ export const MobileView: React.FC<MobileViewProps> = ({
     else if (currentLevel === 'sections') setCurrentLevel('notebooks');
   };
 
+  // If viewing non-notebook module
+  if (currentView !== 'notebooks') {
+    return (
+      <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden">
+        {/* Module Content */}
+        <div className="flex-1 overflow-hidden">
+          {currentView === 'tasks' && <TasksView />}
+          {currentView === 'habits' && <HabitsView />}
+          {currentView === 'finance' && <FinanceView />}
+        </div>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0">
+          <button
+            onClick={() => setCurrentView('notebooks')}
+            className="flex flex-col items-center gap-1 text-[10px] font-medium"
+          >
+            <Book className="w-5 h-5" />
+            <span>Notes</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('tasks')}
+            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
+              currentView === 'tasks' ? 'text-brand-primary' : ''
+            }`}
+          >
+            <CheckSquare className="w-5 h-5" />
+            <span>Tasks</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('habits')}
+            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
+              currentView === 'habits' ? 'text-brand-primary' : ''
+            }`}
+          >
+            <Flame className="w-5 h-5 text-amber-500" />
+            <span>Habits</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('finance')}
+            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
+              currentView === 'finance' ? 'text-brand-primary' : ''
+            }`}
+          >
+            <Wallet className="w-5 h-5" />
+            <span>Finance</span>
+          </button>
+
+          <button
+            onClick={onOpenSettings}
+            className="flex flex-col items-center gap-1 text-[10px] font-medium"
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden select-none">
       {/* Top Mobile Bar */}
@@ -123,6 +195,15 @@ export const MobileView: React.FC<MobileViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {currentLevel !== 'editor' && (
+            <button
+              onClick={onOpenSearch}
+              className="p-1.5 rounded-lg text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Search notes"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
           <StatusPill />
           {currentLevel === 'editor' && (
             <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
@@ -339,21 +420,40 @@ export const MobileView: React.FC<MobileViewProps> = ({
       {currentLevel !== 'editor' && (
         <div className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0">
           <button
-            onClick={() => setCurrentLevel('notebooks')}
+            onClick={() => {
+              setCurrentView('notebooks');
+              setCurrentLevel('notebooks');
+            }}
             className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
               currentLevel === 'notebooks' ? 'text-brand-primary' : ''
             }`}
           >
             <Book className="w-5 h-5" />
-            <span>Vault</span>
+            <span>Notes</span>
           </button>
 
           <button
-            onClick={onOpenSearch}
+            onClick={() => setCurrentView('tasks')}
             className="flex flex-col items-center gap-1 text-[10px] font-medium"
           >
-            <Search className="w-5 h-5" />
-            <span>Search</span>
+            <CheckSquare className="w-5 h-5" />
+            <span>Tasks</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('habits')}
+            className="flex flex-col items-center gap-1 text-[10px] font-medium"
+          >
+            <Flame className="w-5 h-5 text-amber-500" />
+            <span>Habits</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('finance')}
+            className="flex flex-col items-center gap-1 text-[10px] font-medium"
+          >
+            <Wallet className="w-5 h-5" />
+            <span>Finance</span>
           </button>
 
           <button

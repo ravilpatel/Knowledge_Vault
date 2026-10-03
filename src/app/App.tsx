@@ -6,9 +6,12 @@ import { syncEngine } from '../features/sync/syncEngine';
 import { SignInModal } from '../features/auth/SignInModal';
 import { WorkspaceLayout } from './WorkspaceLayout';
 
+import { useVaultStore } from '../features/vault/vaultStore';
+
 export const App: React.FC = () => {
   const { user, isGuest } = useAuthStore();
   const { loadInitialData } = useNoteStore();
+  const { loadVaultData } = useVaultStore();
 
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -37,6 +40,7 @@ export const App: React.FC = () => {
   // Bootstrap data and Google Auth
   useEffect(() => {
     loadInitialData();
+    loadVaultData();
     initGoogleAuth();
 
     if (user && !isGuest && navigator.onLine) {

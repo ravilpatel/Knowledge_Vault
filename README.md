@@ -8,6 +8,7 @@ Built with **React 18 + TypeScript + Vite + Tailwind CSS + Dexie (IndexedDB) + C
 
 ## 🌟 Key Features
 
+### 📓 NoteVault (Notes & Knowledge Base)
 - 📓 **OneNote Mental Model**: Organizes notes hierarchically into **Notebooks &rarr; Sections (colored tabs) &rarr; Pages**.
 - ✍️ **Markdown-First Editing**: CodeMirror 6 editor with live split preview, GFM checklists, syntax code blocks with copy buttons, GitHub-style alerts (`> [!NOTE]`), and Wiki links `[[Page Title]]`.
 - 📁 **Zero Proprietary Lock-In**: Notes are plain `.md` files with YAML front-matter stored in standard folders in your personal Google Drive. Even without NoteVault, your notes open in any text editor or Markdown app.
@@ -16,7 +17,13 @@ Built with **React 18 + TypeScript + Vite + Tailwind CSS + Dexie (IndexedDB) + C
 - 🛡️ **Zero-Loss Data Safety Guarantee**: Permanent file deletion is forbidden (`files.delete` is never called); deleted items move to Drive Trash (`trashed: true`) and can be restored anytime.
 - 🔍 **Instant Full-Text Search**: Offline MiniSearch index with query operator support (`tag:cooking`, `in:Recipes`, `is:favorite`) and highlighted search snippets.
 - 🖼️ **Attachments**: Drag-and-drop or paste images directly into notes. Files are saved in the notebook's `_attachments/` folder and linked with relative paths (`../_attachments/...`).
-- 📱 **Responsive PWA**: Full desktop 3-pane layout and mobile stack drill-down with installable PWA service worker.
+
+### 🧠 Knowledge Vault Integrated Productivity Modules
+- 🎯 **Tasks & Eisenhower Decision Matrix**: 4-Quadrant prioritization (Q1: Do First, Q2: Schedule & Focus, Q3: Delegate, Q4: Eliminate) with category filtering, overdue tracking, and fast dual-view (Matrix / Kanban List).
+- 🔥 **Habit Tracker & Daily Streaks**: Interactive 7-day checklist grid, dynamic streak calculation, best streak history, category grouping, and daily progress completion bars.
+- 💳 **Finance & Expense Ledger**: Cashflow summary cards (Net balance, Total Income, Total Expenses, Reimbursable claims), ₹ INR formatting, category tagging, and receipt claim tracking.
+- 🌐 **Intel & Policy Aggregator**: Curated news feeds (PIB India, Startup India, Gazette policies, AI/Tech), full-text search, category filters, and read/unread bookmark state.
+- 📱 **Responsive PWA**: Full desktop 3-pane layout, 1-click module switcher, and mobile stack drill-down with installable PWA service worker.
 
 ---
 

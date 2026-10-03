@@ -1,6 +1,58 @@
 export type ViewMode = 'edit' | 'split' | 'preview';
 
+export type WorkspaceView = 'notebooks' | 'tasks' | 'habits' | 'finance' | 'intel';
+
 export type SectionColor = 'peach' | 'sage' | 'lavender' | 'sky' | 'butter' | 'rose';
+
+export interface TodoItem {
+  id: string;
+  title: string;
+  description?: string;
+  urgent: boolean;
+  important: boolean;
+  dueDate?: string; // YYYY-MM-DD
+  completed: boolean;
+  completedAt?: string;
+  category?: string;
+  priority?: 'low' | 'medium' | 'high';
+  createdAt: string;
+}
+
+export interface HabitItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  frequency: 'daily' | 'weekly';
+  color: string;
+  streak: number;
+  bestStreak: number;
+  completedDates: string[]; // YYYY-MM-DD
+  archived?: boolean;
+  createdAt: string;
+}
+
+export interface ExpenseItem {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  type: 'expense' | 'income';
+  reimbursable?: boolean;
+  date: string; // YYYY-MM-DD
+  createdAt: string;
+}
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  category: string;
+  publishedAt: string;
+  isRead: boolean;
+}
 
 export interface PageFrontMatter {
   id: string;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../features/auth/authStore';
+import { useVaultStore } from '../features/vault/vaultStore';
 import { NotebookRail } from '../components/NotebookRail';
 import { SectionTabs } from '../components/SectionTabs';
 import { PageList } from '../components/PageList';
@@ -10,6 +11,10 @@ import { CommandPalette } from '../components/CommandPalette';
 import { ConflictModal } from '../components/ConflictModal';
 import { SettingsModal } from '../components/SettingsModal';
 import { MobileView } from '../components/mobile/MobileView';
+import { TasksView } from '../features/vault/TasksView';
+import { HabitsView } from '../features/vault/HabitsView';
+import { FinanceView } from '../features/vault/FinanceView';
+import { IntelView } from '../features/vault/IntelView';
 import {
   BookOpen,
   Search,
@@ -19,6 +24,10 @@ import {
   User,
   PanelLeftClose,
   PanelLeft,
+  CheckSquare,
+  Flame,
+  Wallet,
+  Globe,
 } from 'lucide-react';
 
 interface WorkspaceLayoutProps {
@@ -28,6 +37,7 @@ interface WorkspaceLayoutProps {
 
 export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onToggleTheme }) => {
   const { user, isGuest } = useAuthStore();
+  const { currentView, setCurrentView } = useVaultStore();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -88,38 +98,103 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
       <OfflineBanner />
 
       {/* Top Workspace Header */}
-      <header className="h-12 border-b border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark px-4 flex items-center justify-between flex-shrink-0 select-none z-10">
+      <header className="h-12 border-b border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark px-4 flex items-center justify-between flex-shrink-0 select-none z-10 gap-3">
         {/* Brand & Left Toggle */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsRailCollapsed(!isRailCollapsed)}
-            className="p-1.5 rounded-lg text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-            title={isRailCollapsed ? 'Expand Notebook Rail' : 'Collapse Notebook Rail'}
-          >
-            {isRailCollapsed ? (
-              <PanelLeft className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
-          </button>
+          {currentView === 'notebooks' && (
+            <button
+              onClick={() => setIsRailCollapsed(!isRailCollapsed)}
+              className="p-1.5 rounded-lg text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title={isRailCollapsed ? 'Expand Notebook Rail' : 'Collapse Notebook Rail'}
+            >
+              {isRailCollapsed ? (
+                <PanelLeft className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+          )}
 
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-brand-primary text-white flex items-center justify-center shadow-xs">
               <BookOpen className="w-4 h-4" />
             </div>
-            <span className="font-extrabold text-sm tracking-tight text-ink-primary dark:text-ink-darkPrimary">
+            <span className="font-extrabold text-sm tracking-tight text-ink-primary dark:text-ink-darkPrimary hidden sm:inline">
               NoteVault
             </span>
           </div>
         </div>
 
+        {/* Feature Workspace Switcher (Knowledge Vault Modules) */}
+        <div className="flex items-center p-1 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold">
+          <button
+            onClick={() => setCurrentView('notebooks')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'notebooks'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Notes</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('tasks')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'tasks'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Tasks</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('habits')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'habits'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-amber-500" />
+            <span className="hidden md:inline">Habits</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('finance')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'finance'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <Wallet className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Finance</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('intel')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'intel'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5 text-blue-500" />
+            <span className="hidden md:inline">Intel</span>
+          </button>
+        </div>
+
         {/* Global Search Omnibar Trigger */}
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark hover:border-brand-primary/40 dark:hover:border-brand-darkPrimary/40 transition w-80 text-xs text-ink-muted dark:text-ink-darkMuted cursor-pointer"
+          className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark hover:border-brand-primary/40 dark:hover:border-brand-darkPrimary/40 transition w-64 text-xs text-ink-muted dark:text-ink-darkMuted cursor-pointer"
         >
           <Search className="w-3.5 h-3.5 text-brand-primary dark:text-brand-darkPrimary" />
-          <span className="flex-1 text-left truncate">Search notes, tags (#), operators...</span>
+          <span className="flex-1 text-left truncate">Search notes, tags...</span>
           <kbd className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle text-ink-muted shadow-2xs">
             Ctrl+K
           </kbd>
@@ -156,20 +231,30 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         </div>
       </header>
 
-      {/* Pastel Section Tabs bar */}
-      <SectionTabs />
+      {/* Main Body Depending on Active View */}
+      {currentView === 'notebooks' && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Pastel Section Tabs bar */}
+          <SectionTabs />
 
-      {/* 3-Pane Body: Notebook Rail | Page List | Editor Pane */}
-      <div className="flex-1 flex overflow-hidden">
-        {!isRailCollapsed && (
-          <NotebookRail
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onOpenSearch={() => setIsSearchOpen(true)}
-          />
-        )}
-        <PageList />
-        <EditorPane isDark={isDark} />
-      </div>
+          {/* 3-Pane Body: Notebook Rail | Page List | Editor Pane */}
+          <div className="flex-1 flex overflow-hidden">
+            {!isRailCollapsed && (
+              <NotebookRail
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenSearch={() => setIsSearchOpen(true)}
+              />
+            )}
+            <PageList />
+            <EditorPane isDark={isDark} />
+          </div>
+        </div>
+      )}
+
+      {currentView === 'tasks' && <TasksView />}
+      {currentView === 'habits' && <HabitsView />}
+      {currentView === 'finance' && <FinanceView />}
+      {currentView === 'intel' && <IntelView />}
 
       {/* Modals & Dialogs */}
       <CommandPalette

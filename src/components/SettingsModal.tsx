@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuthStore } from '../features/auth/authStore';
 import { useNoteStore } from '../features/notes/noteStore';
 import { useSyncStore } from '../features/sync/syncStore';
+import { useVaultStore } from '../features/vault/vaultStore';
 import { syncEngine } from '../features/sync/syncEngine';
 import { TrashView } from './TrashView';
 import {
@@ -32,6 +33,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const { user, scopeMode, setScopeMode, signOut } = useAuthStore();
   const { notebooks, sections, pages, loadInitialData } = useNoteStore();
+  const { todos, habits, expenses, news } = useVaultStore();
   const { status, pendingCount } = useSyncStore();
 
   const [activeTab, setActiveTab] = useState<'settings' | 'trash'>('settings');
@@ -65,11 +67,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleExportVault = () => {
     const exportData = {
-      vaultVersion: 1,
+      vaultVersion: 2,
       exportedAt: new Date().toISOString(),
       notebooks: notebooks.filter((n) => !n.trashed),
       sections: sections.filter((s) => !s.trashed),
       pages: pages.filter((p) => !p.trashed),
+      todos,
+      habits,
+      expenses,
+      news,
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -78,7 +84,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `NoteVault-Backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `NoteVault-KnowledgeVault-Backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -283,7 +289,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               {/* Local Storage Meter */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <h4 className="text-xs font-bold">Local IndexedDB Database Metrics</h4>
                 <div className="grid grid-cols-4 gap-2 text-center text-xs">
                   <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
@@ -307,6 +313,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
                     <span className="block text-base font-bold text-brand-primary">{pendingCount}</span>
                     <span className="text-[10px] text-ink-muted">Outbox Queue</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-emerald-600 dark:text-emerald-400">
+                      {todos.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Tasks (Matrix)</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-amber-600 dark:text-amber-400">
+                      {habits.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Habits</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-indigo-600 dark:text-indigo-400">
+                      {expenses.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Expenses</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                    <span className="block text-base font-bold text-sky-600 dark:text-sky-400">
+                      {news.length}
+                    </span>
+                    <span className="text-[10px] text-ink-muted">Intel Feeds</span>
                   </div>
                 </div>
               </div>
