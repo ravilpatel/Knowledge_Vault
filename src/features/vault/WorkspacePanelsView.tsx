@@ -35,7 +35,6 @@ import {
   PeopleView,
   CompaniesView,
   ProjectsView,
-  TechnologiesView,
 } from './DirectoryViews';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
@@ -83,7 +82,7 @@ export const WorkspacePanelsView: React.FC = () => {
     deleteEntry,
   } = useVaultStore();
 
-  const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects' | 'technologies'>('panels');
+  const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects'>('panels');
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>('grid');
 
@@ -668,18 +667,6 @@ export const WorkspacePanelsView: React.FC = () => {
             <Briefcase className="w-3.5 h-3.5" />
             <span>Projects ({projects.length})</span>
           </button>
-
-          <button
-            onClick={() => setSubTab('technologies')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
-              subTab === 'technologies'
-                ? 'bg-brand-primary text-white shadow-xs'
-                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5" />
-            <span>Technologies ({technologies.length})</span>
-          </button>
         </div>
       )}
 
@@ -697,10 +684,6 @@ export const WorkspacePanelsView: React.FC = () => {
           ) : subTab === 'projects' ? (
             <div className="flex-1 overflow-y-auto">
               <ProjectsView />
-            </div>
-          ) : subTab === 'technologies' ? (
-            <div className="flex-1 overflow-y-auto">
-              <TechnologiesView />
             </div>
           ) : (
             /* ══════════════════════════════════════════════════════════════════
