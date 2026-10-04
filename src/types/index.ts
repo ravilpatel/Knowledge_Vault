@@ -180,6 +180,7 @@ export interface TodoItem {
 
 export interface HabitItem {
   id: string;
+  user_id?: string;
   title: string;
   description?: string;
   category: string;
@@ -194,11 +195,13 @@ export interface HabitItem {
 
 export interface ExpenseItem {
   id: string;
+  user_id?: string;
   amount: number;
   description: string;
   category: string;
   type: 'expense' | 'income';
   reimbursable?: boolean;
+  receipt_url?: string;
   date: string; // YYYY-MM-DD
   createdAt: string;
 }

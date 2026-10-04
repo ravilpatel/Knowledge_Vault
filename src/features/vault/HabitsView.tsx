@@ -58,7 +58,7 @@ export const HabitsView: React.FC = () => {
   const colors = ['#4F46E5', '#10B981', '#F59E0B', '#E11D48', '#0284C7', '#8B5CF6'];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3.5 md:p-6 space-y-3.5 md:space-y-5">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-y-auto md:overflow-hidden p-3.5 md:p-6 space-y-3.5 md:space-y-5 pb-24 md:pb-6 touch-pan-y">
       {/* Top Header & Metrics Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs">
         <div>
@@ -170,7 +170,7 @@ export const HabitsView: React.FC = () => {
       )}
 
       {/* Habits Grid with 7-Day Checklist */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs divide-y divide-border-subtle/60 dark:divide-border-darkSubtle/60">
+      <div className="flex-1 overflow-x-auto overflow-y-auto touch-pan-x touch-pan-y bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs divide-y divide-border-subtle/60 dark:divide-border-darkSubtle/60">
         <div className="min-w-[480px]">
           {/* Table Header: Days of Week */}
           <div className="flex items-center justify-between p-3.5 md:p-4 bg-surface-subtle dark:bg-surface-subtleDark text-xs font-bold text-ink-muted select-none">
@@ -264,7 +264,7 @@ export const HabitsView: React.FC = () => {
                 {/* Delete Action */}
                 <button
                   onClick={() => deleteHabit(habit.id)}
-                  className="w-8 p-1.5 rounded text-ink-muted hover:text-rose-500 opacity-0 group-hover:opacity-100 transition text-center"
+                  className="w-8 p-1.5 rounded text-ink-muted hover:text-rose-500 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition text-center"
                   title="Delete habit"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

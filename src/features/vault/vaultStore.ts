@@ -388,10 +388,11 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           if (expRes.status === 'fulfilled' && expRes.value.data) {
             const remoteExpenses: ExpenseItem[] = expRes.value.data.map((r: any) => ({
               id: r.id,
+              user_id: r.user_id,
               amount: Number(r.amount) || 0,
               description: r.description || 'Expense',
               category: r.category || 'General',
-              type: (Number(r.amount) < 0 ? 'expense' : 'expense') as 'expense' | 'income',
+              type: (r.type === 'income' ? 'income' : 'expense') as 'expense' | 'income',
               reimbursable: !!r.reimbursable,
               date: r.date || new Date().toISOString().slice(0, 10),
               createdAt: r.created_at || new Date().toISOString(),
@@ -1140,11 +1141,18 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   // ─── Todo Actions ────────────────────────────────────────
 
   addTodo: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const userId = session?.user?.id;
+
     const id = generateUUID();
     const now = new Date().toISOString();
     const newTodo: TodoItem = {
       ...item,
       id,
+      user_id: userId,
       scope: item.scope || 'work',
       status: item.status || (item.completed ? 'done' : 'todo'),
       priority: item.priority || (item.urgent && item.important ? 'p1' : item.important ? 'p2' : 'p3'),
@@ -1156,29 +1164,30 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     await db.todos.put(newTodo);
     set((state) => ({ todos: [newTodo, ...state.todos] }));
 
-    const sb = getSupabase();
-    safeSupabaseCall(
-      sb.from('todos').insert({
-        id: newTodo.id,
-        title: newTodo.title,
-        description: newTodo.description || '',
-        urgent: newTodo.urgent,
-        important: newTodo.important,
-        due_date: newTodo.dueDate,
-        due_time: newTodo.dueTime,
-        completed: newTodo.completed,
-        completed_at: newTodo.completedAt,
-        status: newTodo.status,
-        scope: newTodo.scope,
-        priority: newTodo.priority,
-        project_id: newTodo.projectId || null,
-        tags: newTodo.tags,
-        subtasks: newTodo.subtasks,
-        estimated_minutes: newTodo.estimatedMinutes || null,
-        recurrence: newTodo.recurrence || 'none',
-        order_index: newTodo.orderIndex || 0,
-      })
-    );
+    const sbPayload: Record<string, any> = {
+      id: newTodo.id,
+      title: newTodo.title,
+      description: newTodo.description || '',
+      urgent: newTodo.urgent,
+      important: newTodo.important,
+      due_date: newTodo.dueDate,
+      due_time: newTodo.dueTime,
+      completed: newTodo.completed,
+      completed_at: newTodo.completedAt,
+      status: newTodo.status,
+      scope: newTodo.scope,
+      priority: newTodo.priority,
+      project_id: newTodo.projectId || null,
+      tags: newTodo.tags,
+      subtasks: newTodo.subtasks,
+      estimated_minutes: newTodo.estimatedMinutes || null,
+      recurrence: newTodo.recurrence || 'none',
+      order_index: newTodo.orderIndex || 0,
+      created_at: now,
+    };
+    if (userId) sbPayload.user_id = userId;
+
+    safeSupabaseCall(sb.from('todos').insert(sbPayload));
 
     return newTodo;
   },
@@ -1281,6 +1290,12 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   // ─── Habit Actions ───────────────────────────────────────
 
   addHabit: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const userId = session?.user?.id;
+
     const id = generateUUID();
     const now = new Date().toISOString();
     const newHabit: HabitItem = {
@@ -1295,17 +1310,18 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     await db.habits.put(newHabit);
     set((state) => ({ habits: [...state.habits, newHabit] }));
 
-    const sb = getSupabase();
-    safeSupabaseCall(
-      sb.from('habits').insert({
-        id: newHabit.id,
-        name: newHabit.title,
-        description: newHabit.description,
-        category: newHabit.category,
-        color: newHabit.color,
-        frequency: newHabit.frequency,
-      })
-    );
+    const sbPayload: Record<string, any> = {
+      id: newHabit.id,
+      name: newHabit.title,
+      description: newHabit.description,
+      category: newHabit.category,
+      color: newHabit.color,
+      frequency: newHabit.frequency,
+      created_at: now,
+    };
+    if (userId) sbPayload.user_id = userId;
+
+    safeSupabaseCall(sb.from('habits').insert(sbPayload));
 
     return newHabit;
   },
@@ -1313,6 +1329,12 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   toggleHabitDate: async (id, dateStr) => {
     const target = get().habits.find((h) => h.id === id);
     if (!target) return;
+
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const userId = session?.user?.id;
 
     let updatedDates = [...target.completedDates];
     const isCompleted = updatedDates.includes(dateStr);
@@ -1352,15 +1374,14 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       ),
     }));
 
-    const sb = getSupabase();
     if (!isCompleted) {
-      safeSupabaseCall(
-        sb.from('habit_logs').upsert({
-          habit_id: id,
-          date: dateStr,
-          completed: true,
-        })
-      );
+      const payload: Record<string, any> = {
+        habit_id: id,
+        date: dateStr,
+        completed: true,
+      };
+      if (userId) payload.user_id = userId;
+      safeSupabaseCall(sb.from('habit_logs').upsert(payload));
     } else {
       safeSupabaseCall(
         sb.from('habit_logs').delete().eq('habit_id', id).eq('date', dateStr)
@@ -1379,24 +1400,38 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   // ─── Expense Actions ─────────────────────────────────────
 
   addExpense: async (item) => {
+    const sb = getSupabase();
+    const {
+      data: { session },
+    } = await sb.auth.getSession();
+    const userId = session?.user?.id;
+
     const id = generateUUID();
     const now = new Date().toISOString();
-    const newExpense: ExpenseItem = { ...item, id, createdAt: now };
+    const newExpense: ExpenseItem = {
+      ...item,
+      id,
+      user_id: userId,
+      type: item.type || 'expense',
+      createdAt: now,
+    };
 
     await db.expenses.put(newExpense);
     set((state) => ({ expenses: [newExpense, ...state.expenses] }));
 
-    const sb = getSupabase();
-    safeSupabaseCall(
-      sb.from('expenses').insert({
-        id: newExpense.id,
-        amount: newExpense.amount,
-        description: newExpense.description,
-        category: newExpense.category,
-        reimbursable: newExpense.reimbursable,
-        date: newExpense.date,
-      })
-    );
+    const sbPayload: Record<string, any> = {
+      id: newExpense.id,
+      amount: newExpense.amount,
+      description: newExpense.description,
+      category: newExpense.category,
+      type: newExpense.type,
+      reimbursable: !!newExpense.reimbursable,
+      date: newExpense.date,
+      created_at: now,
+    };
+    if (userId) sbPayload.user_id = userId;
+
+    safeSupabaseCall(sb.from('expenses').insert(sbPayload));
 
     return newExpense;
   },

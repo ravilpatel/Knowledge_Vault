@@ -437,8 +437,8 @@ export const TasksView: React.FC = () => {
             </h4>
           </div>
 
-          {/* Quick Hover Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition flex-shrink-0">
+          {/* Quick Actions (Always visible on touch, hover on desktop) */}
+          <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover/card:opacity-100 transition flex-shrink-0">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -664,9 +664,9 @@ export const TasksView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3.5 md:p-6 space-y-3 md:space-y-4 select-none">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-y-auto md:overflow-hidden p-3 md:p-6 space-y-3 md:space-y-4 pb-24 md:pb-6 select-none touch-pan-y">
       {/* ─── Top Header & Controls ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs flex-shrink-0">
         <div>
           <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight flex items-center gap-2">
             <Columns3 className="w-5 h-5 text-brand-primary" />
@@ -1022,12 +1022,13 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* ─── Main Content Display: Kanban Board vs List vs Matrix ─── */}
-      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+      {/* ─── Main Content Display: Kanban Board vs List vs Matrix ─── */}
+      <div className="flex-1 min-h-[400px] md:min-h-0 overflow-hidden flex flex-col">
         {viewMode === 'board' ? (
           /* ══════════════════════════════════════════════════════════════════
              KANBAN BOARD VIEW (4 COLUMNS: To Do, In Progress, Review, Done)
              ══════════════════════════════════════════════════════════════════ */
-          <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto pb-3 pt-1 px-1 items-start">
+          <div className="flex-1 min-h-0 flex gap-3 md:gap-4 overflow-x-auto pb-3 pt-1 px-1 items-start touch-pan-x overscroll-contain">
             {KANBAN_COLUMNS.map((col) => {
               const colTasks = filteredTodos.filter((t) => {
                 if (col.id === 'done') return t.completed || t.status === 'done';
@@ -1050,11 +1051,11 @@ export const TasksView: React.FC = () => {
               return (
                 <div
                   key={col.id}
-                  className="w-80 min-w-[300px] max-w-[340px] flex-shrink-0 flex flex-col h-[calc(100vh-250px)] max-h-[calc(100vh-250px)] bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs overflow-hidden transition-all"
+                  className="w-[285px] sm:w-80 min-w-[275px] max-w-[340px] flex-shrink-0 flex flex-col h-[460px] md:h-full md:max-h-full bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs overflow-hidden transition-all"
                   style={{ borderTop: `4px solid ${col.color}` }}
                 >
                   {/* Column Header */}
-                  <div className="p-3 border-b border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/50 dark:bg-surface-subtleDark/50 flex items-center justify-between">
+                  <div className="p-3 border-b border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/50 dark:bg-surface-subtleDark/50 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-6 h-6 rounded-lg flex items-center justify-center"
@@ -1072,7 +1073,7 @@ export const TasksView: React.FC = () => {
 
                     <button
                       onClick={() => openCreateModal(col.id)}
-                      className="p-1 rounded-lg text-ink-muted hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition"
+                      className="p-1 rounded-lg text-ink-muted hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition active:scale-90"
                       title={`Add task to ${col.title}`}
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -1080,7 +1081,7 @@ export const TasksView: React.FC = () => {
                   </div>
 
                   {/* Scrollable Column Body */}
-                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0 bg-canvas-subtle/10 dark:bg-canvas-darkSubtle/10">
+                  <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0 bg-canvas-subtle/10 dark:bg-canvas-darkSubtle/10 touch-pan-y overscroll-contain">
                     {colTasks.length === 0 ? (
                       <div className="text-center py-12 px-3 text-ink-muted text-xs">
                         <Circle className="w-6 h-6 mx-auto mb-2 opacity-20 text-ink-muted" />
@@ -1089,7 +1090,7 @@ export const TasksView: React.FC = () => {
                         </p>
                         <button
                           onClick={() => openCreateModal(col.id)}
-                          className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-brand-primary/10 text-brand-primary text-[11px] font-semibold hover:bg-brand-primary/20 transition"
+                          className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-brand-primary/10 text-brand-primary text-[11px] font-semibold hover:bg-brand-primary/20 transition active:scale-95"
                         >
                           <Plus className="w-3 h-3" />
                           <span>Add Task</span>
@@ -1101,10 +1102,10 @@ export const TasksView: React.FC = () => {
                   </div>
 
                   {/* Quick Add footer button */}
-                  <div className="p-2 border-t border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/30">
+                  <div className="p-2 border-t border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/30 flex-shrink-0">
                     <button
                       onClick={() => openCreateModal(col.id)}
-                      className="w-full py-1.5 px-2 rounded-xl text-xs font-semibold text-ink-secondary dark:text-ink-darkSecondary hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition flex items-center justify-center gap-1.5 border border-dashed border-border-subtle hover:border-brand-primary/40"
+                      className="w-full py-1.5 px-2 rounded-xl text-xs font-semibold text-ink-secondary dark:text-ink-darkSecondary hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition flex items-center justify-center gap-1.5 border border-dashed border-border-subtle hover:border-brand-primary/40 active:scale-98"
                     >
                       <Plus className="w-3.5 h-3.5 text-brand-primary" />
                       <span>Add Task</span>
@@ -1118,7 +1119,7 @@ export const TasksView: React.FC = () => {
           /* ══════════════════════════════════════════════════════════════════
              LIST VIEW
              ══════════════════════════════════════════════════════════════════ */
-          <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+          <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 touch-pan-y overscroll-contain min-h-0">
             {filteredTodos.length === 0 ? (
               <div className="p-12 text-center text-xs text-ink-muted border border-dashed border-border-subtle rounded-2xl bg-surface/50">
                 <CheckSquare className="w-8 h-8 mx-auto mb-2 text-brand-primary opacity-40" />
@@ -1132,10 +1133,10 @@ export const TasksView: React.FC = () => {
           /* ══════════════════════════════════════════════════════════════════
              EISENHOWER MATRIX VIEW (2x2 GRID)
              ══════════════════════════════════════════════════════════════════ */
-          <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-4 touch-pan-y overscroll-contain min-h-0 pb-4">
             {/* Q1: Do First (Urgent & Important) */}
-            <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 flex flex-col h-80">
-              <div className="flex items-center justify-between pb-2 border-b border-rose-500/20 mb-2">
+            <div className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 flex flex-col min-h-[260px] md:h-80">
+              <div className="flex items-center justify-between pb-2 border-b border-rose-500/20 mb-2 flex-shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-rose-600 dark:text-rose-400">
                   <Flame className="w-4 h-4" />
                   <span>DO FIRST (Urgent &amp; Important)</span>
@@ -1144,7 +1145,7 @@ export const TasksView: React.FC = () => {
                   {filteredTodos.filter((t) => t.urgent && t.important && !t.completed).length}
                 </span>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 touch-pan-y overscroll-contain">
                 {filteredTodos
                   .filter((t) => t.urgent && t.important)
                   .map((todo) => renderTaskCard(todo))}
@@ -1152,8 +1153,8 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Q2: Schedule (Not Urgent & Important) */}
-            <div className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-500/5 flex flex-col h-80">
-              <div className="flex items-center justify-between pb-2 border-b border-indigo-500/20 mb-2">
+            <div className="p-4 rounded-2xl border border-indigo-500/30 bg-indigo-500/5 flex flex-col min-h-[260px] md:h-80">
+              <div className="flex items-center justify-between pb-2 border-b border-indigo-500/20 mb-2 flex-shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 dark:text-indigo-400">
                   <Calendar className="w-4 h-4" />
                   <span>SCHEDULE (Not Urgent, Important)</span>
@@ -1162,7 +1163,7 @@ export const TasksView: React.FC = () => {
                   {filteredTodos.filter((t) => !t.urgent && t.important && !t.completed).length}
                 </span>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 touch-pan-y overscroll-contain">
                 {filteredTodos
                   .filter((t) => !t.urgent && t.important)
                   .map((todo) => renderTaskCard(todo))}
@@ -1170,8 +1171,8 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Q3: Delegate (Urgent, Not Important) */}
-            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col h-80">
-              <div className="flex items-center justify-between pb-2 border-b border-amber-500/20 mb-2">
+            <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 flex flex-col min-h-[260px] md:h-80">
+              <div className="flex items-center justify-between pb-2 border-b border-amber-500/20 mb-2 flex-shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
                   <User className="w-4 h-4" />
                   <span>DELEGATE (Urgent, Not Important)</span>
@@ -1180,7 +1181,7 @@ export const TasksView: React.FC = () => {
                   {filteredTodos.filter((t) => t.urgent && !t.important && !t.completed).length}
                 </span>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 touch-pan-y overscroll-contain">
                 {filteredTodos
                   .filter((t) => t.urgent && !t.important)
                   .map((todo) => renderTaskCard(todo))}
@@ -1188,8 +1189,8 @@ export const TasksView: React.FC = () => {
             </div>
 
             {/* Q4: Eliminate (Not Urgent & Not Important) */}
-            <div className="p-4 rounded-2xl border border-slate-500/30 bg-slate-500/5 flex flex-col h-80">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-500/20 mb-2">
+            <div className="p-4 rounded-2xl border border-slate-500/30 bg-slate-500/5 flex flex-col min-h-[260px] md:h-80">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-500/20 mb-2 flex-shrink-0">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
                   <Trash2 className="w-4 h-4" />
                   <span>ELIMINATE (Not Urgent, Not Important)</span>
@@ -1198,7 +1199,7 @@ export const TasksView: React.FC = () => {
                   {filteredTodos.filter((t) => !t.urgent && !t.important && !t.completed).length}
                 </span>
               </div>
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 touch-pan-y overscroll-contain">
                 {filteredTodos
                   .filter((t) => !t.urgent && !t.important)
                   .map((todo) => renderTaskCard(todo))}

@@ -5,6 +5,7 @@
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
   }
 
   html,
@@ -17,6 +18,7 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -24,14 +26,25 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  /* Allow text selection in document editor and rendered markdown */
+  /* Allow text selection and touch gestures in document editor and rendered markdown */
   .cm-editor,
+  .cm-scroller,
   .markdown-rendered,
   input,
-  textarea {
+  textarea,
+  select,
+  [contenteditable] {
     user-select: text;
+    -webkit-user-select: text;
+    touch-action: pan-y;
+  }
+
+  .cm-scroller {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 }
 
@@ -69,3 +82,15 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Mobile Touch Scroll Utilities */
+.touch-pan-y {
+  touch-action: pan-y;
+}
+.touch-pan-x {
+  touch-action: pan-x;
+}
+.overscroll-contain {
+  overscroll-behavior: contain;
+}
+

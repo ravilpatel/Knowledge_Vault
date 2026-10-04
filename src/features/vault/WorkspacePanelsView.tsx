@@ -461,7 +461,7 @@ export const WorkspacePanelsView: React.FC = () => {
     : [];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3 md:p-4 space-y-2.5 select-none">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-y-auto md:overflow-hidden p-3 md:p-4 space-y-2.5 pb-24 md:pb-4 select-none touch-pan-y">
       {/* ─── Top Header & Controls (Minimal Height) ─── */}
       <div className="flex items-center justify-between gap-3 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle px-3.5 py-1.5 md:py-2 rounded-xl shadow-xs flex-wrap sm:flex-nowrap flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -674,22 +674,22 @@ export const WorkspacePanelsView: React.FC = () => {
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {!activePanelId ? (
           subTab === 'people' ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto touch-pan-y">
               <PeopleView />
             </div>
           ) : subTab === 'companies' ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto touch-pan-y">
               <CompaniesView />
             </div>
           ) : subTab === 'projects' ? (
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto touch-pan-y">
               <ProjectsView />
             </div>
           ) : (
             /* ══════════════════════════════════════════════════════════════════
                COLUMN SCROLLABLE WORKSPACE PANELS FORMAT (LEGACY KNOWLEDGE VAULT)
                ══════════════════════════════════════════════════════════════════ */
-            <div className="flex-1 min-h-0 flex gap-3.5 overflow-x-auto pb-2 pt-0.5 px-0.5 items-stretch h-full">
+            <div className="flex-1 min-h-0 flex gap-3.5 overflow-x-auto touch-pan-x pb-4 pt-0.5 px-0.5 items-stretch h-full">
               {visiblePanels.length === 0 ? (
                 <div className="w-full p-12 text-center text-xs text-ink-muted border border-dashed border-border-subtle dark:border-border-darkSubtle rounded-2xl bg-surface/50 dark:bg-surface-dark/50">
                   <FolderKanban className="w-10 h-10 mx-auto mb-3 text-brand-primary opacity-40" />
@@ -798,7 +798,7 @@ export const WorkspacePanelsView: React.FC = () => {
                       </div>
 
                       {/* Column Content: Vertically Scrollable List of Entries */}
-                      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0 bg-canvas-subtle/20 dark:bg-canvas-darkSubtle/20">
+                      <div className="flex-1 overflow-y-auto touch-pan-y p-3 space-y-2.5 min-h-0 bg-canvas-subtle/20 dark:bg-canvas-darkSubtle/20">
                         {fields.length === 0 ? (
                           <div className="text-center py-10 px-4 text-ink-muted text-xs">
                             <FileText className="w-6 h-6 mx-auto mb-2 opacity-30 text-ink-muted" />
@@ -855,7 +855,7 @@ export const WorkspacePanelsView: React.FC = () => {
                                   <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary leading-snug line-clamp-2">
                                     {String(primaryTitle)}
                                   </h4>
-                                  <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition flex-shrink-0">
+                                  <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover/card:opacity-100 transition flex-shrink-0">
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();

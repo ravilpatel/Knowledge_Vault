@@ -718,7 +718,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
         {currentView === 'finance' && <FinanceView />}
         {currentView === 'notebooks' && (
           currentLevel !== 'editor' ? (
-          <div className="flex-1 flex flex-col overflow-y-auto space-y-3 pb-24">
+          <div className="flex-1 flex flex-col overflow-y-auto space-y-3 pb-24 touch-pan-y">
             {/* Top Stat Carousel & Section Tabs Ribbon */}
             <div className="bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle p-3.5 space-y-3 flex-shrink-0 shadow-2xs">
               {/* Daily Overview Stat Carousel (From Stitch Screen 3) */}
@@ -1088,7 +1088,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
               </div>
 
               {/* Editor / Preview Content Canvas */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto touch-pan-y">
                 {editorTab === 'edit' ? (
                   <MarkdownEditor
                     ref={editorRef}

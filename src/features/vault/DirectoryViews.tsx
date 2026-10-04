@@ -122,7 +122,7 @@ export const PeopleView: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 pb-24 md:pb-6 touch-pan-y">
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
@@ -156,7 +156,7 @@ export const PeopleView: React.FC = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto touch-pan-y">
           {filtered.map((person) => {
             const linkedProjects = projects.filter((p) =>
               (person.related_projects || []).includes(p.id)
@@ -505,7 +505,7 @@ export const CompaniesView: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 pb-24 md:pb-6 touch-pan-y">
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
@@ -535,7 +535,7 @@ export const CompaniesView: React.FC = () => {
           <p className="mt-1">Track organizations, partners, and clients in your workspace.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto touch-pan-y">
           {filtered.map((comp) => {
             const linkedProjects = projects.filter((p) =>
               (comp.related_projects || []).includes(p.id)
@@ -832,7 +832,7 @@ export const ProjectsView: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 pb-24 md:pb-6 touch-pan-y">
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
@@ -862,7 +862,7 @@ export const ProjectsView: React.FC = () => {
           <p className="mt-1">Track strategic initiatives, client deliverables, and technology stacks.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto touch-pan-y">
           {filtered.map((proj) => {
             // Find linked technologies
             const linkedTechList = technologies.filter((t) =>
@@ -1206,7 +1206,7 @@ export const TechnologiesView: React.FC = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 pb-24 md:pb-6 touch-pan-y">
       {/* Header & Controls */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-2 flex-1 max-w-md">
@@ -1252,7 +1252,7 @@ export const TechnologiesView: React.FC = () => {
           <p className="mt-1">Track tech stack tools, frameworks, and developer tools linked to your Projects.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 overflow-y-auto touch-pan-y">
           {filtered.map((tech) => {
             // Find projects using this technology
             const connectedProjects = projects.filter(
