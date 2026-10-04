@@ -72,12 +72,13 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
 
   if (isMobile) {
     return (
-      <div className="h-screen w-screen flex flex-col overflow-hidden">
+      <div className="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden">
         <OfflineBanner />
         <MobileView
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
           isDark={isDark}
+          onToggleTheme={onToggleTheme}
         />
         <CommandPalette
           isOpen={isSearchOpen}
@@ -96,7 +97,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden font-sans">
+    <div className="h-full min-h-[100dvh] w-full flex flex-col bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden font-sans">
       {/* Offline Alert Banner */}
       <OfflineBanner />
 

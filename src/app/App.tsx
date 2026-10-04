@@ -52,7 +52,7 @@ export const App: React.FC = () => {
   }, [user?.accessToken, supabaseUser?.id]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden">
       {/* If not authenticated via Supabase and not in guest mode, display Supabase login */}
       {!supabaseUser && !user && !isGuest ? (
         <SignInModal />

@@ -12,6 +12,7 @@ import { HabitsView } from '../../features/vault/HabitsView';
 import { FinanceView } from '../../features/vault/FinanceView';
 import { WorkspacePanelsView } from '../../features/vault/WorkspacePanelsView';
 import {
+  BookOpen,
   Book,
   Folder,
   ChevronLeft,
@@ -46,12 +47,16 @@ import {
   Calendar as CalendarIcon,
   ArrowUp,
   Inbox,
+  Sun,
+  Moon,
+  User,
 } from 'lucide-react';
 
 interface MobileViewProps {
   onOpenSearch: () => void;
   onOpenSettings: () => void;
   isDark: boolean;
+  onToggleTheme?: () => void;
 }
 
 type MobileLevel = 'notebooks' | 'sections' | 'pages' | 'editor';
@@ -136,6 +141,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
   onOpenSearch,
   onOpenSettings,
   isDark,
+  onToggleTheme,
 }) => {
   const {
     notebooks,
@@ -417,232 +423,301 @@ export const MobileView: React.FC<MobileViewProps> = ({
 
   // Docked Bottom Navigation Bar (Stitch Design Pattern)
   const renderBottomNav = () => (
-    <nav className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0 z-30 shadow-lg">
+    <nav className="flex items-center justify-around py-2 px-1.5 bg-surface/95 dark:bg-surface-dark/95 backdrop-blur-md border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0 z-40 shadow-lg pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))]">
       <button
         onClick={() => {
           setCurrentView('notebooks');
           setCurrentLevel('pages');
         }}
-        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition active:scale-95 ${
+        className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium transition active:scale-95 ${
           currentView === 'notebooks'
             ? 'text-brand-primary dark:text-brand-darkPrimary font-bold'
             : 'hover:text-ink-primary dark:hover:text-ink-darkPrimary'
         }`}
       >
-        <Book className="w-5 h-5" />
+        <div
+          className={`p-1 rounded-xl transition ${
+            currentView === 'notebooks'
+              ? 'bg-brand-light dark:bg-brand-primary/20 text-brand-primary dark:text-brand-darkPrimary'
+              : ''
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+        </div>
         <span>Notes</span>
       </button>
 
       <button
         onClick={() => setCurrentView('workspace')}
-        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition active:scale-95 ${
+        className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium transition active:scale-95 ${
           currentView === 'workspace'
             ? 'text-brand-primary dark:text-brand-darkPrimary font-bold'
             : 'hover:text-ink-primary dark:hover:text-ink-darkPrimary'
         }`}
       >
-        <Layers className="w-5 h-5" />
+        <div
+          className={`p-1 rounded-xl transition ${
+            currentView === 'workspace'
+              ? 'bg-indigo-50 dark:bg-indigo-950/40 text-brand-primary dark:text-brand-darkPrimary'
+              : ''
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+        </div>
         <span>Workspace</span>
       </button>
 
       <button
         onClick={() => setCurrentView('tasks')}
-        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition active:scale-95 ${
+        className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium transition active:scale-95 ${
           currentView === 'tasks'
             ? 'text-brand-primary dark:text-brand-darkPrimary font-bold'
             : 'hover:text-ink-primary dark:hover:text-ink-darkPrimary'
         }`}
       >
-        <CheckSquare className="w-5 h-5" />
+        <div
+          className={`p-1 rounded-xl transition ${
+            currentView === 'tasks'
+              ? 'bg-brand-light dark:bg-brand-primary/20 text-brand-primary dark:text-brand-darkPrimary'
+              : ''
+          }`}
+        >
+          <CheckSquare className="w-4 h-4" />
+        </div>
         <span>Tasks</span>
       </button>
 
       <button
         onClick={() => setCurrentView('habits')}
-        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition active:scale-95 ${
+        className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium transition active:scale-95 ${
           currentView === 'habits'
             ? 'text-brand-primary dark:text-brand-darkPrimary font-bold'
             : 'hover:text-ink-primary dark:hover:text-ink-darkPrimary'
         }`}
       >
-        <Flame className="w-5 h-5 text-amber-500" />
+        <div
+          className={`p-1 rounded-xl transition ${
+            currentView === 'habits' ? 'bg-amber-50 dark:bg-amber-950/40' : ''
+          }`}
+        >
+          <Flame className="w-4 h-4 text-amber-500" />
+        </div>
         <span>Habits</span>
       </button>
 
       <button
         onClick={() => setCurrentView('finance')}
-        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition active:scale-95 ${
+        className={`flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium transition active:scale-95 ${
           currentView === 'finance'
             ? 'text-brand-primary dark:text-brand-darkPrimary font-bold'
             : 'hover:text-ink-primary dark:hover:text-ink-darkPrimary'
         }`}
       >
-        <Wallet className="w-5 h-5" />
+        <div
+          className={`p-1 rounded-xl transition ${
+            currentView === 'finance' ? 'bg-emerald-50 dark:bg-emerald-950/40' : ''
+          }`}
+        >
+          <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        </div>
         <span>Finance</span>
       </button>
 
       <button
         onClick={onOpenSettings}
-        className="flex flex-col items-center gap-1 text-[10px] font-medium hover:text-ink-primary dark:hover:text-ink-darkPrimary transition active:scale-95"
+        className="flex-1 flex flex-col items-center justify-center py-1 gap-0.5 text-[10px] font-medium hover:text-ink-primary dark:hover:text-ink-darkPrimary transition active:scale-95"
       >
-        <Settings className="w-5 h-5" />
+        <div className="p-1 rounded-xl">
+          <Settings className="w-4 h-4" />
+        </div>
         <span>Settings</span>
       </button>
     </nav>
   );
 
-  // If viewing secondary modules (Workspace, Tasks, Habits, Finance)
-  if (currentView !== 'notebooks') {
-    return (
-      <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          {currentView === 'workspace' && <WorkspacePanelsView />}
-          {currentView === 'tasks' && <TasksView />}
-          {currentView === 'habits' && <HabitsView />}
-          {currentView === 'finance' && <FinanceView />}
-        </div>
-        {renderBottomNav()}
-      </div>
-    );
-  }
-
-  // NOTEBOOK EXPLORER & EDITOR VIEW
-  return (
-    <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden select-none relative font-sans">
-      {/* ─── 1. TOP APP BAR & GREETING HEADER ─── */}
-      <header className="px-4 py-2.5 bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle flex-shrink-0 z-20 shadow-xs flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-2">
-          {/* Leading: Back action or Notebook Switcher */}
+  // Unified Mobile Top App Bar / Navbar
+  const renderTopNavbar = () => {
+    if (currentLevel === 'editor' && currentView === 'notebooks') {
+      return (
+        <header className="px-3.5 py-2.5 bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle flex-shrink-0 z-30 shadow-xs flex items-center justify-between gap-2">
+          {/* Leading: Back action + Active section tag */}
           <div className="flex items-center gap-2 min-w-0">
-            {currentLevel === 'editor' ? (
-              <button
-                onClick={handleBack}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
-                title="Back to notes"
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition text-xs font-bold"
+              title="Back to notes"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Notes</span>
+            </button>
+
+            {activeSection && (
+              <span
+                className={`text-[10px] font-bold px-2.5 py-1 rounded-full truncate max-w-[120px] ${
+                  COLOR_MAP[activeSection.color]?.bg || 'bg-brand-light'
+                } ${COLOR_MAP[activeSection.color]?.text || 'text-brand-primary'} ${
+                  COLOR_MAP[activeSection.color]?.darkBg || ''
+                } ${COLOR_MAP[activeSection.color]?.darkText || ''}`}
               >
-                <ChevronLeft className="w-5 h-5" />
+                {COLOR_MAP[activeSection.color]?.emoji} {activeSection.name}
+              </span>
+            )}
+          </div>
+
+          {/* Trailing: Edit/Preview toggle + Star + More Actions */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <StatusPill />
+
+            {/* Segmented Edit / Preview Mode Switcher */}
+            <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-border-subtle dark:border-border-darkSubtle">
+              <button
+                onClick={() => setEditorTab('edit')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                  editorTab === 'edit'
+                    ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                    : 'text-ink-muted'
+                }`}
+              >
+                <Edit3 className="w-3 h-3" />
+                <span>Edit</span>
               </button>
-            ) : (
+              <button
+                onClick={() => setEditorTab('preview')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                  editorTab === 'preview'
+                    ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                    : 'text-ink-muted'
+                }`}
+              >
+                <Eye className="w-3 h-3" />
+                <span>Preview</span>
+              </button>
+            </div>
+
+            {activePage && (
+              <>
+                <button
+                  onClick={() => togglePageFavorite(activePage.id)}
+                  className="p-1.5 rounded-xl text-ink-muted hover:text-amber-500 active:scale-90 transition"
+                  title="Favorite Note"
+                >
+                  <Star
+                    className={`w-4 h-4 ${
+                      activePage.favorite
+                        ? 'fill-amber-500 text-amber-500'
+                        : 'text-slate-400 dark:text-slate-500'
+                    }`}
+                  />
+                </button>
+
+                <button
+                  onClick={() => setIsEditorMenuOpen(!isEditorMenuOpen)}
+                  className="p-1.5 rounded-xl text-ink-muted hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+      );
+    }
+
+    return (
+      <header className="px-3.5 py-2.5 bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle flex-shrink-0 z-30 shadow-xs flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: Brand + Active View Selector */}
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-brand-primary text-white flex items-center justify-center shadow-xs flex-shrink-0">
+              <BookOpen className="w-4 h-4" />
+            </div>
+
+            {currentView === 'notebooks' ? (
               <button
                 onClick={() => setIsNotebookDrawerOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-border-subtle dark:border-border-darkSubtle text-xs font-bold text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95 max-w-[200px] truncate"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-border-subtle dark:border-border-darkSubtle text-xs font-bold text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95 max-w-[190px] truncate"
               >
                 <Book className="w-3.5 h-3.5 text-brand-primary dark:text-brand-darkPrimary flex-shrink-0" />
                 <span className="truncate">{activeNotebook?.name || 'My Vault'}</span>
                 <ChevronDown className="w-3 h-3 text-ink-muted flex-shrink-0" />
               </button>
-            )}
-
-            {currentLevel === 'editor' && activeSection && (
-              <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full truncate max-w-[130px] ${
-                  COLOR_MAP[activeSection.color]?.bg || 'bg-brand-light'
-                } ${COLOR_MAP[activeSection.color]?.text || 'text-brand-primary'}`}
-              >
-                {activeSection.name}
-              </span>
-            )}
-          </div>
-
-          {/* Trailing: Status + Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <StatusPill />
-
-            {currentLevel !== 'editor' ? (
-              <>
-                <button
-                  onClick={onOpenSearch}
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
-                  title="Search notes (Ctrl+K)"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-
-                {/* Profile Chip */}
-                <div
-                  onClick={onOpenSettings}
-                  className="w-8 h-8 rounded-xl bg-brand-primary text-white font-bold text-xs flex items-center justify-center shadow-xs cursor-pointer active:scale-95 transition"
-                  title="Settings & Profile"
-                >
-                  <span>{userInitials}</span>
-                </div>
-              </>
             ) : (
-              <div className="flex items-center gap-1.5">
-                {/* Segmented Edit / Preview Mode Switcher */}
-                <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-border-subtle dark:border-border-darkSubtle">
-                  <button
-                    onClick={() => setEditorTab('edit')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-                      editorTab === 'edit'
-                        ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
-                        : 'text-ink-muted'
-                    }`}
-                  >
-                    <Edit3 className="w-3 h-3" />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => setEditorTab('preview')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-                      editorTab === 'preview'
-                        ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
-                        : 'text-ink-muted'
-                    }`}
-                  >
-                    <Eye className="w-3 h-3" />
-                    <span>Preview</span>
-                  </button>
-                </div>
-
-                {activePage && (
-                  <>
-                    <button
-                      onClick={() => togglePageFavorite(activePage.id)}
-                      className="p-1.5 rounded-xl text-ink-muted hover:text-amber-500 active:scale-90 transition"
-                      title="Favorite Note"
-                    >
-                      <Star
-                        className={`w-4 h-4 ${
-                          activePage.favorite
-                            ? 'fill-amber-500 text-amber-500'
-                            : 'text-slate-400 dark:text-slate-500'
-                        }`}
-                      />
-                    </button>
-
-                    <button
-                      onClick={() => setIsEditorMenuOpen(!isEditorMenuOpen)}
-                      className="p-1.5 rounded-xl text-ink-muted hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-extrabold text-sm tracking-tight text-ink-primary dark:text-ink-darkPrimary truncate">
+                  {currentView === 'workspace' && 'Workspace Boards'}
+                  {currentView === 'tasks' && 'Tasks Hub'}
+                  {currentView === 'habits' && 'Habits Tracker'}
+                  {currentView === 'finance' && 'Finance & Cashflow'}
+                </span>
               </div>
             )}
           </div>
+
+          {/* Right: Status + Search + Theme Switch + Profile */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <StatusPill />
+
+            <button
+              onClick={onOpenSearch}
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+              title="Search notes (Ctrl+K)"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
+            {onToggleTheme && (
+              <button
+                onClick={onToggleTheme}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4" />}
+              </button>
+            )}
+
+            {/* Profile Avatar Chip */}
+            <div
+              onClick={onOpenSettings}
+              className="w-8 h-8 rounded-xl bg-brand-primary text-white font-bold text-xs flex items-center justify-center shadow-xs cursor-pointer active:scale-95 transition"
+              title="Settings & Profile"
+            >
+              {userInitials ? <span>{userInitials}</span> : <User className="w-3.5 h-3.5" />}
+            </div>
+          </div>
         </div>
 
-        {/* Date context string when in explorer */}
-        {currentLevel !== 'editor' && (
+        {/* Date context bar when on Notes explorer */}
+        {currentView === 'notebooks' && (
           <div className="flex items-center justify-between text-[11px] text-ink-muted dark:text-ink-darkMuted pt-0.5">
-            <span className="flex items-center gap-1.5 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block" />
-              <span>
+            <span className="flex items-center gap-1.5 font-medium truncate">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block flex-shrink-0" />
+              <span className="truncate">
                 {todayFormatted} • Good day, {userName}
               </span>
             </span>
-            <span className="font-semibold text-brand-primary dark:text-brand-darkPrimary">
+            <span className="font-semibold text-brand-primary dark:text-brand-darkPrimary flex-shrink-0">
               {visiblePages.length} {visiblePages.length === 1 ? 'note' : 'notes'}
             </span>
           </div>
         )}
       </header>
+    );
+  };
+
+  // NOTEBOOK EXPLORER & EDITOR VIEW
+  return (
+    <div className="flex flex-col h-full min-h-[100dvh] w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden select-none relative font-sans">
+      {/* ─── 1. TOP APP BAR & GREETING HEADER (Always visible across all views) ─── */}
+      {renderTopNavbar()}
 
       {/* ─── 2. MAIN CONTENT STACK ─── */}
-      <div className="flex-1 overflow-hidden flex flex-col relative">
-        {currentLevel !== 'editor' ? (
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col relative">
+        {currentView === 'workspace' && <WorkspacePanelsView />}
+        {currentView === 'tasks' && <TasksView />}
+        {currentView === 'habits' && <HabitsView />}
+        {currentView === 'finance' && <FinanceView />}
+        {currentView === 'notebooks' && (
+          currentLevel !== 'editor' ? (
           <div className="flex-1 flex flex-col overflow-y-auto space-y-3 pb-24">
             {/* Top Stat Carousel & Section Tabs Ribbon */}
             <div className="bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle p-3.5 space-y-3 flex-shrink-0 shadow-2xs">
@@ -970,10 +1045,9 @@ export const MobileView: React.FC<MobileViewProps> = ({
               )}
             </div>
           </div>
-        ) : (
+        ) : activePage ? (
           /* ─── LEVEL 4: MOBILE NOTE EDITOR CANVAS ─── */
-          activePage && (
-            <div className="h-full flex flex-col overflow-hidden bg-canvas-light dark:bg-canvas-dark">
+          <div className="h-full flex flex-col overflow-hidden bg-canvas-light dark:bg-canvas-dark">
               {/* Note Metadata and Title Header */}
               <div className="p-4 border-b border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark space-y-2 flex-shrink-0">
                 {/* Meta details */}
@@ -1157,12 +1231,12 @@ export const MobileView: React.FC<MobileViewProps> = ({
                 </div>
               )}
             </div>
-          )
+          ) : null
         )}
       </div>
 
       {/* ─── 3. SPEED DIAL FLOATING ACTION BUTTON (Visible in explorer level) ─── */}
-      {currentLevel !== 'editor' && (
+      {currentView === 'notebooks' && currentLevel !== 'editor' && (
         <>
           {/* Speed Dial Menu Popover & Backdrop */}
           {isSpeedDialOpen && (

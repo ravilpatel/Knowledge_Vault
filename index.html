@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icons/icon-192.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#4F46E5" />
     <meta name="description" content="OneNote-style, Markdown-first notebook PWA storing all notes in your own Google Drive." />
     <title>NoteVault</title>
@@ -20,8 +20,8 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://apis.google.com/js/api.js" async defer></script>
   </head>
-  <body class="bg-canvas-light text-ink-primary dark:bg-canvas-dark dark:text-ink-darkPrimary antialiased selection:bg-brand-primary/20 selection:text-brand-primary overflow-hidden">
-    <div id="root" class="h-screen w-screen flex flex-col overflow-hidden"></div>
+  <body class="bg-canvas-light text-ink-primary dark:bg-canvas-dark dark:text-ink-darkPrimary antialiased selection:bg-brand-primary/20 selection:text-brand-primary overflow-hidden min-h-[100dvh] h-[100dvh]">
+    <div id="root" class="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
