@@ -196,12 +196,12 @@ export const SupabaseAuthModal: React.FC = () => {
               <span>Authenticating...</span>
             ) : mode === 'signin' ? (
               <>
-                <span>Sign In with Supabase</span>
+                <span>Login</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             ) : mode === 'signup' ? (
               <>
-                <span>Create Supabase Account</span>
+                <span>Create Account</span>
                 <Sparkles className="w-4 h-4" />
               </>
             ) : (

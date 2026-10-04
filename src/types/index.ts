@@ -8,6 +8,8 @@ export type FieldType =
   | 'tags'
   | 'people_link'
   | 'projects_link'
+  | 'technology_link'
+  | 'company_link'
   | 'url'
   | 'date'
   | 'select'
@@ -57,6 +59,7 @@ export interface PersonEntity {
   related_technologies?: string[];
   related_projects?: string[];
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface CompanyEntity {
@@ -69,6 +72,7 @@ export interface CompanyEntity {
   related_people?: string[];
   related_projects?: string[];
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface TechnologyEntity {
@@ -76,7 +80,12 @@ export interface TechnologyEntity {
   user_id?: string;
   name: string;
   description?: string;
+  category?: string;
+  website?: string;
+  related_projects?: string[];
+  related_people?: string[];
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProjectEntity {
@@ -85,7 +94,10 @@ export interface ProjectEntity {
   name: string;
   status?: string;
   description?: string;
+  related_technologies?: string[];
+  related_companies?: string[];
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface CategoryItem {

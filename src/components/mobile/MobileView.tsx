@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useNoteStore } from '../../features/notes/noteStore';
 import { useVaultStore } from '../../features/vault/vaultStore';
 import { formatRelativeTime } from '../../lib/date';
 import { SectionColor } from '../../types';
-import { MarkdownEditor } from '../../features/editor/MarkdownEditor';
+import { MarkdownEditor, MarkdownEditorRef } from '../../features/editor/MarkdownEditor';
 import { PreviewPane } from '../PreviewPane';
 import { StatusPill } from '../StatusPill';
 import { TasksView } from '../../features/vault/TasksView';
@@ -14,6 +14,7 @@ import {
   Book,
   Folder,
   ChevronLeft,
+  ChevronDown,
   Plus,
   Star,
   Search,
@@ -25,6 +26,27 @@ import {
   Wallet,
   Layers,
   Trash2,
+  Share2,
+  Tag,
+  Clock,
+  FileText,
+  Bold,
+  Italic,
+  Strikethrough,
+  Heading1,
+  Heading2,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Link,
+  Table,
+  Undo2,
+  Redo2,
+  X,
+  ArrowUpDown,
+  CheckCircle2,
+  MoreVertical,
 } from 'lucide-react';
 
 interface MobileViewProps {
@@ -34,14 +56,60 @@ interface MobileViewProps {
 }
 
 type MobileLevel = 'notebooks' | 'sections' | 'pages' | 'editor';
+type SortOption = 'updated' | 'title' | 'favorites';
 
-const COLOR_MAP: Record<SectionColor, { bg: string; text: string; border: string }> = {
-  peach: { bg: 'bg-[#FFE4D6]', text: 'text-[#9A3412]', border: 'border-[#FDBA74]' },
-  sage: { bg: 'bg-[#DCFCE7]', text: 'text-[#166534]', border: 'border-[#86EFAC]' },
-  lavender: { bg: 'bg-[#EDE9FE]', text: 'text-[#5B21B6]', border: 'border-[#C4B5FD]' },
-  sky: { bg: 'bg-[#E0F2FE]', text: 'text-[#075985]', border: 'border-[#7DD3FC]' },
-  butter: { bg: 'bg-[#FEF9C3]', text: 'text-[#854D0E]', border: 'border-[#FDE047]' },
-  rose: { bg: 'bg-[#FFE4E6]', text: 'text-[#9F1239]', border: 'border-[#FDA4AF]' },
+const COLOR_MAP: Record<
+  SectionColor,
+  { bg: string; text: string; border: string; darkBg: string; darkText: string; darkBorder: string }
+> = {
+  peach: {
+    bg: 'bg-[#FFE4D6]',
+    text: 'text-[#9A3412]',
+    border: 'border-[#FDBA74]',
+    darkBg: 'dark:bg-[#431407]',
+    darkText: 'dark:text-[#FB923C]',
+    darkBorder: 'dark:border-[#7C2D12]',
+  },
+  sage: {
+    bg: 'bg-[#DCFCE7]',
+    text: 'text-[#166534]',
+    border: 'border-[#86EFAC]',
+    darkBg: 'dark:bg-[#052E16]',
+    darkText: 'dark:text-[#4ADE80]',
+    darkBorder: 'dark:border-[#14532D]',
+  },
+  lavender: {
+    bg: 'bg-[#EDE9FE]',
+    text: 'text-[#5B21B6]',
+    border: 'border-[#C4B5FD]',
+    darkBg: 'dark:bg-[#2E1065]',
+    darkText: 'dark:text-[#A78BFA]',
+    darkBorder: 'dark:border-[#581C87]',
+  },
+  sky: {
+    bg: 'bg-[#E0F2FE]',
+    text: 'text-[#075985]',
+    border: 'border-[#7DD3FC]',
+    darkBg: 'dark:bg-[#082F49]',
+    darkText: 'dark:text-[#38BDF8]',
+    darkBorder: 'dark:border-[#075985]',
+  },
+  butter: {
+    bg: 'bg-[#FEF9C3]',
+    text: 'text-[#854D0E]',
+    border: 'border-[#FDE047]',
+    darkBg: 'dark:bg-[#422006]',
+    darkText: 'dark:text-[#FACC15]',
+    darkBorder: 'dark:border-[#713F12]',
+  },
+  rose: {
+    bg: 'bg-[#FFE4E6]',
+    text: 'text-[#9F1239]',
+    border: 'border-[#FDA4AF]',
+    darkBg: 'dark:bg-[#4C0519]',
+    darkText: 'dark:text-[#FB7185]',
+    darkBorder: 'dark:border-[#881337]',
+  },
 };
 
 export const MobileView: React.FC<MobileViewProps> = ({
@@ -68,24 +136,66 @@ export const MobileView: React.FC<MobileViewProps> = ({
     trashPage,
   } = useNoteStore();
 
-  const { currentView, setCurrentView } = useVaultStore();
+  const { currentView, setCurrentView, addTodo, addExpense } = useVaultStore();
 
+  const editorRef = useRef<MarkdownEditorRef>(null);
+
+  // Mobile state
   const [currentLevel, setCurrentLevel] = useState<MobileLevel>(
-    activePageId ? 'editor' : activeSectionId ? 'pages' : activeNotebookId ? 'sections' : 'notebooks'
+    activePageId ? 'editor' : 'pages'
   );
   const [editorTab, setEditorTab] = useState<'edit' | 'preview'>('edit');
+  const [selectedSectionFilter, setSelectedSectionFilter] = useState<string>('all');
+  const [sortOption, setSortOption] = useState<SortOption>('updated');
+  const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
+  const [isNotebookDrawerOpen, setIsNotebookDrawerOpen] = useState(false);
+  const [isQuickTaskOpen, setIsQuickTaskOpen] = useState(false);
+  const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
+  const [isTagModalOpen, setIsTagModalOpen] = useState(false);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [isEditorMenuOpen, setIsEditorMenuOpen] = useState(false);
 
-  const activeNotebook = notebooks.find((n) => n.id === activeNotebookId && !n.trashed);
+  // Quick form states
+  const [quickTaskTitle, setQuickTaskTitle] = useState('');
+  const [quickTaskScope, setQuickTaskScope] = useState<'work' | 'personal'>('work');
+  const [quickExpenseAmount, setQuickExpenseAmount] = useState('');
+  const [quickExpenseDesc, setQuickExpenseDesc] = useState('');
+  const [quickExpenseType, setQuickExpenseType] = useState<'expense' | 'income'>('expense');
+
+  // Active records
+  const activeNotebook =
+    notebooks.find((n) => n.id === activeNotebookId && !n.trashed) ||
+    notebooks.find((n) => !n.trashed);
   const activeSection = sections.find((s) => s.id === activeSectionId && !s.trashed);
   const activePage = pages.find((p) => p.id === activePageId && !p.trashed);
 
-  const activeSections = sections
-    .filter((s) => s.notebookId === activeNotebookId && !s.trashed)
-    .sort((a, b) => a.order - b.order);
+  const notebookSections = useMemo(() => {
+    if (!activeNotebook) return [];
+    return sections
+      .filter((s) => s.notebookId === activeNotebook.id && !s.trashed)
+      .sort((a, b) => a.order - b.order);
+  }, [sections, activeNotebook]);
 
-  const activePages = pages
-    .filter((p) => p.sectionId === activeSectionId && !p.trashed)
-    .sort((a, b) => new Date(b.updated).getTime() - new Date(a.updated).getTime());
+  // Filtered and sorted pages
+  const visiblePages = useMemo(() => {
+    if (!activeNotebook) return [];
+    let list = pages.filter((p) => p.notebookId === activeNotebook.id && !p.trashed);
+
+    if (selectedSectionFilter !== 'all') {
+      list = list.filter((p) => p.sectionId === selectedSectionFilter);
+    }
+
+    return list.sort((a, b) => {
+      if (sortOption === 'favorites') {
+        if (a.favorite && !b.favorite) return -1;
+        if (!a.favorite && b.favorite) return 1;
+      }
+      if (sortOption === 'title') {
+        return (a.title || '').localeCompare(b.title || '');
+      }
+      return new Date(b.updated).getTime() - new Date(a.updated).getTime();
+    });
+  }, [pages, activeNotebook, selectedSectionFilter, sortOption]);
 
   // Handlers
   const handleSelectNotebook = (id: string) => {
@@ -93,13 +203,9 @@ export const MobileView: React.FC<MobileViewProps> = ({
     const secs = sections.filter((s) => s.notebookId === id && !s.trashed);
     if (secs.length > 0) {
       setActiveSection(secs[0].id);
+      setSelectedSectionFilter('all');
     }
-    setCurrentLevel('sections');
-  };
-
-  const handleSelectSection = (id: string) => {
-    setActiveSection(id);
-    setCurrentLevel('pages');
+    setIsNotebookDrawerOpen(false);
   };
 
   const handleSelectPage = (id: string) => {
@@ -108,12 +214,154 @@ export const MobileView: React.FC<MobileViewProps> = ({
   };
 
   const handleBack = () => {
-    if (currentLevel === 'editor') setCurrentLevel('pages');
-    else if (currentLevel === 'pages') setCurrentLevel('sections');
-    else if (currentLevel === 'sections') setCurrentLevel('notebooks');
+    if (currentLevel === 'editor') {
+      setCurrentLevel('pages');
+    } else if (currentLevel === 'sections') {
+      setCurrentLevel('pages');
+    } else if (currentLevel === 'notebooks') {
+      setCurrentLevel('pages');
+    }
   };
 
-  // If viewing non-notebook module
+  const handleCreateNewNote = async () => {
+    if (!activeNotebook) return;
+    const targetSectionId =
+      selectedSectionFilter !== 'all'
+        ? selectedSectionFilter
+        : notebookSections[0]?.id || (await createSection(activeNotebook.id, 'General')).id;
+
+    const newPage = await createPage(activeNotebook.id, targetSectionId, 'Untitled Note', '');
+    setActiveSection(targetSectionId);
+    setActivePage(newPage.id);
+    setCurrentLevel('editor');
+    setIsSpeedDialOpen(false);
+  };
+
+  const handleQuickTaskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickTaskTitle.trim()) return;
+    await addTodo({
+      title: quickTaskTitle.trim(),
+      scope: quickTaskScope,
+      status: 'todo',
+      priority: 'medium',
+      urgent: false,
+      important: false,
+      completed: false,
+    });
+    setQuickTaskTitle('');
+    setIsQuickTaskOpen(false);
+  };
+
+  const handleQuickExpenseSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const parsed = parseFloat(quickExpenseAmount);
+    if (isNaN(parsed) || parsed <= 0 || !quickExpenseDesc.trim()) return;
+    await addExpense({
+      amount: parsed,
+      description: quickExpenseDesc.trim(),
+      type: quickExpenseType,
+      category: 'General',
+      date: new Date().toISOString().slice(0, 10),
+    });
+    setQuickExpenseAmount('');
+    setQuickExpenseDesc('');
+    setIsQuickExpenseOpen(false);
+  };
+
+  // Estimate read time
+  const getReadTime = (content?: string) => {
+    if (!content) return '1 min read';
+    const words = content.trim().split(/\s+/).length;
+    const minutes = Math.ceil(words / 200);
+    return `${minutes} min read`;
+  };
+
+  // Word count
+  const getWordCount = (content?: string) => {
+    if (!content || !content.trim()) return 0;
+    return content.trim().split(/\s+/).length;
+  };
+
+  // Helper to extract tags from markdown
+  const extractTags = (content?: string) => {
+    if (!content) return [];
+    const hashTags = content.match(/#[a-zA-Z0-9_\-]+/g) || [];
+    const cleanTags = Array.from(new Set(hashTags.map((t) => t.replace(/^#/, '')))).slice(0, 3);
+    return cleanTags;
+  };
+
+  // Handle mobile formatting bar clicks
+  const formatText = (prefix: string, suffix: string = '', defaultText: string = '') => {
+    editorRef.current?.insertText(prefix, suffix, defaultText);
+  };
+
+  const renderBottomNav = (activeTab: string) => (
+    <nav className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0 z-20 shadow-md">
+      <button
+        onClick={() => {
+          setCurrentView('notebooks');
+          setCurrentLevel('pages');
+        }}
+        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+          activeTab === 'notebooks' ? 'text-brand-primary dark:text-brand-darkPrimary font-bold' : ''
+        }`}
+      >
+        <Book className="w-5 h-5" />
+        <span>Notes</span>
+      </button>
+
+      <button
+        onClick={() => setCurrentView('workspace')}
+        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+          activeTab === 'workspace' ? 'text-brand-primary dark:text-brand-darkPrimary font-bold' : ''
+        }`}
+      >
+        <Layers className="w-5 h-5" />
+        <span>Workspace</span>
+      </button>
+
+      <button
+        onClick={() => setCurrentView('tasks')}
+        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+          activeTab === 'tasks' ? 'text-brand-primary dark:text-brand-darkPrimary font-bold' : ''
+        }`}
+      >
+        <CheckSquare className="w-5 h-5" />
+        <span>Tasks</span>
+      </button>
+
+      <button
+        onClick={() => setCurrentView('habits')}
+        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+          activeTab === 'habits' ? 'text-brand-primary dark:text-brand-darkPrimary font-bold' : ''
+        }`}
+      >
+        <Flame className="w-5 h-5 text-amber-500" />
+        <span>Habits</span>
+      </button>
+
+      <button
+        onClick={() => setCurrentView('finance')}
+        className={`flex flex-col items-center gap-1 text-[10px] font-medium transition ${
+          activeTab === 'finance' ? 'text-brand-primary dark:text-brand-darkPrimary font-bold' : ''
+        }`}
+      >
+        <Wallet className="w-5 h-5" />
+        <span>Finance</span>
+      </button>
+
+      <button
+        onClick={onOpenSettings}
+        className="flex flex-col items-center gap-1 text-[10px] font-medium"
+      >
+        <Settings className="w-5 h-5" />
+        <span>Settings</span>
+      </button>
+    </nav>
+  );
+
+  // If viewing non-notebook main modules (Workspace, Tasks, Habits, Finance)
   if (currentView !== 'notebooks') {
     return (
       <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden">
@@ -126,381 +374,920 @@ export const MobileView: React.FC<MobileViewProps> = ({
         </div>
 
         {/* Mobile Bottom Navigation Bar */}
-        <div className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0">
-          <button
-            onClick={() => setCurrentView('notebooks')}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Book className="w-5 h-5" />
-            <span>Notes</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('workspace')}
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
-              currentView === 'workspace' ? 'text-brand-primary font-bold' : ''
-            }`}
-          >
-            <Layers className="w-5 h-5" />
-            <span>Workspace</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('tasks')}
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
-              currentView === 'tasks' ? 'text-brand-primary' : ''
-            }`}
-          >
-            <CheckSquare className="w-5 h-5" />
-            <span>Tasks</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('habits')}
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
-              currentView === 'habits' ? 'text-brand-primary' : ''
-            }`}
-          >
-            <Flame className="w-5 h-5 text-amber-500" />
-            <span>Habits</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('finance')}
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
-              currentView === 'finance' ? 'text-brand-primary' : ''
-            }`}
-          >
-            <Wallet className="w-5 h-5" />
-            <span>Finance</span>
-          </button>
-
-          <button
-            onClick={onOpenSettings}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </button>
-        </div>
+        {renderBottomNav(currentView)}
       </div>
     );
   }
 
+  // NOTEBOOK EXPLORER & EDITOR VIEW
   return (
-    <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden select-none">
-      {/* Top Mobile Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle flex-shrink-0">
-        <div className="flex items-center gap-2">
-          {currentLevel !== 'notebooks' && (
+    <div className="flex flex-col h-full w-full bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden select-none relative">
+      {/* 1. TOP APP BAR */}
+      <header className="flex items-center justify-between px-3.5 py-2.5 bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle flex-shrink-0 z-20 shadow-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          {currentLevel === 'editor' ? (
             <button
               onClick={handleBack}
-              className="p-1 rounded-lg text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="p-1.5 -ml-1 rounded-xl text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+              title="Back to notes"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-          )}
-
-          <h2 className="text-sm font-bold truncate max-w-[200px]">
-            {currentLevel === 'notebooks' && 'Notebooks'}
-            {currentLevel === 'sections' && (activeNotebook?.name || 'Sections')}
-            {currentLevel === 'pages' && (activeSection?.name || 'Pages')}
-            {currentLevel === 'editor' && (activePage?.title || 'Untitled Note')}
-          </h2>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {currentLevel !== 'editor' && (
+          ) : (
             <button
-              onClick={onOpenSearch}
-              className="p-1.5 rounded-lg text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Search notes"
+              onClick={() => setIsNotebookDrawerOpen(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 border border-border-subtle dark:border-border-darkSubtle text-xs font-bold text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-200 dark:hover:bg-slate-700 transition max-w-[210px] truncate"
             >
-              <Search className="w-4 h-4" />
+              <Book className="w-3.5 h-3.5 text-brand-primary dark:text-brand-darkPrimary flex-shrink-0" />
+              <span className="truncate">{activeNotebook?.name || 'My Vault'}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-ink-muted flex-shrink-0" />
             </button>
           )}
-          <StatusPill />
-          {currentLevel === 'editor' && activePage && (
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
-                <button
-                  onClick={() => setEditorTab('edit')}
-                  className={`p-1.5 rounded-md ${
-                    editorTab === 'edit'
-                      ? 'bg-surface dark:bg-surface-dark text-brand-primary'
-                      : 'text-ink-muted'
-                  }`}
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setEditorTab('preview')}
-                  className={`p-1.5 rounded-md ${
-                    editorTab === 'preview'
-                      ? 'bg-surface dark:bg-surface-dark text-brand-primary'
-                      : 'text-ink-muted'
-                  }`}
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                </button>
-              </div>
 
-              <button
-                onClick={async () => {
-                  await trashPage(activePage.id);
-                  setCurrentLevel('pages');
-                }}
-                className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                title="Move to Trash"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+          {currentLevel === 'editor' && (
+            <div className="flex items-center gap-1.5 truncate">
+              {activeSection && (
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    COLOR_MAP[activeSection.color]?.bg || 'bg-brand-light'
+                  } ${COLOR_MAP[activeSection.color]?.text || 'text-brand-primary'}`}
+                >
+                  {activeSection.name}
+                </span>
+              )}
             </div>
           )}
         </div>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <StatusPill />
+
+          {currentLevel !== 'editor' ? (
+            <button
+              onClick={onOpenSearch}
+              className="p-2 rounded-xl text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title="Search notes (Ctrl+K)"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="flex items-center gap-1">
+              {/* Edit / Preview Segmented Switch */}
+              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-border-subtle dark:border-border-darkSubtle">
+                <button
+                  onClick={() => setEditorTab('edit')}
+                  className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                    editorTab === 'edit'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => setEditorTab('preview')}
+                  className={`px-2 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
+                    editorTab === 'preview'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Preview</span>
+                </button>
+              </div>
+
+              {activePage && (
+                <>
+                  <button
+                    onClick={() => togglePageFavorite(activePage.id)}
+                    className="p-1.5 rounded-xl text-ink-muted hover:text-amber-500 transition"
+                    title="Toggle Favorite"
+                  >
+                    <Star
+                      className={`w-4 h-4 ${
+                        activePage.favorite
+                          ? 'fill-amber-500 text-amber-500'
+                          : 'text-slate-400 dark:text-slate-500'
+                      }`}
+                    />
+                  </button>
+
+                  <button
+                    onClick={() => setIsEditorMenuOpen(!isEditorMenuOpen)}
+                    className="p-1.5 rounded-xl text-ink-muted hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* 2. MAIN CONTENT STACK */}
+      <div className="flex-1 overflow-hidden flex flex-col relative">
+        {currentLevel !== 'editor' ? (
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Top Stat Ribbon & Section Filter Pills */}
+            <div className="bg-surface dark:bg-surface-dark border-b border-border-subtle dark:border-border-darkSubtle px-3.5 pt-3 pb-2.5 space-y-2.5 flex-shrink-0">
+              {/* Horizontal Scrollable Pastel Section Pills */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+                <button
+                  onClick={() => setSelectedSectionFilter('all')}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 ${
+                    selectedSectionFilter === 'all'
+                      ? 'bg-brand-primary text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-ink-secondary dark:text-ink-darkSecondary hover:bg-slate-200'
+                  }`}
+                >
+                  <Folder className="w-3 h-3" />
+                  <span>All</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                      selectedSectionFilter === 'all'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-ink-muted'
+                    }`}
+                  >
+                    {pages.filter((p) => p.notebookId === activeNotebook?.id && !p.trashed).length}
+                  </span>
+                </button>
+
+                {notebookSections.map((sec) => {
+                  const color = COLOR_MAP[sec.color] || COLOR_MAP.peach;
+                  const isSelected = selectedSectionFilter === sec.id;
+                  const count = pages.filter((p) => p.sectionId === sec.id && !p.trashed).length;
+
+                  return (
+                    <button
+                      key={sec.id}
+                      onClick={() => setSelectedSectionFilter(sec.id)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition flex items-center gap-1.5 border ${
+                        isSelected
+                          ? `${color.bg} ${color.text} ${color.border} ring-2 ring-brand-primary/30 shadow-xs ${color.darkBg} ${color.darkText} ${color.darkBorder}`
+                          : `bg-surface dark:bg-surface-dark ${color.text} ${color.border} opacity-85 hover:opacity-100 ${color.darkText} ${color.darkBorder}`
+                      }`}
+                    >
+                      <span className="w-2 h-2 rounded-full bg-current opacity-80" />
+                      <span>{sec.name}</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/5 dark:bg-white/10 font-semibold">
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+
+                <button
+                  onClick={async () => {
+                    if (!activeNotebook) return;
+                    const name = prompt('New section name:');
+                    if (name && name.trim()) {
+                      const colors: SectionColor[] = ['peach', 'sage', 'lavender', 'sky', 'butter', 'rose'];
+                      const nextColor = colors[notebookSections.length % colors.length];
+                      const newSec = await createSection(activeNotebook.id, name.trim(), nextColor);
+                      setSelectedSectionFilter(newSec.id);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 rounded-full text-xs font-semibold text-brand-primary dark:text-brand-darkPrimary bg-brand-light dark:bg-brand-primary/10 border border-brand-primary/20 whitespace-nowrap flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Section</span>
+                </button>
+              </div>
+
+              {/* Context Summary & Sort Bar */}
+              <div className="flex items-center justify-between text-xs text-ink-muted dark:text-ink-darkMuted pt-1">
+                <span className="font-semibold">
+                  {visiblePages.length} {visiblePages.length === 1 ? 'note' : 'notes'}
+                </span>
+
+                <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-800/70 px-2 py-1 rounded-lg">
+                  <ArrowUpDown className="w-3 h-3 text-ink-muted" />
+                  <select
+                    value={sortOption}
+                    onChange={(e) => setSortOption(e.target.value as SortOption)}
+                    className="bg-transparent text-[11px] font-semibold text-ink-secondary dark:text-ink-darkSecondary outline-none cursor-pointer"
+                  >
+                    <option value="updated">Recently Edited</option>
+                    <option value="title">Alphabetical</option>
+                    <option value="favorites">Favorites First</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Note Cards Feed (Mobile View) */}
+            <div className="flex-1 overflow-y-auto p-3.5 space-y-2.5 pb-20">
+              {visiblePages.length === 0 ? (
+                <div className="py-16 text-center text-xs text-ink-muted space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-light dark:bg-brand-primary/10 text-brand-primary flex items-center justify-center mx-auto">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-ink-primary dark:text-ink-darkPrimary text-sm">No notes here yet</p>
+                    <p className="text-[11px] mt-0.5">Tap the (+) button below to create your first note.</p>
+                  </div>
+                  <button
+                    onClick={handleCreateNewNote}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover transition shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create Note</span>
+                  </button>
+                </div>
+              ) : (
+                visiblePages.map((page) => {
+                  const sec = sections.find((s) => s.id === page.sectionId);
+                  const color = sec ? COLOR_MAP[sec.color] || COLOR_MAP.peach : COLOR_MAP.peach;
+                  const tags = extractTags(page.content);
+
+                  return (
+                    <div
+                      key={page.id}
+                      onClick={() => handleSelectPage(page.id)}
+                      className="group relative p-3.5 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs active:scale-[0.99] transition cursor-pointer overflow-hidden flex flex-col justify-between"
+                    >
+                      {/* Left pastel color accent strip */}
+                      <div
+                        className={`absolute left-0 top-0 bottom-0 w-1.5 ${
+                          color.bg.replace('bg-', 'bg-')
+                        } ${color.border.replace('border-', 'bg-')}`}
+                      />
+
+                      <div className="pl-1">
+                        {/* Top row: Title + Star + Read Time */}
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <h3 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary leading-snug line-clamp-1 flex-1">
+                            {page.title || 'Untitled Note'}
+                          </h3>
+
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <span className="text-[10px] font-medium text-ink-muted bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md">
+                              {getReadTime(page.content)}
+                            </span>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePageFavorite(page.id);
+                              }}
+                              className="p-1 -mr-1 text-slate-300 dark:text-slate-600 hover:text-amber-500 transition"
+                            >
+                              <Star
+                                className={`w-3.5 h-3.5 ${
+                                  page.favorite
+                                    ? 'fill-amber-500 text-amber-500'
+                                    : 'text-slate-300 dark:text-slate-600'
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Snippet preview */}
+                        <p className="text-xs text-ink-muted dark:text-ink-darkMuted line-clamp-2 leading-relaxed mb-2 font-normal">
+                          {page.content
+                            ? page.content.replace(/^[#\s\*\>\-]+/gm, '').trim().slice(0, 100)
+                            : 'No additional content...'}
+                        </p>
+
+                        {/* Bottom row: Time + Tags */}
+                        <div className="flex items-center justify-between text-[10px] text-ink-muted pt-1 border-t border-border-subtle/50 dark:border-border-darkSubtle/50">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Clock className="w-3 h-3" />
+                            {formatRelativeTime(page.updated)}
+                          </span>
+
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {sec && (
+                              <span
+                                className={`font-semibold px-2 py-0.5 rounded-full ${color.bg} ${color.text} ${color.darkBg} ${color.darkText}`}
+                              >
+                                {sec.name}
+                              </span>
+                            )}
+                            {tags.map((t) => (
+                              <span
+                                key={t}
+                                className="bg-slate-100 dark:bg-slate-800 text-ink-secondary dark:text-ink-darkSecondary px-1.5 py-0.5 rounded-md font-medium"
+                              >
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ) : (
+          /* LEVEL 4: MOBILE NOTE EDITOR CANVAS */
+          activePage && (
+            <div className="h-full flex flex-col overflow-hidden bg-canvas-light dark:bg-canvas-dark">
+              {/* Note Metadata and Title Header */}
+              <div className="p-4 border-b border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark space-y-2 flex-shrink-0">
+                {/* Meta details */}
+                <div className="flex items-center justify-between text-[11px] text-ink-muted">
+                  <span className="flex items-center gap-1 font-medium">
+                    <Clock className="w-3 h-3" />
+                    Edited {formatRelativeTime(activePage.updated)} • {getWordCount(activePage.content)} words • {getReadTime(activePage.content)}
+                  </span>
+                </div>
+
+                {/* Big Note Title Input */}
+                <input
+                  type="text"
+                  value={activePage.title}
+                  onChange={(e) => updatePageTitle(activePage.id, e.target.value)}
+                  placeholder="Note Title..."
+                  className="w-full text-xl font-bold bg-transparent outline-none border-none text-ink-primary dark:text-ink-darkPrimary placeholder:text-ink-muted/50 font-sans"
+                />
+
+                {/* Tags Strip */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  {extractTags(activePage.content).map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-brand-primary dark:text-brand-darkPrimary"
+                    >
+                      <Tag className="w-2.5 h-2.5" />
+                      #{tag}
+                    </span>
+                  ))}
+                  <button
+                    onClick={() => setIsTagModalOpen(true)}
+                    className="text-[11px] font-medium text-ink-muted hover:text-brand-primary flex items-center gap-0.5 px-2 py-0.5 rounded-full border border-dashed border-border-subtle dark:border-border-darkSubtle"
+                  >
+                    <Plus className="w-2.5 h-2.5" /> Tag
+                  </button>
+                </div>
+              </div>
+
+              {/* Editor / Preview Content Canvas */}
+              <div className="flex-1 overflow-y-auto">
+                {editorTab === 'edit' ? (
+                  <MarkdownEditor
+                    ref={editorRef}
+                    value={activePage.content}
+                    onChange={(val) => updatePageContent(activePage.id, val)}
+                    notebookId={activePage.notebookId}
+                    isDark={isDark}
+                  />
+                ) : (
+                  <PreviewPane
+                    content={activePage.content}
+                    notebookId={activePage.notebookId}
+                    pageId={activePage.id}
+                  />
+                )}
+              </div>
+
+              {/* Sticky Mobile Formatting Toolbar (Visible in Edit mode) */}
+              {editorTab === 'edit' && (
+                <div className="flex items-center gap-1 px-2.5 py-1.5 border-t border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark overflow-x-auto no-scrollbar text-ink-secondary dark:text-ink-darkSecondary flex-shrink-0 z-20 shadow-md">
+                  <button
+                    onClick={() => editorRef.current?.undo?.()}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Undo"
+                  >
+                    <Undo2 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => editorRef.current?.redo?.()}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Redo"
+                  >
+                    <Redo2 className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-[1px] h-4 bg-border-subtle dark:border-border-darkSubtle mx-0.5" />
+
+                  <button
+                    onClick={() => formatText('# ', '', 'Heading 1')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition font-bold text-xs"
+                    title="H1"
+                  >
+                    <Heading1 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('## ', '', 'Heading 2')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition font-bold text-xs"
+                    title="H2"
+                  >
+                    <Heading2 className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('**', '**', 'bold text')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition font-bold text-xs"
+                    title="Bold"
+                  >
+                    <Bold className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('*', '*', 'italic text')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition italic text-xs"
+                    title="Italic"
+                  >
+                    <Italic className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('~~', '~~', 'strikethrough')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Strikethrough"
+                  >
+                    <Strikethrough className="w-4 h-4" />
+                  </button>
+
+                  <div className="w-[1px] h-4 bg-border-subtle dark:border-border-darkSubtle mx-0.5" />
+
+                  <button
+                    onClick={() => formatText('- [ ] ', '', 'Task item')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition text-brand-primary"
+                    title="Checklist"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('- ', '', 'List item')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Bullet List"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('1. ', '', 'Numbered item')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Numbered List"
+                  >
+                    <ListOrdered className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('> ', '', 'Quote')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Blockquote"
+                  >
+                    <Quote className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('```ts\n', '\n```', 'console.log("hello");')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Code Block"
+                  >
+                    <Code className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() => formatText('[', '](https://)', 'link title')}
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Link"
+                  >
+                    <Link className="w-4 h-4" />
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      formatText(
+                        '| Column 1 | Column 2 |\n|---|---|\n| Item 1 | Item 2 |\n'
+                      )
+                    }
+                    className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95 transition"
+                    title="Table"
+                  >
+                    <Table className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )
+        )}
       </div>
 
-      {/* Main Stack Content */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Level 1: Notebooks */}
-        {currentLevel === 'notebooks' && (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-                My Notebooks
-              </span>
+      {/* 3. SPEED DIAL FLOATING ACTION BUTTON (Visible in explorer level) */}
+      {currentLevel !== 'editor' && (
+        <>
+          {/* Speed Dial Menu Popover */}
+          {isSpeedDialOpen && (
+            <div
+              className="fixed inset-0 bg-black/40 backdrop-blur-xs z-30 flex flex-col justify-end p-5 pb-20 animate-in fade-in duration-150"
+              onClick={() => setIsSpeedDialOpen(false)}
+            >
+              <div
+                className="bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-3xl p-3 shadow-2xl space-y-1 mb-3 self-end w-64 animate-in slide-in-from-bottom-6 duration-150"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="px-3 py-1.5 text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                  Quick Capture
+                </div>
+
+                <button
+                  onClick={handleCreateNewNote}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-brand-light dark:hover:bg-brand-primary/10 text-ink-primary dark:text-ink-darkPrimary transition text-xs font-bold"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-brand-primary text-white flex items-center justify-center">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div>New Note</div>
+                    <span className="text-[10px] text-ink-muted font-normal">Add in active section</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSpeedDialOpen(false);
+                    setIsQuickTaskOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-ink-primary dark:text-ink-darkPrimary transition text-xs font-bold"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center">
+                    <CheckSquare className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div>New Task</div>
+                    <span className="text-[10px] text-ink-muted font-normal">Quick add to Todo</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSpeedDialOpen(false);
+                    setCurrentView('habits');
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-amber-50 dark:hover:bg-amber-950/30 text-ink-primary dark:text-ink-darkPrimary transition text-xs font-bold"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center">
+                    <Flame className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div>Log Habit</div>
+                    <span className="text-[10px] text-ink-muted font-normal">Check in today's streaks</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsSpeedDialOpen(false);
+                    setIsQuickExpenseOpen(true);
+                  }}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-indigo-50 dark:hover:bg-indigo-950/30 text-ink-primary dark:text-ink-darkPrimary transition text-xs font-bold"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div>Add Expense</div>
+                    <span className="text-[10px] text-ink-muted font-normal">Track spending or income</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Floating Action Button */}
+          <button
+            onClick={() => setIsSpeedDialOpen(!isSpeedDialOpen)}
+            className={`fixed right-5 bottom-20 w-14 h-14 rounded-full bg-brand-primary text-white shadow-xl flex items-center justify-center transition-all transform active:scale-95 z-40 ${
+              isSpeedDialOpen ? 'rotate-45 bg-slate-800' : 'hover:scale-105'
+            }`}
+            title="Create new"
+          >
+            <Plus className="w-6 h-6" />
+          </button>
+        </>
+      )}
+
+      {/* 4. NOTEBOOK SELECTION DRAWER / BOTTOM SHEET */}
+      {isNotebookDrawerOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex flex-col justify-end animate-in fade-in duration-150"
+          onClick={() => setIsNotebookDrawerOpen(false)}
+        >
+          <div
+            className="bg-surface dark:bg-surface-dark rounded-t-3xl border-t border-border-subtle dark:border-border-darkSubtle max-h-[80vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Sheet Handle & Header */}
+            <div className="p-4 border-b border-border-subtle dark:border-border-darkSubtle flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Book className="w-5 h-5 text-brand-primary" />
+                <h3 className="font-bold text-sm text-ink-primary dark:text-ink-darkPrimary">
+                  Switch Notebook
+                </h3>
+              </div>
               <button
                 onClick={async () => {
                   const name = prompt('New notebook name:');
                   if (name && name.trim()) {
                     const nb = await createNotebook(name.trim());
                     setActiveNotebook(nb.id);
+                    setIsNotebookDrawerOpen(false);
                   }
                 }}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-primary"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-light dark:bg-brand-primary/10 text-brand-primary dark:text-brand-darkPrimary text-xs font-bold"
               >
-                <Plus className="w-3.5 h-3.5" /> New
+                <Plus className="w-3.5 h-3.5" />
+                <span>New</span>
               </button>
             </div>
 
-            <div className="space-y-2">
+            {/* Notebook List */}
+            <div className="p-4 overflow-y-auto space-y-2">
               {notebooks
                 .filter((n) => !n.trashed)
-                .map((nb) => (
-                  <div
-                    key={nb.id}
-                    onClick={() => handleSelectNotebook(nb.id)}
-                    className="flex items-center justify-between p-3.5 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs cursor-pointer active:scale-98 transition"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-brand-light dark:bg-brand-primary/15 text-brand-primary flex items-center justify-center">
-                        <Book className="w-4 h-4" />
-                      </div>
-                      <span className="text-sm font-semibold text-ink-primary dark:text-ink-darkPrimary">
-                        {nb.name}
-                      </span>
-                    </div>
-                    <span className="text-xs text-ink-muted">
-                      {sections.filter((s) => s.notebookId === nb.id && !s.trashed).length} sections
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        )}
+                .map((nb) => {
+                  const isCurrent = nb.id === activeNotebook?.id;
+                  const secCount = sections.filter((s) => s.notebookId === nb.id && !s.trashed).length;
+                  const pageCount = pages.filter((p) => p.notebookId === nb.id && !p.trashed).length;
 
-        {/* Level 2: Sections */}
-        {currentLevel === 'sections' && (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-                Sections in {activeNotebook?.name}
-              </span>
-              <button
-                onClick={async () => {
-                  if (!activeNotebookId) return;
-                  const name = prompt('New section name:');
-                  if (name && name.trim()) {
-                    const sec = await createSection(activeNotebookId, name.trim());
-                    setActiveSection(sec.id);
-                  }
-                }}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-primary"
-              >
-                <Plus className="w-3.5 h-3.5" /> New
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {activeSections.map((sec) => {
-                const color = COLOR_MAP[sec.color] || COLOR_MAP.peach;
-                return (
-                  <div
-                    key={sec.id}
-                    onClick={() => handleSelectSection(sec.id)}
-                    className={`p-4 rounded-2xl border ${color.border} ${color.bg} shadow-xs cursor-pointer active:scale-98 transition flex flex-col justify-between h-28`}
-                  >
-                    <Folder className={`w-5 h-5 ${color.text}`} />
-                    <div>
-                      <h4 className={`text-xs font-bold ${color.text} truncate`}>{sec.name}</h4>
-                      <span className="text-[10px] opacity-75 font-medium">
-                        {pages.filter((p) => p.sectionId === sec.id && !p.trashed).length} notes
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Level 3: Pages */}
-        {currentLevel === 'pages' && (
-          <div className="p-4 space-y-3">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-ink-muted uppercase tracking-wider">
-                Pages in {activeSection?.name}
-              </span>
-              <button
-                onClick={async () => {
-                  if (!activeNotebookId || !activeSectionId) return;
-                  const newPage = await createPage(activeNotebookId, activeSectionId, 'Untitled Note', '');
-                  setActivePage(newPage.id);
-                  setCurrentLevel('editor');
-                }}
-                className="inline-flex items-center gap-1 text-xs font-semibold text-brand-primary"
-              >
-                <Plus className="w-3.5 h-3.5" /> New
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {activePages.map((page) => (
-                <div
-                  key={page.id}
-                  onClick={() => handleSelectPage(page.id)}
-                  className="p-3.5 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs cursor-pointer active:scale-98 transition"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary truncate">
-                      {page.title || 'Untitled Note'}
-                    </h4>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        togglePageFavorite(page.id);
-                      }}
-                      className="p-1"
+                  return (
+                    <div
+                      key={nb.id}
+                      onClick={() => handleSelectNotebook(nb.id)}
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border transition cursor-pointer ${
+                        isCurrent
+                          ? 'border-brand-primary bg-brand-light/50 dark:bg-brand-primary/15'
+                          : 'border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark hover:bg-slate-100'
+                      }`}
                     >
-                      <Star
-                        className={`w-3.5 h-3.5 ${
-                          page.favorite ? 'fill-amber-500 text-amber-500' : 'text-slate-300'
-                        }`}
-                      />
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-ink-muted line-clamp-2 leading-relaxed">
-                    {page.content ? page.content.slice(0, 70) : 'No content'}
-                  </p>
-                  <span className="text-[10px] text-ink-muted mt-2 block">
-                    {formatRelativeTime(page.updated)}
-                  </span>
-                </div>
-              ))}
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                            isCurrent
+                              ? 'bg-brand-primary text-white'
+                              : 'bg-slate-200 dark:bg-slate-700 text-ink-muted'
+                          }`}
+                        >
+                          <Book className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary">
+                            {nb.name}
+                          </h4>
+                          <span className="text-[11px] text-ink-muted">
+                            {secCount} sections • {pageCount} notes
+                          </span>
+                        </div>
+                      </div>
+
+                      {isCurrent && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
+                    </div>
+                  );
+                })}
             </div>
           </div>
-        )}
-
-        {/* Level 4: Editor */}
-        {currentLevel === 'editor' && activePage && (
-          <div className="h-full flex flex-col">
-            <div className="px-4 py-2 border-b border-border-subtle dark:border-border-darkSubtle">
-              <input
-                type="text"
-                value={activePage.title}
-                onChange={(e) => updatePageTitle(activePage.id, e.target.value)}
-                placeholder="Note Title"
-                className="w-full text-base font-bold bg-transparent outline-none border-none text-ink-primary dark:text-ink-darkPrimary"
-              />
-            </div>
-
-            <div className="flex-1 overflow-hidden">
-              {editorTab === 'edit' ? (
-                <MarkdownEditor
-                  value={activePage.content}
-                  onChange={(val) => updatePageContent(activePage.id, val)}
-                  notebookId={activePage.notebookId}
-                  isDark={isDark}
-                />
-              ) : (
-                <PreviewPane
-                  content={activePage.content}
-                  notebookId={activePage.notebookId}
-                  pageId={activePage.id}
-                />
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Mobile Bottom Navigation Bar (Hidden when editing note) */}
-      {currentLevel !== 'editor' && (
-        <div className="flex items-center justify-around py-2.5 bg-surface dark:bg-surface-dark border-t border-border-subtle dark:border-border-darkSubtle text-ink-muted dark:text-ink-darkMuted flex-shrink-0">
-          <button
-            onClick={() => {
-              setCurrentView('notebooks');
-              setCurrentLevel('notebooks');
-            }}
-            className={`flex flex-col items-center gap-1 text-[10px] font-medium ${
-              currentLevel === 'notebooks' ? 'text-brand-primary' : ''
-            }`}
-          >
-            <Book className="w-5 h-5" />
-            <span>Notes</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('workspace')}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Layers className="w-5 h-5" />
-            <span>Workspace</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('tasks')}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <CheckSquare className="w-5 h-5" />
-            <span>Tasks</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('habits')}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Flame className="w-5 h-5 text-amber-500" />
-            <span>Habits</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView('finance')}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Wallet className="w-5 h-5" />
-            <span>Finance</span>
-          </button>
-
-          <button
-            onClick={onOpenSettings}
-            className="flex flex-col items-center gap-1 text-[10px] font-medium"
-          >
-            <Settings className="w-5 h-5" />
-            <span>Settings</span>
-          </button>
         </div>
       )}
+
+      {/* 5. QUICK ADD TASK BOTTOM SHEET */}
+      {isQuickTaskOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex flex-col justify-end animate-in fade-in duration-150"
+          onClick={() => setIsQuickTaskOpen(false)}
+        >
+          <form
+            onSubmit={handleQuickTaskSubmit}
+            className="bg-surface dark:bg-surface-dark rounded-t-3xl border-t border-border-subtle dark:border-border-darkSubtle p-5 space-y-4 animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
+                <CheckSquare className="w-4 h-4 text-emerald-500" />
+                <span>Quick Add Task</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsQuickTaskOpen(false)}
+                className="p-1 rounded-lg text-ink-muted hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <input
+              type="text"
+              autoFocus
+              placeholder="What needs to be done?"
+              value={quickTaskTitle}
+              onChange={(e) => setQuickTaskTitle(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 text-sm font-medium text-ink-primary dark:text-ink-darkPrimary"
+            />
+
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-border-subtle dark:border-border-darkSubtle">
+                <button
+                  type="button"
+                  onClick={() => setQuickTaskScope('work')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    quickTaskScope === 'work'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  Work
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickTaskScope('personal')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
+                    quickTaskScope === 'personal'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  Personal
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                disabled={!quickTaskTitle.trim()}
+                className="px-5 py-2 rounded-xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover transition disabled:opacity-50 shadow-sm"
+              >
+                Create Task
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* 6. QUICK ADD EXPENSE BOTTOM SHEET */}
+      {isQuickExpenseOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex flex-col justify-end animate-in fade-in duration-150"
+          onClick={() => setIsQuickExpenseOpen(false)}
+        >
+          <form
+            onSubmit={handleQuickExpenseSubmit}
+            className="bg-surface dark:bg-surface-dark rounded-t-3xl border-t border-border-subtle dark:border-border-darkSubtle p-5 space-y-4 animate-in slide-in-from-bottom duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
+                <Wallet className="w-4 h-4 text-indigo-500" />
+                <span>Quick Log Transaction</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsQuickExpenseOpen(false)}
+                className="p-1 rounded-lg text-ink-muted hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                step="any"
+                autoFocus
+                placeholder="Amount (₹ / $)"
+                value={quickExpenseAmount}
+                onChange={(e) => setQuickExpenseAmount(e.target.value)}
+                className="px-4 py-3 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 text-sm font-bold text-ink-primary dark:text-ink-darkPrimary"
+              />
+
+              <div className="flex items-center p-0.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-border-subtle dark:border-border-darkSubtle">
+                <button
+                  type="button"
+                  onClick={() => setQuickExpenseType('expense')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                    quickExpenseType === 'expense'
+                      ? 'bg-surface dark:bg-surface-dark text-rose-600 shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  Expense
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setQuickExpenseType('income')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+                    quickExpenseType === 'income'
+                      ? 'bg-surface dark:bg-surface-dark text-emerald-600 shadow-xs'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  Income
+                </button>
+              </div>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Description (e.g. Coffee, Domain, Client Invoice)..."
+              value={quickExpenseDesc}
+              onChange={(e) => setQuickExpenseDesc(e.target.value)}
+              className="w-full px-4 py-3 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 text-sm font-medium text-ink-primary dark:text-ink-darkPrimary"
+            />
+
+            <button
+              type="submit"
+              disabled={!quickExpenseAmount || !quickExpenseDesc.trim()}
+              className="w-full py-3 rounded-2xl bg-brand-primary text-white text-xs font-bold hover:bg-brand-hover transition disabled:opacity-50 shadow-sm"
+            >
+              Log Transaction
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 7. QUICK TAG MODAL */}
+      {isTagModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          onClick={() => setIsTagModalOpen(false)}
+        >
+          <div
+            className="bg-surface dark:bg-surface-dark rounded-3xl border border-border-subtle dark:border-border-darkSubtle p-5 w-full max-w-xs space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary">Add Tag to Note</h4>
+              <button onClick={() => setIsTagModalOpen(false)}>
+                <X className="w-4 h-4 text-ink-muted" />
+              </button>
+            </div>
+
+            <input
+              type="text"
+              placeholder="Tag name (e.g. ideas, work, books)..."
+              value={newTagInput}
+              onChange={(e) => setNewTagInput(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 text-ink-primary dark:text-ink-darkPrimary"
+            />
+
+            <button
+              onClick={() => {
+                if (newTagInput.trim() && activePage) {
+                  const tagText = ` #${newTagInput.trim().replace(/^#/, '')}`;
+                  updatePageContent(activePage.id, activePage.content + tagText);
+                  setNewTagInput('');
+                  setIsTagModalOpen(false);
+                }
+              }}
+              disabled={!newTagInput.trim()}
+              className="w-full py-2 rounded-xl bg-brand-primary text-white text-xs font-bold disabled:opacity-50"
+            >
+              Insert Tag
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 8. EDITOR ACTIONS DROPDOWN MENU */}
+      {isEditorMenuOpen && activePage && (
+        <div
+          className="fixed inset-0 bg-black/20 z-40"
+          onClick={() => setIsEditorMenuOpen(false)}
+        >
+          <div
+            className="absolute top-12 right-4 bg-surface dark:bg-surface-dark rounded-2xl border border-border-subtle dark:border-border-darkSubtle p-1.5 shadow-xl w-48 space-y-0.5 z-50 text-xs font-medium"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(activePage.content);
+                setIsEditorMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary text-left"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Copy Note Markdown</span>
+            </button>
+
+            <button
+              onClick={async () => {
+                setIsEditorMenuOpen(false);
+                await trashPage(activePage.id);
+                setCurrentLevel('pages');
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 text-left"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Move to Trash</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 9. DOCKED MOBILE BOTTOM NAVIGATION BAR (Hidden in note editor view) */}
+      {currentLevel !== 'editor' && renderBottomNav('notebooks')}
     </div>
   );
 };

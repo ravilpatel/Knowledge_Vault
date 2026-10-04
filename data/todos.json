@@ -36,7 +36,8 @@
     "recurrence": "none",
     "due_time": null,
     "estimated_minutes": null,
-    "order_index": 0
+    "order_index": 0,
+    "scope": "work"
   },
   {
     "id": "ddf5d35a-124a-482e-bebe-a4aca168971f",
@@ -75,7 +76,8 @@
     "recurrence": "none",
     "due_time": null,
     "estimated_minutes": null,
-    "order_index": 0
+    "order_index": 0,
+    "scope": "work"
   },
   {
     "id": "d6dd030f-0a18-4be8-94d8-4135803394e9",
@@ -102,7 +104,8 @@
     "recurrence": "none",
     "due_time": null,
     "estimated_minutes": null,
-    "order_index": 0
+    "order_index": 0,
+    "scope": "work"
   },
   {
     "id": "7d2f3a61-bb53-4686-bf11-b775358a5029",
@@ -128,6 +131,7 @@
     "recurrence": "none",
     "due_time": null,
     "estimated_minutes": null,
-    "order_index": 0
+    "order_index": 0,
+    "scope": "work"
   }
 ]

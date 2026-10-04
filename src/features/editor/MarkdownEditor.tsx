@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter } from '@codemirror/view';
-import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { defaultKeymap, history, historyKeymap, undo as cmUndo, redo as cmRedo } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { generateAttachmentFilename } from '../../lib/id';
@@ -12,6 +12,8 @@ import { syncEngine } from '../sync/syncEngine';
 export interface MarkdownEditorRef {
   insertText: (prefix: string, suffix?: string, defaultText?: string) => void;
   openFilePicker: () => void;
+  undo?: () => void;
+  redo?: () => void;
 }
 
 interface MarkdownEditorProps {
@@ -52,6 +54,16 @@ export const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>
     },
     openFilePicker: () => {
       fileInputRef.current?.click();
+    },
+    undo: () => {
+      if (viewRef.current) {
+        cmUndo(viewRef.current);
+      }
+    },
+    redo: () => {
+      if (viewRef.current) {
+        cmRedo(viewRef.current);
+      }
     },
   }));
 

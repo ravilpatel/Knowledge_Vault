@@ -58,40 +58,40 @@ export const HabitsView: React.FC = () => {
   const colors = ['#4F46E5', '#10B981', '#F59E0B', '#E11D48', '#0284C7', '#8B5CF6'];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-6 space-y-5">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3.5 md:p-6 space-y-3.5 md:space-y-5">
       {/* Top Header & Metrics Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs">
         <div>
-          <h2 className="text-lg font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
+          <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
             <Flame className="w-5 h-5 text-amber-500" />
             <span>Habit Tracker &amp; Daily Streaks</span>
           </h2>
-          <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
+          <p className="text-[11px] md:text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
             Atomic consistency builds compounded results over time.
           </p>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-semibold">
+        <div className="flex items-center gap-3 md:gap-4 text-xs font-semibold flex-wrap">
           <div className="flex items-center gap-2">
-            <div className="w-24 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+            <div className="w-20 md:w-24 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all"
                 style={{ width: `${todayPct}%` }}
               />
             </div>
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-[11px] md:text-xs">
               {completedToday}/{totalHabits} Today ({todayPct}%)
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            <Flame className="w-4 h-4" />
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[11px] md:text-xs">
+            <Flame className="w-3.5 h-3.5" />
             <span>{totalStreaks} Active Streak Days</span>
           </div>
 
           <button
             onClick={() => setIsAdding(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs ml-auto md:ml-0"
           >
             <Plus className="w-4 h-4" />
             <span>New Habit</span>
@@ -170,12 +170,13 @@ export const HabitsView: React.FC = () => {
       )}
 
       {/* Habits Grid with 7-Day Checklist */}
-      <div className="flex-1 overflow-y-auto bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs divide-y divide-border-subtle/60 dark:divide-border-darkSubtle/60">
-        {/* Table Header: Days of Week */}
-        <div className="flex items-center justify-between p-4 bg-surface-subtle dark:bg-surface-subtleDark text-xs font-bold text-ink-muted select-none">
-          <div className="w-1/3">Habit Name</div>
-          <div className="flex items-center justify-end gap-3 flex-1">
-            {last7Days.map((day) => (
+      <div className="flex-1 overflow-x-auto overflow-y-auto bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs divide-y divide-border-subtle/60 dark:divide-border-darkSubtle/60">
+        <div className="min-w-[480px]">
+          {/* Table Header: Days of Week */}
+          <div className="flex items-center justify-between p-3.5 md:p-4 bg-surface-subtle dark:bg-surface-subtleDark text-xs font-bold text-ink-muted select-none">
+            <div className="w-1/3">Habit Name</div>
+            <div className="flex items-center justify-end gap-3 flex-1">
+              {last7Days.map((day) => (
               <div
                 key={day.dateStr}
                 className={`w-9 text-center ${
@@ -272,6 +273,7 @@ export const HabitsView: React.FC = () => {
             </div>
           ))
         )}
+        </div>
       </div>
     </div>
   );

@@ -113,9 +113,15 @@ interface VaultState {
 
 const safeSupabaseCall = async (queryPromise: PromiseLike<any>) => {
   try {
-    await queryPromise;
+    const res = await queryPromise;
+    if (res && typeof res === 'object' && res.error) {
+      console.warn('Supabase sync error response:', res.error);
+      return { error: res.error, data: null };
+    }
+    return { data: res?.data ?? res, error: null };
   } catch (err: any) {
-    console.warn('Supabase sync warning:', err);
+    console.warn('Supabase sync exception:', err);
+    return { error: err, data: null };
   }
 };
 
@@ -418,39 +424,84 @@ export const useVaultStore = create<VaultState>((set, get) => ({
 
           // People, Companies, Tech, Projects, Categories, Tags Sync
           if (peopRes.status === 'fulfilled' && peopRes.value.data) {
-            const remotePeople: PersonEntity[] = peopRes.value.data;
+            const remotePeople: PersonEntity[] = peopRes.value.data.map((r: any) => ({
+              id: r.id,
+              user_id: r.user_id,
+              name: r.name,
+              organisation: r.organisation || '',
+              designation: r.designation || '',
+              contact_info: r.contact_info || '',
+              notes: r.notes || '',
+              related_companies: Array.isArray(r.related_companies) ? r.related_companies : [],
+              related_technologies: Array.isArray(r.related_technologies) ? r.related_technologies : [],
+              related_projects: Array.isArray(r.related_projects) ? r.related_projects : [],
+              created_at: r.created_at || new Date().toISOString(),
+              updated_at: r.updated_at || undefined,
+            }));
             await db.people.clear();
             if (remotePeople.length > 0) {
               await db.people.bulkPut(remotePeople);
-              set({ people: remotePeople });
             }
+            set({ people: remotePeople });
           }
 
           if (compRes.status === 'fulfilled' && compRes.value.data) {
-            const remoteCompanies: CompanyEntity[] = compRes.value.data;
+            const remoteCompanies: CompanyEntity[] = compRes.value.data.map((r: any) => ({
+              id: r.id,
+              user_id: r.user_id,
+              name: r.name,
+              industry: r.industry || '',
+              website: r.website || '',
+              description: r.description || '',
+              related_people: Array.isArray(r.related_people) ? r.related_people : [],
+              related_projects: Array.isArray(r.related_projects) ? r.related_projects : [],
+              created_at: r.created_at || new Date().toISOString(),
+              updated_at: r.updated_at || undefined,
+            }));
             await db.companies.clear();
             if (remoteCompanies.length > 0) {
               await db.companies.bulkPut(remoteCompanies);
-              set({ companies: remoteCompanies });
             }
+            set({ companies: remoteCompanies });
           }
 
           if (techRes.status === 'fulfilled' && techRes.value.data) {
-            const remoteTech: TechnologyEntity[] = techRes.value.data;
+            const remoteTech: TechnologyEntity[] = techRes.value.data.map((r: any) => ({
+              id: r.id,
+              user_id: r.user_id,
+              name: r.name,
+              description: r.description || '',
+              category: r.category || 'General',
+              website: r.website || '',
+              related_projects: Array.isArray(r.related_projects) ? r.related_projects : [],
+              related_people: Array.isArray(r.related_people) ? r.related_people : [],
+              created_at: r.created_at || new Date().toISOString(),
+              updated_at: r.updated_at || undefined,
+            }));
             await db.technologies.clear();
             if (remoteTech.length > 0) {
               await db.technologies.bulkPut(remoteTech);
-              set({ technologies: remoteTech });
             }
+            set({ technologies: remoteTech });
           }
 
           if (projRes.status === 'fulfilled' && projRes.value.data) {
-            const remoteProjects: ProjectEntity[] = projRes.value.data;
+            const remoteProjects: ProjectEntity[] = projRes.value.data.map((r: any) => ({
+              id: r.id,
+              user_id: r.user_id,
+              name: r.name,
+              description: r.description || '',
+              status: r.status ? r.status.charAt(0).toUpperCase() + r.status.slice(1) : 'Active',
+              related_technologies: Array.isArray(r.related_technologies) ? r.related_technologies : [],
+              related_companies: Array.isArray(r.related_companies) ? r.related_companies : [],
+              created_at: r.created_at || new Date().toISOString(),
+              updated_at: r.updated_at || undefined,
+            }));
             await db.projects.clear();
             if (remoteProjects.length > 0) {
               await db.projects.bulkPut(remoteProjects);
-              set({ projects: remoteProjects });
             }
+            set({ projects: remoteProjects });
           }
 
           if (catRes.status === 'fulfilled' && catRes.value.data) {
@@ -1152,7 +1203,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
     if (updates.status !== undefined) sbPayload.status = updates.status;
     if (updates.scope !== undefined) sbPayload.scope = updates.scope;
     if (updates.priority !== undefined) sbPayload.priority = updates.priority;
-    if (updates.projectId !== undefined) sbPayload.project_id = updates.projectId;
+    if (updates.projectId !== undefined) sbPayload.project_id = updates.projectId || null;
     if (updates.tags !== undefined) sbPayload.tags = updates.tags;
     if (updates.subtasks !== undefined) sbPayload.subtasks = updates.subtasks;
 
@@ -1381,25 +1432,58 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       data: { session },
     } = await sb.auth.getSession();
     const id = generateUUID();
+    const now = new Date().toISOString();
     const newPerson: PersonEntity = {
       ...item,
       id,
       user_id: session?.user?.id,
-      created_at: new Date().toISOString(),
+      related_companies: item.related_companies || [],
+      related_technologies: item.related_technologies || [],
+      related_projects: item.related_projects || [],
+      created_at: now,
+      updated_at: now,
     };
     await db.people.put(newPerson);
     set((state) => ({ people: [newPerson, ...state.people] }));
-    safeSupabaseCall(sb.from('people').insert(newPerson));
+
+    const sbPayload: Record<string, any> = {
+      id: newPerson.id,
+      name: newPerson.name,
+      organisation: newPerson.organisation || '',
+      designation: newPerson.designation || '',
+      contact_info: newPerson.contact_info || '',
+      notes: newPerson.notes || '',
+      related_companies: newPerson.related_companies,
+      related_technologies: newPerson.related_technologies,
+      related_projects: newPerson.related_projects,
+      created_at: newPerson.created_at,
+      updated_at: newPerson.updated_at,
+    };
+    if (session?.user?.id) sbPayload.user_id = session.user.id;
+    safeSupabaseCall(sb.from('people').insert(sbPayload));
     return newPerson;
   },
 
   updatePerson: async (id, updates) => {
-    await db.people.update(id, updates);
+    const now = new Date().toISOString();
+    const finalUpdates = { ...updates, updated_at: now };
+    await db.people.update(id, finalUpdates);
     set((state) => ({
-      people: state.people.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      people: state.people.map((p) => (p.id === id ? { ...p, ...finalUpdates } : p)),
     }));
+
+    const sbPayload: Record<string, any> = { updated_at: now };
+    if (updates.name !== undefined) sbPayload.name = updates.name;
+    if (updates.organisation !== undefined) sbPayload.organisation = updates.organisation;
+    if (updates.designation !== undefined) sbPayload.designation = updates.designation;
+    if (updates.contact_info !== undefined) sbPayload.contact_info = updates.contact_info;
+    if (updates.notes !== undefined) sbPayload.notes = updates.notes;
+    if (updates.related_companies !== undefined) sbPayload.related_companies = updates.related_companies;
+    if (updates.related_technologies !== undefined) sbPayload.related_technologies = updates.related_technologies;
+    if (updates.related_projects !== undefined) sbPayload.related_projects = updates.related_projects;
+
     const sb = getSupabase();
-    safeSupabaseCall(sb.from('people').update(updates).eq('id', id));
+    safeSupabaseCall(sb.from('people').update(sbPayload).eq('id', id));
   },
 
   deletePerson: async (id) => {
@@ -1416,25 +1500,53 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       data: { session },
     } = await sb.auth.getSession();
     const id = generateUUID();
+    const now = new Date().toISOString();
     const newCompany: CompanyEntity = {
       ...item,
       id,
       user_id: session?.user?.id,
-      created_at: new Date().toISOString(),
+      related_people: item.related_people || [],
+      related_projects: item.related_projects || [],
+      created_at: now,
+      updated_at: now,
     };
     await db.companies.put(newCompany);
     set((state) => ({ companies: [newCompany, ...state.companies] }));
-    safeSupabaseCall(sb.from('companies').insert(newCompany));
+
+    const sbPayload: Record<string, any> = {
+      id: newCompany.id,
+      name: newCompany.name,
+      industry: newCompany.industry || '',
+      website: newCompany.website || '',
+      description: newCompany.description || '',
+      related_people: newCompany.related_people,
+      related_projects: newCompany.related_projects,
+      created_at: newCompany.created_at,
+      updated_at: newCompany.updated_at,
+    };
+    if (session?.user?.id) sbPayload.user_id = session.user.id;
+    safeSupabaseCall(sb.from('companies').insert(sbPayload));
     return newCompany;
   },
 
   updateCompany: async (id, updates) => {
-    await db.companies.update(id, updates);
+    const now = new Date().toISOString();
+    const finalUpdates = { ...updates, updated_at: now };
+    await db.companies.update(id, finalUpdates);
     set((state) => ({
-      companies: state.companies.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+      companies: state.companies.map((c) => (c.id === id ? { ...c, ...finalUpdates } : c)),
     }));
+
+    const sbPayload: Record<string, any> = { updated_at: now };
+    if (updates.name !== undefined) sbPayload.name = updates.name;
+    if (updates.industry !== undefined) sbPayload.industry = updates.industry;
+    if (updates.website !== undefined) sbPayload.website = updates.website;
+    if (updates.description !== undefined) sbPayload.description = updates.description;
+    if (updates.related_people !== undefined) sbPayload.related_people = updates.related_people;
+    if (updates.related_projects !== undefined) sbPayload.related_projects = updates.related_projects;
+
     const sb = getSupabase();
-    safeSupabaseCall(sb.from('companies').update(updates).eq('id', id));
+    safeSupabaseCall(sb.from('companies').update(sbPayload).eq('id', id));
   },
 
   deleteCompany: async (id) => {
@@ -1451,25 +1563,47 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       data: { session },
     } = await sb.auth.getSession();
     const id = generateUUID();
+    const now = new Date().toISOString();
     const newTech: TechnologyEntity = {
       ...item,
       id,
       user_id: session?.user?.id,
-      created_at: new Date().toISOString(),
+      category: item.category || 'General',
+      website: item.website || '',
+      related_projects: item.related_projects || [],
+      related_people: item.related_people || [],
+      created_at: now,
+      updated_at: now,
     };
     await db.technologies.put(newTech);
     set((state) => ({ technologies: [newTech, ...state.technologies] }));
-    safeSupabaseCall(sb.from('technologies').insert(newTech));
+
+    const sbPayload: Record<string, any> = {
+      id: newTech.id,
+      name: newTech.name,
+      description: newTech.description || '',
+      created_at: newTech.created_at,
+      updated_at: newTech.updated_at,
+    };
+    if (session?.user?.id) sbPayload.user_id = session.user.id;
+    safeSupabaseCall(sb.from('technologies').insert(sbPayload));
     return newTech;
   },
 
   updateTechnology: async (id, updates) => {
-    await db.technologies.update(id, updates);
+    const now = new Date().toISOString();
+    const finalUpdates = { ...updates, updated_at: now };
+    await db.technologies.update(id, finalUpdates);
     set((state) => ({
-      technologies: state.technologies.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+      technologies: state.technologies.map((t) => (t.id === id ? { ...t, ...finalUpdates } : t)),
     }));
+
+    const sbPayload: Record<string, any> = { updated_at: now };
+    if (updates.name !== undefined) sbPayload.name = updates.name;
+    if (updates.description !== undefined) sbPayload.description = updates.description;
+
     const sb = getSupabase();
-    safeSupabaseCall(sb.from('technologies').update(updates).eq('id', id));
+    safeSupabaseCall(sb.from('technologies').update(sbPayload).eq('id', id));
   },
 
   deleteTechnology: async (id) => {
@@ -1486,25 +1620,52 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       data: { session },
     } = await sb.auth.getSession();
     const id = generateUUID();
+    const now = new Date().toISOString();
     const newProject: ProjectEntity = {
       ...item,
       id,
       user_id: session?.user?.id,
-      created_at: new Date().toISOString(),
+      status: item.status || 'Active',
+      related_technologies: item.related_technologies || [],
+      related_companies: item.related_companies || [],
+      created_at: now,
+      updated_at: now,
     };
     await db.projects.put(newProject);
     set((state) => ({ projects: [newProject, ...state.projects] }));
-    safeSupabaseCall(sb.from('projects').insert(newProject));
+
+    const sbPayload: Record<string, any> = {
+      id: newProject.id,
+      name: newProject.name,
+      status: (newProject.status || 'Active').toLowerCase(),
+      description: newProject.description || '',
+      related_technologies: newProject.related_technologies || [],
+      related_companies: newProject.related_companies || [],
+      created_at: newProject.created_at,
+      updated_at: newProject.updated_at,
+    };
+    if (session?.user?.id) sbPayload.user_id = session.user.id;
+    safeSupabaseCall(sb.from('projects').insert(sbPayload));
     return newProject;
   },
 
   updateProject: async (id, updates) => {
-    await db.projects.update(id, updates);
+    const now = new Date().toISOString();
+    const finalUpdates = { ...updates, updated_at: now };
+    await db.projects.update(id, finalUpdates);
     set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      projects: state.projects.map((p) => (p.id === id ? { ...p, ...finalUpdates } : p)),
     }));
+
+    const sbPayload: Record<string, any> = { updated_at: now };
+    if (updates.name !== undefined) sbPayload.name = updates.name;
+    if (updates.status !== undefined) sbPayload.status = updates.status.toLowerCase();
+    if (updates.description !== undefined) sbPayload.description = updates.description;
+    if (updates.related_technologies !== undefined) sbPayload.related_technologies = updates.related_technologies;
+    if (updates.related_companies !== undefined) sbPayload.related_companies = updates.related_companies;
+
     const sb = getSupabase();
-    safeSupabaseCall(sb.from('projects').update(updates).eq('id', id));
+    safeSupabaseCall(sb.from('projects').update(sbPayload).eq('id', id));
   },
 
   deleteProject: async (id) => {

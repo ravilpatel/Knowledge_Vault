@@ -427,6 +427,24 @@ export const WorkspacePanelsView: React.FC = () => {
           </span>
         );
 
+      case 'technology_link':
+        const techName = resolveEntityName('technologies', String(val));
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+            <Cpu className="w-3 h-3" />
+            <span className="truncate max-w-[150px]">{techName}</span>
+          </span>
+        );
+
+      case 'company_link':
+        const compName = resolveEntityName('companies', String(val));
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-400 font-semibold bg-sky-500/10 px-2 py-0.5 rounded-md border border-sky-500/20">
+            <Building2 className="w-3 h-3" />
+            <span className="truncate max-w-[150px]">{compName}</span>
+          </span>
+        );
+
       default:
         return (
           <span className="text-[11px] text-ink-primary dark:text-ink-darkPrimary font-medium">
@@ -1223,6 +1241,8 @@ export const WorkspacePanelsView: React.FC = () => {
                       <option value="tags">Tags</option>
                       <option value="people_link">Person Link</option>
                       <option value="projects_link">Project Link</option>
+                      <option value="technology_link">Technology Link</option>
+                      <option value="company_link">Company Link</option>
                       <option value="rating">Rating (1-5 Stars)</option>
                     </select>
                   </div>
@@ -1389,6 +1409,38 @@ export const WorkspacePanelsView: React.FC = () => {
                         {projects.map((pr) => (
                           <option key={pr.id} value={pr.name}>
                             {pr.name} ({pr.status})
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.field_type === 'technology_link' ? (
+                      <select
+                        value={val}
+                        required={field.is_required}
+                        onChange={(e) =>
+                          setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none"
+                      >
+                        <option value="">-- Select Technology --</option>
+                        {technologies.map((t) => (
+                          <option key={t.id} value={t.name}>
+                            {t.name} {t.category ? `(${t.category})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.field_type === 'company_link' ? (
+                      <select
+                        value={val}
+                        required={field.is_required}
+                        onChange={(e) =>
+                          setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none"
+                      >
+                        <option value="">-- Select Company --</option>
+                        {companies.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.name} {c.industry ? `(${c.industry})` : ''}
                           </option>
                         ))}
                       </select>

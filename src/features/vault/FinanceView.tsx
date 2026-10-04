@@ -85,15 +85,15 @@ export const FinanceView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-6 space-y-5">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3.5 md:p-6 space-y-3.5 md:space-y-5">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs">
         <div>
-          <h2 className="text-lg font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
+          <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary flex items-center gap-2">
             <Wallet className="w-5 h-5 text-indigo-500" />
             <span>Finance &amp; Expense Tracker</span>
           </h2>
-          <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
+          <p className="text-[11px] md:text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
             Monitor cashflow, business expenses, and reimbursable team claims.
           </p>
         </div>
@@ -108,7 +108,7 @@ export const FinanceView: React.FC = () => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
         {/* Net Balance */}
         <div className="p-4 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs">
           <span className="text-[11px] font-semibold text-ink-muted uppercase tracking-wider block mb-1">
@@ -285,12 +285,12 @@ export const FinanceView: React.FC = () => {
       {/* Transaction List with Filter Bar */}
       <div className="flex-1 flex flex-col overflow-hidden bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs">
         {/* Filter Bar */}
-        <div className="p-3 border-b border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
+        <div className="p-3 border-b border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark flex items-center justify-between text-xs gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             <span className="text-[11px] font-medium text-ink-muted">Show:</span>
             <button
               onClick={() => setFilterType('all')}
-              className={`px-2.5 py-1 rounded-lg transition font-medium ${
+              className={`px-2.5 py-1 rounded-lg transition font-medium text-xs ${
                 filterType === 'all' ? 'bg-brand-primary text-white' : 'text-ink-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -298,7 +298,7 @@ export const FinanceView: React.FC = () => {
             </button>
             <button
               onClick={() => setFilterType('income')}
-              className={`px-2.5 py-1 rounded-lg transition font-medium ${
+              className={`px-2.5 py-1 rounded-lg transition font-medium text-xs ${
                 filterType === 'income' ? 'bg-emerald-600 text-white' : 'text-ink-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -306,7 +306,7 @@ export const FinanceView: React.FC = () => {
             </button>
             <button
               onClick={() => setFilterType('expense')}
-              className={`px-2.5 py-1 rounded-lg transition font-medium ${
+              className={`px-2.5 py-1 rounded-lg transition font-medium text-xs ${
                 filterType === 'expense' ? 'bg-rose-600 text-white' : 'text-ink-secondary hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
@@ -327,7 +327,7 @@ export const FinanceView: React.FC = () => {
             </select>
           </div>
 
-          <div className="text-[11px] text-ink-muted">
+          <div className="text-[11px] text-ink-muted flex-shrink-0">
             {filteredExpenses.length} {filteredExpenses.length === 1 ? 'record' : 'records'}
           </div>
         </div>

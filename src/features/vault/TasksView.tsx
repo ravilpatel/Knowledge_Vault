@@ -664,24 +664,24 @@ export const TasksView: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-4 md:p-6 space-y-4 select-none">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3.5 md:p-6 space-y-3 md:space-y-4 select-none">
       {/* ─── Top Header & Controls ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-3.5 md:p-4 rounded-2xl shadow-xs">
         <div>
           <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight flex items-center gap-2">
             <Columns3 className="w-5 h-5 text-brand-primary" />
             <span>Task Board</span>
           </h2>
-          <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
+          <p className="text-[11px] md:text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
             {filteredTodos.length} tasks visible &bull; {completedCount} of {totalCount} completed ({completionPct}%)
           </p>
         </div>
 
         {/* Work vs Personal Scope Switcher (Prominent Toggle) */}
-        <div className="flex items-center p-1 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold shadow-inner">
+        <div className="flex items-center p-1 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold shadow-inner flex-wrap">
           <button
             onClick={() => setActiveScope('work')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
               activeScope === 'work'
                 ? 'bg-surface dark:bg-surface-dark text-indigo-600 dark:text-indigo-400 shadow-xs font-bold'
                 : 'text-ink-muted hover:text-ink-primary'
@@ -696,7 +696,7 @@ export const TasksView: React.FC = () => {
 
           <button
             onClick={() => setActiveScope('personal')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
               activeScope === 'personal'
                 ? 'bg-surface dark:bg-surface-dark text-purple-600 dark:text-purple-400 shadow-xs font-bold'
                 : 'text-ink-muted hover:text-ink-primary'
@@ -737,7 +737,7 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* ─── Stats KPI Row ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 md:gap-3">
         <div
           onClick={() => setFilterPreset('all')}
           className="p-3 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark flex items-center justify-between cursor-pointer hover:border-brand-primary/40 transition shadow-xs"
