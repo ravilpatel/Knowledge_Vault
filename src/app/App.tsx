@@ -35,11 +35,22 @@ export const App: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Bootstrap data and Supabase Auth
+  // Bootstrap data and Supabase Auth sequentially
   useEffect(() => {
-    initSupabaseAuth();
-    loadInitialData();
-    loadVaultData();
+    let mounted = true;
+    const init = async () => {
+      await initSupabaseAuth();
+      if (!mounted) return;
+      await loadInitialData();
+      await loadVaultData();
+      if (navigator.onLine) {
+        syncEngine.flushOutbox();
+      }
+    };
+    init();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // When user signs in or changes, refresh data and flush outbox

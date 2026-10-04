@@ -1,0 +1,42 @@
+[
+  {
+    "id": "f3fba155-d30a-490a-99b4-05bd9de14972",
+    "notebook_id": "c35f4902-475f-4b8f-aa96-ca15c92f2932",
+    "section_id": "7be0c47a-bf63-47d2-a335-b9c9b56e6d16",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Classic Roman Carbonara 🍝",
+    "tags": [
+      "cooking",
+      "italian",
+      "dinner",
+      "pasta"
+    ],
+    "favorite": true,
+    "content": "# Classic Roman Carbonara 🍝\n\n> \"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n\n## Technique Steps\n1. Render guanciale over medium-low heat until crisp and deep amber.\n2. Whisk egg yolks with pecorino and abundant black pepper into a thick paste.\n3. Cook pasta in salted boiling water until al dente (*riserva l'acqua di cottura*).\n4. Toss pasta with rendered fat, temper with pasta water, fold in egg cream off heat.\n\n> [!NOTE]\n> Authentic Roman carbonara contains no heavy cream. The glossy sauce forms naturally from emulsifying hot starchy cooking water with the rich egg-pecorino paste.\n",
+    "raw_markdown": "---\nid: f3fba155-d30a-490a-99b4-05bd9de14972\ntitle: Classic Roman Carbonara 🍝\ntags: [cooking, italian, dinner, pasta]\nfavorite: true\n---\n\n# Classic Roman Carbonara 🍝\n\n> \"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n",
+    "sort_order": 0,
+    "trashed": false,
+    "custom_front_matter": {},
+    "created_at": "2026-10-04T13:30:31.423801+00:00",
+    "updated_at": "2026-10-04T13:30:31.423801+00:00"
+  },
+  {
+    "id": "test-pg-1791120659264",
+    "notebook_id": "test-nb-1791120659264",
+    "section_id": "test-sec-1791120659264",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "title": "Sync Test Page",
+    "tags": [
+      "test",
+      "sync"
+    ],
+    "favorite": false,
+    "content": "Hello from sync test",
+    "raw_markdown": "# Hello from sync test",
+    "sort_order": 0,
+    "trashed": false,
+    "custom_front_matter": {},
+    "created_at": "2026-10-04T13:30:59.911337+00:00",
+    "updated_at": "2026-10-04T13:30:59.57+00:00"
+  }
+]

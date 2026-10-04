@@ -65,9 +65,13 @@ class SyncEngine {
   }
 
   async updatePendingCount(): Promise<number> {
-    const count = await db.outbox.count();
-    useSyncStore.getState().setPendingCount(count);
-    return count;
+    try {
+      const count = await db.outbox.count();
+      useSyncStore.getState().setPendingCount(count);
+      return count;
+    } catch {
+      return 0;
+    }
   }
 
   /**
@@ -86,12 +90,18 @@ class SyncEngine {
     }
 
     if (isGuest || !userId) {
-      // Offline guest mode: data stays local in IndexedDB
+      // Offline / guest mode: data stays local in IndexedDB
       useSyncStore.getState().setStatus(pending > 0 ? 'offline' : 'synced');
       return;
     }
 
-    if (this.isFlushing || pending === 0) return;
+    if (this.isFlushing) return;
+
+    if (pending === 0) {
+      useSyncStore.getState().setStatus('synced');
+      useSyncStore.getState().setErrorMessage(null);
+      return;
+    }
 
     this.isFlushing = true;
     useSyncStore.getState().setStatus('syncing');
@@ -107,16 +117,41 @@ class SyncEngine {
             await db.outbox.delete(item.id);
           }
         } catch (err: any) {
-          console.error(`Error processing outbox item ${item.id}:`, err);
+          const errMsg = err?.message || String(err);
+          console.warn(`Outbox item ${item.id} (${item.action}) sync issue:`, errMsg);
+
+          const isNetworkError =
+            errMsg.includes('Failed to fetch') ||
+            errMsg.includes('NetworkError') ||
+            errMsg.includes('network') ||
+            !navigator.onLine;
+
+          if (isNetworkError) {
+            // Transient offline condition, don't flag fatal error
+            useSyncStore.getState().setStatus('offline');
+            break;
+          }
+
+          const retries = (item.retryCount || 0) + 1;
           if (item.id) {
             await db.outbox.update(item.id, {
-              retryCount: (item.retryCount || 0) + 1,
-              lastError: err.message || String(err),
+              retryCount: retries,
+              lastError: errMsg,
             });
           }
-          useSyncStore.getState().setErrorMessage(err.message || 'Sync error encountered');
+
+          // Auto-recovery: if poisoned or retried 3+ times, drop it to unblock the FIFO queue
+          if (retries >= 3 || errMsg.includes('violates foreign key constraint') || errMsg.includes('not found')) {
+            console.warn(`⚠️ Auto-purging stuck outbox item ${item.id} (${item.action}) after ${retries} attempts:`, errMsg);
+            if (item.id) {
+              await db.outbox.delete(item.id);
+            }
+            continue; // Continue processing subsequent queue items!
+          }
+
+          useSyncStore.getState().setErrorMessage(errMsg);
           useSyncStore.getState().setStatus('error');
-          break; // Stop on error to preserve FIFO ordering
+          break; // Stop on temporary error to retry later
         }
       }
 
@@ -127,9 +162,12 @@ class SyncEngine {
         useSyncStore.getState().setErrorMessage(null);
       }
     } catch (err: any) {
-      console.error('Fatal flushOutbox error:', err);
-      useSyncStore.getState().setStatus('error');
-      useSyncStore.getState().setErrorMessage(err.message || 'Failed to connect to Supabase Cloud');
+      console.warn('Flush outbox warning:', err);
+      const isNet = !navigator.onLine || String(err?.message || err).includes('Failed to fetch');
+      useSyncStore.getState().setStatus(isNet ? 'offline' : 'error');
+      if (!isNet) {
+        useSyncStore.getState().setErrorMessage(err?.message || 'Sync error');
+      }
     } finally {
       this.isFlushing = false;
     }
@@ -156,12 +194,20 @@ class SyncEngine {
           sort_order: nb.order ?? 0,
           section_order: nb.sectionOrder || [],
           trashed: Boolean(nb.trashed),
-          updated_at: new Date().toISOString(),
+          updated_at: nb.updated_at || new Date().toISOString(),
         };
 
         const { error } = await sb.from('notebooks').upsert(row);
         if (error) throw error;
         await db.notebooks.update(nb.id, { user_id: userId, updated_at: row.updated_at });
+        break;
+      }
+
+      case 'delete_notebook': {
+        const { error } = await sb.from('notebooks').delete().eq('id', item.entityId).eq('user_id', userId);
+        if (error && !error.message?.includes('not found')) {
+          throw error;
+        }
         break;
       }
 
@@ -173,6 +219,24 @@ class SyncEngine {
         const sec = await db.sections.get(item.entityId);
         if (!sec) return;
 
+        // Foreign Key Pre-flight: Ensure parent notebook exists in Supabase first
+        if (sec.notebookId) {
+          const parentNb = await db.notebooks.get(sec.notebookId);
+          if (parentNb) {
+            await sb.from('notebooks').upsert({
+              id: parentNb.id,
+              user_id: userId,
+              name: parentNb.name,
+              color: parentNb.color || '#4F7CAC',
+              icon: parentNb.icon || 'book',
+              sort_order: parentNb.order ?? 0,
+              section_order: parentNb.sectionOrder || [],
+              trashed: Boolean(parentNb.trashed),
+              updated_at: parentNb.updated_at || new Date().toISOString(),
+            });
+          }
+        }
+
         const row = {
           id: sec.id,
           notebook_id: sec.notebookId,
@@ -183,12 +247,20 @@ class SyncEngine {
           sort_order: sec.order ?? 0,
           page_order: sec.pageOrder || [],
           trashed: Boolean(sec.trashed),
-          updated_at: new Date().toISOString(),
+          updated_at: sec.updated_at || new Date().toISOString(),
         };
 
         const { error } = await sb.from('sections').upsert(row);
         if (error) throw error;
         await db.sections.update(sec.id, { user_id: userId, updated_at: row.updated_at });
+        break;
+      }
+
+      case 'delete_section': {
+        const { error } = await sb.from('sections').delete().eq('id', item.entityId).eq('user_id', userId);
+        if (error && !error.message?.includes('not found')) {
+          throw error;
+        }
         break;
       }
 
@@ -200,6 +272,42 @@ class SyncEngine {
       case 'restore_page': {
         const page = await db.pages.get(item.entityId);
         if (!page) return;
+
+        // Foreign Key Pre-flight: Ensure parent notebook and section exist in Supabase first
+        if (page.notebookId) {
+          const parentNb = await db.notebooks.get(page.notebookId);
+          if (parentNb) {
+            await sb.from('notebooks').upsert({
+              id: parentNb.id,
+              user_id: userId,
+              name: parentNb.name,
+              color: parentNb.color || '#4F7CAC',
+              icon: parentNb.icon || 'book',
+              sort_order: parentNb.order ?? 0,
+              section_order: parentNb.sectionOrder || [],
+              trashed: Boolean(parentNb.trashed),
+              updated_at: parentNb.updated_at || new Date().toISOString(),
+            });
+          }
+        }
+
+        if (page.sectionId) {
+          const parentSec = await db.sections.get(page.sectionId);
+          if (parentSec) {
+            await sb.from('sections').upsert({
+              id: parentSec.id,
+              notebook_id: parentSec.notebookId,
+              user_id: userId,
+              name: parentSec.name,
+              color: parentSec.color || 'peach',
+              icon: parentSec.icon || null,
+              sort_order: parentSec.order ?? 0,
+              page_order: parentSec.pageOrder || [],
+              trashed: Boolean(parentSec.trashed),
+              updated_at: parentSec.updated_at || new Date().toISOString(),
+            });
+          }
+        }
 
         // Check for remote conflict if updating existing page
         if (item.action === 'update_page' && page.updated_at) {
@@ -217,7 +325,7 @@ class SyncEngine {
             page.localDirty &&
             remoteData.content !== page.content
           ) {
-            // Keep both: Create conflict copy
+            // Create conflict copy
             const timestampStr = new Date().toISOString().replace(/:/g, '-').slice(0, 16).replace('T', ' ');
             const conflictTitle = `${page.title} (conflict ${timestampStr})`;
             const conflictPageId = generateUUID();
@@ -272,7 +380,7 @@ class SyncEngine {
           }
         }
 
-        const now = new Date().toISOString();
+        const now = page.updated_at || new Date().toISOString();
         const row = {
           id: page.id,
           notebook_id: page.notebookId,
@@ -297,6 +405,14 @@ class SyncEngine {
           updated_at: now,
           localDirty: false,
         });
+        break;
+      }
+
+      case 'delete_page': {
+        const { error } = await sb.from('pages').delete().eq('id', item.entityId).eq('user_id', userId);
+        if (error && !error.message?.includes('not found')) {
+          throw error;
+        }
         break;
       }
 
@@ -370,10 +486,11 @@ class SyncEngine {
       const localSections = await db.sections.toArray();
       const localPages = await db.pages.toArray();
 
-      // If remote is empty and local has notes, upload all local notes
+      // If remote is empty and local has notes, upload all local notes in topological order
       if ((!remoteNotebooks || remoteNotebooks.length === 0) && localNotebooks.length > 0) {
         console.log('🔄 Migrating local notes to Supabase for user:', userId);
 
+        // 1. Notebooks first
         for (const nb of localNotebooks) {
           await sb.from('notebooks').upsert({
             id: nb.id,
@@ -389,6 +506,7 @@ class SyncEngine {
           await db.notebooks.update(nb.id, { user_id: userId });
         }
 
+        // 2. Sections next
         for (const sec of localSections) {
           await sb.from('sections').upsert({
             id: sec.id,
@@ -405,6 +523,7 @@ class SyncEngine {
           await db.sections.update(sec.id, { user_id: userId });
         }
 
+        // 3. Pages last
         for (const pg of localPages) {
           await sb.from('pages').upsert({
             id: pg.id,
@@ -423,6 +542,10 @@ class SyncEngine {
           });
           await db.pages.update(pg.id, { user_id: userId, localDirty: false });
         }
+
+        // Clear initial outbox items since we just migrated everything cleanly
+        await db.outbox.clear();
+        await this.updatePendingCount();
 
         console.log('✅ Local notes successfully migrated to Supabase Cloud!');
       } else if (remoteNotebooks && remoteNotebooks.length > 0) {
@@ -507,6 +630,33 @@ class SyncEngine {
         await db.pages.put(record);
       }
     }
+
+    // Clean up any stale outbox items that were already reconciled
+    const remainingOutbox = await db.outbox.toArray();
+    for (const ob of remainingOutbox) {
+      if (ob.action === 'create_notebook' || ob.action === 'create_section' || ob.action === 'create_page') {
+        const existsInDexie =
+          ob.action === 'create_notebook'
+            ? await db.notebooks.get(ob.entityId)
+            : ob.action === 'create_section'
+            ? await db.sections.get(ob.entityId)
+            : await db.pages.get(ob.entityId);
+
+        if (!existsInDexie && ob.id) {
+          await db.outbox.delete(ob.id);
+        }
+      }
+    }
+    await this.updatePendingCount();
+  }
+
+  /**
+   * Clears any stuck sync errors and retries outbox flush
+   */
+  async clearAndRetry(): Promise<void> {
+    useSyncStore.getState().setErrorMessage(null);
+    useSyncStore.getState().setStatus('syncing');
+    await this.flushOutbox();
   }
 
   /**

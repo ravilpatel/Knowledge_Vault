@@ -1,32 +1,128 @@
 {
   "metadata": {
-    "exportedAt": "2026-10-04T07:30:06.772Z",
+    "exportedAt": "2026-10-04T13:32:48.630Z",
     "supabaseUrl": "https://cmpklimagrwwzfjvqzqe.supabase.co",
     "userId": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
     "counts": {
-      "projects": 4,
-      "people": 6,
-      "companies": 6,
-      "habits": 6,
-      "habitLogs": 14,
-      "todos": 4,
+      "notebooks": 2,
+      "sections": 2,
+      "pages": 2,
+      "projects": 6,
+      "people": 9,
+      "companies": 9,
+      "habits": 9,
+      "habitLogs": 21,
+      "todos": 8,
       "panels": 1,
       "panelEntries": 0,
-      "technologies": 6
+      "technologies": 9
     }
   },
-  "projects": [
+  "notebooks": [
     {
-      "id": "6b50b40b-026e-44ae-abe9-df5068964451",
+      "id": "c35f4902-475f-4b8f-aa96-ca15c92f2932",
       "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
-      "name": "NoteVault + Knowledge Vault 2.0 PWA",
-      "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
-      "status": "active",
-      "related_technologies": [],
-      "related_companies": [],
-      "created_at": "2026-10-03T19:06:54.674656+00:00",
-      "updated_at": "2026-10-03T19:06:54.674656+00:00"
+      "name": "Personal & Research",
+      "color": "#4F7CAC",
+      "icon": "book",
+      "sort_order": 0,
+      "section_order": [
+        "7be0c47a-bf63-47d2-a335-b9c9b56e6d16"
+      ],
+      "trashed": false,
+      "created_at": "2026-10-04T13:30:31.19525+00:00",
+      "updated_at": "2026-10-04T13:30:31.19525+00:00"
     },
+    {
+      "id": "test-nb-1791120659264",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Sync Test Notebook",
+      "color": "#4F7CAC",
+      "icon": "book",
+      "sort_order": 0,
+      "section_order": [
+        "test-sec-1791120659264"
+      ],
+      "trashed": false,
+      "created_at": "2026-10-04T13:30:59.634371+00:00",
+      "updated_at": "2026-10-04T13:30:59.264+00:00"
+    }
+  ],
+  "sections": [
+    {
+      "id": "7be0c47a-bf63-47d2-a335-b9c9b56e6d16",
+      "notebook_id": "c35f4902-475f-4b8f-aa96-ca15c92f2932",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Culinary Arts & Recipes",
+      "color": "peach",
+      "icon": null,
+      "sort_order": 0,
+      "page_order": [
+        "f3fba155-d30a-490a-99b4-05bd9de14972"
+      ],
+      "trashed": false,
+      "created_at": "2026-10-04T13:30:31.372231+00:00",
+      "updated_at": "2026-10-04T13:30:31.372231+00:00"
+    },
+    {
+      "id": "test-sec-1791120659264",
+      "notebook_id": "test-nb-1791120659264",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Sync Test Section",
+      "color": "peach",
+      "icon": null,
+      "sort_order": 0,
+      "page_order": [
+        "test-pg-1791120659264"
+      ],
+      "trashed": false,
+      "created_at": "2026-10-04T13:30:59.810313+00:00",
+      "updated_at": "2026-10-04T13:30:59.369+00:00"
+    }
+  ],
+  "pages": [
+    {
+      "id": "f3fba155-d30a-490a-99b4-05bd9de14972",
+      "notebook_id": "c35f4902-475f-4b8f-aa96-ca15c92f2932",
+      "section_id": "7be0c47a-bf63-47d2-a335-b9c9b56e6d16",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Classic Roman Carbonara 🍝",
+      "tags": [
+        "cooking",
+        "italian",
+        "dinner",
+        "pasta"
+      ],
+      "favorite": true,
+      "content": "# Classic Roman Carbonara 🍝\n\n> \"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n\n## Technique Steps\n1. Render guanciale over medium-low heat until crisp and deep amber.\n2. Whisk egg yolks with pecorino and abundant black pepper into a thick paste.\n3. Cook pasta in salted boiling water until al dente (*riserva l'acqua di cottura*).\n4. Toss pasta with rendered fat, temper with pasta water, fold in egg cream off heat.\n\n> [!NOTE]\n> Authentic Roman carbonara contains no heavy cream. The glossy sauce forms naturally from emulsifying hot starchy cooking water with the rich egg-pecorino paste.\n",
+      "raw_markdown": "---\nid: f3fba155-d30a-490a-99b4-05bd9de14972\ntitle: Classic Roman Carbonara 🍝\ntags: [cooking, italian, dinner, pasta]\nfavorite: true\n---\n\n# Classic Roman Carbonara 🍝\n\n> \"Simplicity is the ultimate sophistication.\" — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n",
+      "sort_order": 0,
+      "trashed": false,
+      "custom_front_matter": {},
+      "created_at": "2026-10-04T13:30:31.423801+00:00",
+      "updated_at": "2026-10-04T13:30:31.423801+00:00"
+    },
+    {
+      "id": "test-pg-1791120659264",
+      "notebook_id": "test-nb-1791120659264",
+      "section_id": "test-sec-1791120659264",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Sync Test Page",
+      "tags": [
+        "test",
+        "sync"
+      ],
+      "favorite": false,
+      "content": "Hello from sync test",
+      "raw_markdown": "# Hello from sync test",
+      "sort_order": 0,
+      "trashed": false,
+      "custom_front_matter": {},
+      "created_at": "2026-10-04T13:30:59.911337+00:00",
+      "updated_at": "2026-10-04T13:30:59.57+00:00"
+    }
+  ],
+  "projects": [
     {
       "id": "9f4e532d-9125-4ab3-95c0-dcebd3a668bc",
       "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
@@ -59,6 +155,44 @@
       "related_companies": [],
       "created_at": "2026-10-03T19:07:08.493224+00:00",
       "updated_at": "2026-10-03T19:07:08.493224+00:00"
+    },
+    {
+      "id": "6b50b40b-026e-44ae-abe9-df5068964451",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "NoteVault + Knowledge Vault 2.0 PWA",
+      "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+      "status": "active",
+      "related_technologies": [
+        "22c45d5d-b7e2-4b1a-ac2d-f8bde7bbf179",
+        "a416fc68-9308-4daf-873b-1a612a0680f7"
+      ],
+      "related_companies": [
+        "27f25b54-24ef-469a-a4bd-67c49d657a9f"
+      ],
+      "created_at": "2026-10-03T19:06:54.674656+00:00",
+      "updated_at": "2026-10-04T07:31:24.018664+00:00"
+    },
+    {
+      "id": "4b12d338-0db6-4395-976b-b0873b3dac92",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "NoteVault + Knowledge Vault 2.0 PWA",
+      "description": "Unified second brain combining OneNote Markdown notes with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+      "status": "active",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-04T13:30:31.515689+00:00",
+      "updated_at": "2026-10-04T13:30:31.515689+00:00"
+    },
+    {
+      "id": "c4c53b05-673e-47dc-ad72-88f1650de4d6",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Autonomous Knowledge Graph & Neural Search",
+      "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+      "status": "planning",
+      "related_technologies": [],
+      "related_companies": [],
+      "created_at": "2026-10-04T13:30:31.515689+00:00",
+      "updated_at": "2026-10-04T13:30:31.515689+00:00"
     }
   ],
   "people": [
@@ -169,6 +303,60 @@
       ],
       "created_at": "2026-10-03T19:07:08.845415+00:00",
       "updated_at": "2026-10-03T19:07:08.845415+00:00"
+    },
+    {
+      "id": "4cbf6588-1331-4902-8f7e-8c56dab9a4b8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dr. Maya Sharma",
+      "organisation": "Anthropic",
+      "designation": "Principal Research Scientist",
+      "contact_info": "maya.sharma@anthropic.com",
+      "notes": "Co-author on agentic alignment and structured tool-calling benchmarks.",
+      "related_companies": [
+        "6fd0d5d3-f301-4e88-b1d7-8ee71f1c7d06"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "c4c53b05-673e-47dc-ad72-88f1650de4d6"
+      ],
+      "created_at": "2026-10-04T13:30:31.622957+00:00",
+      "updated_at": "2026-10-04T13:30:31.622957+00:00"
+    },
+    {
+      "id": "41e8834f-c770-41f5-b651-f1d11368f4a3",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Rohan Varma",
+      "organisation": "Supabase",
+      "designation": "Systems Architect",
+      "contact_info": "rohan.varma@supabase.io",
+      "notes": "Advising on Row Level Security (RLS) fine-grained permissions and Dexie local offline syncing.",
+      "related_companies": [
+        "9a7dae03-f315-4502-a6c9-abcedc269bfe"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "4b12d338-0db6-4395-976b-b0873b3dac92"
+      ],
+      "created_at": "2026-10-04T13:30:31.622957+00:00",
+      "updated_at": "2026-10-04T13:30:31.622957+00:00"
+    },
+    {
+      "id": "b70e15ea-c8f2-4fef-bc17-4aa37cbc8485",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Elena Rostova",
+      "organisation": "Vercel",
+      "designation": "VP of Product Engineering",
+      "contact_info": "elena.r@vercel.com",
+      "notes": "Collaborating on Progressive Web App (PWA) service worker offline strategies and fast TTFB.",
+      "related_companies": [
+        "1b79b578-d8f8-4969-9462-532a7d79dba1"
+      ],
+      "related_technologies": [],
+      "related_projects": [
+        "4b12d338-0db6-4395-976b-b0873b3dac92"
+      ],
+      "created_at": "2026-10-04T13:30:31.622957+00:00",
+      "updated_at": "2026-10-04T13:30:31.622957+00:00"
     }
   ],
   "companies": [
@@ -255,6 +443,48 @@
       ],
       "created_at": "2026-10-03T19:07:08.764153+00:00",
       "updated_at": "2026-10-03T19:07:08.764153+00:00"
+    },
+    {
+      "id": "6fd0d5d3-f301-4e88-b1d7-8ee71f1c7d06",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Anthropic",
+      "industry": "Artificial Intelligence",
+      "website": "https://anthropic.com",
+      "description": "AI safety and research company pioneering constitutional LLMs and Claude.",
+      "related_people": [],
+      "related_projects": [
+        "c4c53b05-673e-47dc-ad72-88f1650de4d6"
+      ],
+      "created_at": "2026-10-04T13:30:31.570218+00:00",
+      "updated_at": "2026-10-04T13:30:31.570218+00:00"
+    },
+    {
+      "id": "9a7dae03-f315-4502-a6c9-abcedc269bfe",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase",
+      "industry": "Cloud Infrastructure / Database",
+      "website": "https://supabase.com",
+      "description": "Open-source Postgres platform providing Realtime DB, Auth, and Edge Functions.",
+      "related_people": [],
+      "related_projects": [
+        "4b12d338-0db6-4395-976b-b0873b3dac92"
+      ],
+      "created_at": "2026-10-04T13:30:31.570218+00:00",
+      "updated_at": "2026-10-04T13:30:31.570218+00:00"
+    },
+    {
+      "id": "1b79b578-d8f8-4969-9462-532a7d79dba1",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Vercel",
+      "industry": "Developer Experience / Edge Computing",
+      "website": "https://vercel.com",
+      "description": "Frontend cloud platform powering Next.js and high-performance serverless web apps.",
+      "related_people": [],
+      "related_projects": [
+        "4b12d338-0db6-4395-976b-b0873b3dac92"
+      ],
+      "created_at": "2026-10-04T13:30:31.570218+00:00",
+      "updated_at": "2026-10-04T13:30:31.570218+00:00"
     }
   ],
   "habits": [
@@ -415,6 +645,85 @@
       "sort_order": 2,
       "created_at": "2026-10-03T19:07:08.918895+00:00",
       "updated_at": "2026-10-03T19:07:08.918895+00:00"
+    },
+    {
+      "id": "0091ad1a-cf43-42c7-8553-a5e457055c71",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Daily Deep Work Block (90m)",
+      "description": "Uninterrupted focus session with notifications disabled.",
+      "category": "Productivity",
+      "color": "#4F46E5",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "session",
+      "reminder_time": "09:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 0,
+      "created_at": "2026-10-04T13:30:31.674904+00:00",
+      "updated_at": "2026-10-04T13:30:31.674904+00:00"
+    },
+    {
+      "id": "72c1b832-d14e-43f8-9bc7-220aa1dd5e38",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "30-Minute Research & Paper Reading",
+      "description": "Read papers on AI architectures, distributed databases, or systems design.",
+      "category": "Learning",
+      "color": "#0284C7",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "target_count": 1,
+      "unit": "reading",
+      "reminder_time": "19:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 1,
+      "created_at": "2026-10-04T13:30:31.674904+00:00",
+      "updated_at": "2026-10-04T13:30:31.674904+00:00"
+    },
+    {
+      "id": "d2d7e4d9-4864-44b4-99a8-053e1cb78749",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Physical Conditioning & Cardio",
+      "description": "Zone 2 cardio or strength session.",
+      "category": "Fitness",
+      "color": "#10B981",
+      "icon": "fa-check",
+      "frequency": "daily",
+      "target_days": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "target_count": 1,
+      "unit": "workout",
+      "reminder_time": "07:00",
+      "reminder_enabled": true,
+      "archived": false,
+      "sort_order": 2,
+      "created_at": "2026-10-04T13:30:31.674904+00:00",
+      "updated_at": "2026-10-04T13:30:31.674904+00:00"
     }
   ],
   "habitLogs": [
@@ -571,6 +880,83 @@
       "notes": null,
       "created_at": "2026-10-03T19:07:09.047942+00:00",
       "updated_at": "2026-10-03T19:07:09.047942+00:00"
+    },
+    {
+      "id": "3f7612c3-85a7-4a6d-be73-d1631d0283e4",
+      "habit_id": "0091ad1a-cf43-42c7-8553-a5e457055c71",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-04",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "704ff159-7585-4930-b767-60b055d3e452",
+      "habit_id": "0091ad1a-cf43-42c7-8553-a5e457055c71",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "fdf6b57c-7322-42b3-9a21-af10e45a2e51",
+      "habit_id": "0091ad1a-cf43-42c7-8553-a5e457055c71",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-02",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "92420df2-16a4-485c-b273-d3ad4f6441c7",
+      "habit_id": "72c1b832-d14e-43f8-9bc7-220aa1dd5e38",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-04",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "bbe4be63-708e-46ee-a1a8-59dc2071aee1",
+      "habit_id": "72c1b832-d14e-43f8-9bc7-220aa1dd5e38",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "37c2189c-42b8-4952-a6e0-4bcf2f97828a",
+      "habit_id": "d2d7e4d9-4864-44b4-99a8-053e1cb78749",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-04",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
+    },
+    {
+      "id": "2b2beeba-2cef-4ad6-aa02-d2d1d67ea034",
+      "habit_id": "d2d7e4d9-4864-44b4-99a8-053e1cb78749",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "date": "2026-10-03",
+      "completed": true,
+      "count": 1,
+      "notes": null,
+      "created_at": "2026-10-04T13:30:31.737335+00:00",
+      "updated_at": "2026-10-04T13:30:31.737335+00:00"
     }
   ],
   "todos": [
@@ -708,6 +1094,141 @@
       "estimated_minutes": null,
       "order_index": 0,
       "scope": "work"
+    },
+    {
+      "id": "d2c065cc-6f64-4493-ada0-558cbbddbdfe",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Review Q4 Architecture Specifications with Supabase Team",
+      "description": "Verify Postgres Row Level Security policies and Dexie IndexedDB v5 migration.",
+      "urgent": true,
+      "important": true,
+      "due_date": "2026-10-05",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-04T13:30:31.793228+00:00",
+      "updated_at": "2026-10-04T13:30:31.793228+00:00",
+      "status": "todo",
+      "priority": "p1",
+      "project_id": "4b12d338-0db6-4395-976b-b0873b3dac92",
+      "tags": [
+        "Architecture",
+        "Supabase",
+        "P1",
+        "Engineering"
+      ],
+      "subtasks": [
+        {
+          "id": "st-1",
+          "text": "Audit RLS security policies on all tables",
+          "completed": true
+        },
+        {
+          "id": "st-2",
+          "text": "Confirm Dexie outbox retry and Supabase sync",
+          "completed": false
+        }
+      ],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0,
+      "scope": "work"
+    },
+    {
+      "id": "f672577c-716c-432c-8b90-d867911e3063",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Design Habit Heatmap & Streaks Visualization Component",
+      "description": "Implement GitHub-style green activity grid with 365-day streak counter.",
+      "urgent": false,
+      "important": true,
+      "due_date": "2026-10-11",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-04T13:30:31.793228+00:00",
+      "updated_at": "2026-10-04T13:30:31.793228+00:00",
+      "status": "todo",
+      "priority": "p2",
+      "project_id": "4b12d338-0db6-4395-976b-b0873b3dac92",
+      "tags": [
+        "UI",
+        "Habits",
+        "Frontend",
+        "Productivity"
+      ],
+      "subtasks": [
+        {
+          "id": "st-3",
+          "text": "Create SVG 7-column day matrix",
+          "completed": false
+        },
+        {
+          "id": "st-4",
+          "text": "Connect streak calculation to habit_logs",
+          "completed": false
+        }
+      ],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0,
+      "scope": "work"
+    },
+    {
+      "id": "870e8844-baff-4687-8e4a-12310c36079a",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Draft Partner Integration Agreement with Anthropic Team",
+      "description": "Coordinate with Dr. Maya Sharma regarding model endpoint API usage limits.",
+      "urgent": true,
+      "important": false,
+      "due_date": "2026-10-05",
+      "completed": false,
+      "completed_at": null,
+      "notify_telegram": false,
+      "created_at": "2026-10-04T13:30:31.793228+00:00",
+      "updated_at": "2026-10-04T13:30:31.793228+00:00",
+      "status": "todo",
+      "priority": "p3",
+      "project_id": "c4c53b05-673e-47dc-ad72-88f1650de4d6",
+      "tags": [
+        "Legal",
+        "Anthropic",
+        "Partnerships"
+      ],
+      "subtasks": [],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0,
+      "scope": "work"
+    },
+    {
+      "id": "ff171fef-51d4-4128-8402-601d37af8615",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "title": "Archive Obsolete Deprecated Web Worker References",
+      "description": "Clean up legacy/ directory leftovers and obsolete test scripts.",
+      "urgent": false,
+      "important": false,
+      "due_date": null,
+      "completed": true,
+      "completed_at": "2026-10-04T13:30:30.701+00:00",
+      "notify_telegram": false,
+      "created_at": "2026-10-04T13:30:31.793228+00:00",
+      "updated_at": "2026-10-04T13:30:31.793228+00:00",
+      "status": "done",
+      "priority": "p4",
+      "project_id": null,
+      "tags": [
+        "Cleanup",
+        "Maintenance"
+      ],
+      "subtasks": [],
+      "recurrence": "none",
+      "due_time": null,
+      "estimated_minutes": null,
+      "order_index": 0,
+      "scope": "work"
     }
   ],
   "panels": [
@@ -822,6 +1343,30 @@
       "description": "Client-side relational database caching 11 tables for zero-latency instant offline capability.",
       "created_at": "2026-10-03T19:07:09.202781+00:00",
       "updated_at": "2026-10-03T19:07:09.202781+00:00"
+    },
+    {
+      "id": "0436a9ef-6b90-4225-b1f6-461c3eb7d6b8",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "React 18 & TypeScript",
+      "description": "Frontend framework with strict type checking and concurrent rendering.",
+      "created_at": "2026-10-04T13:30:31.863211+00:00",
+      "updated_at": "2026-10-04T13:30:31.863211+00:00"
+    },
+    {
+      "id": "a3bbcb8e-4bab-45f8-bbaf-06480fd48fb4",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Supabase PostgreSQL & Auth",
+      "description": "Cloud database with Row Level Security (RLS) and JWT auth token persistence.",
+      "created_at": "2026-10-04T13:30:31.863211+00:00",
+      "updated_at": "2026-10-04T13:30:31.863211+00:00"
+    },
+    {
+      "id": "a10357e2-95ee-471b-91a5-dda356c7e404",
+      "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+      "name": "Dexie.js (IndexedDB v5)",
+      "description": "Client-side relational database caching tables for zero-latency instant offline capability.",
+      "created_at": "2026-10-04T13:30:31.863211+00:00",
+      "updated_at": "2026-10-04T13:30:31.863211+00:00"
     }
   ]
 }

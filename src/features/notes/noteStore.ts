@@ -173,13 +173,15 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         await db.sections.put(defaultSec);
         await db.pages.put(defaultPg);
 
-        // Queue outbox items for Supabase sync
-        await syncEngine.queueOutbox('create_notebook', defaultNbId, defaultNbId, undefined, { name: defaultNb.name });
-        await syncEngine.queueOutbox('create_section', defaultSecId, defaultNbId, defaultSecId, { name: defaultSec.name, color: defaultSec.color });
-        await syncEngine.queueOutbox('create_page', defaultPageId, defaultNbId, defaultSecId, {
-          title: defaultPg.title,
-          rawMarkdown: defaultPg.rawMarkdown,
-        });
+        // Queue outbox items for Supabase sync only if authenticated with Supabase
+        if (userId && navigator.onLine) {
+          await syncEngine.queueOutbox('create_notebook', defaultNbId, defaultNbId, undefined, { name: defaultNb.name });
+          await syncEngine.queueOutbox('create_section', defaultSecId, defaultNbId, defaultSecId, { name: defaultSec.name, color: defaultSec.color });
+          await syncEngine.queueOutbox('create_page', defaultPageId, defaultNbId, defaultSecId, {
+            title: defaultPg.title,
+            rawMarkdown: defaultPg.rawMarkdown,
+          });
+        }
 
         await searchEngine.buildIndex();
 
@@ -364,6 +366,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     await db.notebooks.delete(id);
     await db.sections.where('notebookId').equals(id).delete();
     await db.pages.where('notebookId').equals(id).delete();
+    await syncEngine.queueOutbox('delete_notebook', id, id);
 
     set((state) => ({
       notebooks: state.notebooks.filter((n) => n.id !== id),
@@ -514,8 +517,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
 
   deleteSectionPermanent: async (id) => {
+    const sec = get().sections.find((s) => s.id === id);
     await db.sections.delete(id);
     await db.pages.where('sectionId').equals(id).delete();
+    await syncEngine.queueOutbox('delete_section', id, sec?.notebookId, id);
 
     set((state) => ({
       sections: state.sections.filter((s) => s.id !== id),
@@ -843,6 +848,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       await searchEngine.indexPage({ ...page, trashed: true });
     }
     await db.pages.delete(id);
+    await syncEngine.queueOutbox('delete_page', id, page?.notebookId, page?.sectionId);
+
     set((state) => ({
       pages: state.pages.filter((p) => p.id !== id),
     }));
@@ -855,12 +862,15 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     for (const nb of trashedNbs) {
       await db.notebooks.delete(nb.id);
+      await syncEngine.queueOutbox('delete_notebook', nb.id, nb.id);
     }
     for (const sec of trashedSecs) {
       await db.sections.delete(sec.id);
+      await syncEngine.queueOutbox('delete_section', sec.id, sec.notebookId, sec.id);
     }
     for (const pg of trashedPgs) {
       await db.pages.delete(pg.id);
+      await syncEngine.queueOutbox('delete_page', pg.id, pg.notebookId, pg.sectionId);
     }
 
     set((state) => ({

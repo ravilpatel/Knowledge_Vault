@@ -61,4 +61,16 @@ describe('Sync Engine & Conflict Rules', () => {
     const outboxItem = await db.outbox.where({ entityId: 'page-del-1' }).first();
     expect(outboxItem?.action).toBe('trash_page');
   });
+
+  it('queues permanent delete operations for notebooks, sections, and pages', async () => {
+    await syncEngine.queueOutbox('delete_notebook', 'nb-to-delete', 'nb-to-delete');
+    await syncEngine.queueOutbox('delete_section', 'sec-to-delete', 'nb-1', 'sec-to-delete');
+    await syncEngine.queueOutbox('delete_page', 'page-to-delete', 'nb-1', 'sec-1');
+
+    const pending = await db.outbox.count();
+    expect(pending).toBe(3);
+
+    const actions = (await db.outbox.toArray()).map((i) => i.action);
+    expect(actions).toEqual(['delete_notebook', 'delete_section', 'delete_page']);
+  });
 });

@@ -1,16 +1,5 @@
 [
   {
-    "id": "6b50b40b-026e-44ae-abe9-df5068964451",
-    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
-    "name": "NoteVault + Knowledge Vault 2.0 PWA",
-    "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
-    "status": "active",
-    "related_technologies": [],
-    "related_companies": [],
-    "created_at": "2026-10-03T19:06:54.674656+00:00",
-    "updated_at": "2026-10-03T19:06:54.674656+00:00"
-  },
-  {
     "id": "9f4e532d-9125-4ab3-95c0-dcebd3a668bc",
     "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
     "name": "Autonomous Knowledge Graph & Neural Search",
@@ -42,5 +31,43 @@
     "related_companies": [],
     "created_at": "2026-10-03T19:07:08.493224+00:00",
     "updated_at": "2026-10-03T19:07:08.493224+00:00"
+  },
+  {
+    "id": "6b50b40b-026e-44ae-abe9-df5068964451",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "NoteVault + Knowledge Vault 2.0 PWA",
+    "description": "Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+    "status": "active",
+    "related_technologies": [
+      "22c45d5d-b7e2-4b1a-ac2d-f8bde7bbf179",
+      "a416fc68-9308-4daf-873b-1a612a0680f7"
+    ],
+    "related_companies": [
+      "27f25b54-24ef-469a-a4bd-67c49d657a9f"
+    ],
+    "created_at": "2026-10-03T19:06:54.674656+00:00",
+    "updated_at": "2026-10-04T07:31:24.018664+00:00"
+  },
+  {
+    "id": "4b12d338-0db6-4395-976b-b0873b3dac92",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "NoteVault + Knowledge Vault 2.0 PWA",
+    "description": "Unified second brain combining OneNote Markdown notes with Supabase relational panels, Eisenhower decision matrix, and daily habits.",
+    "status": "active",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-04T13:30:31.515689+00:00",
+    "updated_at": "2026-10-04T13:30:31.515689+00:00"
+  },
+  {
+    "id": "c4c53b05-673e-47dc-ad72-88f1650de4d6",
+    "user_id": "3ae280f8-49be-43fe-8c7c-dd6377748d76",
+    "name": "Autonomous Knowledge Graph & Neural Search",
+    "description": "Local embedding generation and bidirectional entity link graph connecting notes, people, companies, and tasks.",
+    "status": "planning",
+    "related_technologies": [],
+    "related_companies": [],
+    "created_at": "2026-10-04T13:30:31.515689+00:00",
+    "updated_at": "2026-10-04T13:30:31.515689+00:00"
   }
 ]
