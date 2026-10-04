@@ -1,5 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Trash2, Home } from 'lucide-react';
+import { safeStorage } from '../lib/safeStorage';
 
 interface Props {
   children: ReactNode;
@@ -38,11 +39,11 @@ export class ErrorBoundary extends Component<Props, State> {
       )
     ) {
       try {
-        localStorage.removeItem('kv_supabase_url');
-        localStorage.removeItem('kv_supabase_anon_key');
-        localStorage.removeItem('notevault_guest_mode');
-        localStorage.removeItem('notevault_theme');
-        sessionStorage.clear();
+        safeStorage.removeItem('kv_supabase_url');
+        safeStorage.removeItem('kv_supabase_anon_key');
+        safeStorage.removeItem('notevault_guest_mode');
+        safeStorage.removeItem('notevault_theme');
+        if (typeof sessionStorage !== 'undefined') sessionStorage.clear();
       } catch (e) {
         console.warn('Error clearing storage:', e);
       }

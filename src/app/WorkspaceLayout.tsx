@@ -12,6 +12,7 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { CommandPalette } from '../components/CommandPalette';
 import { ConflictModal } from '../components/ConflictModal';
 import { SettingsModal } from '../components/SettingsModal';
+import { SignInModal } from '../features/auth/SignInModal';
 import { MobileView } from '../components/mobile/MobileView';
 import { TasksView } from '../features/vault/TasksView';
 import { HabitsView } from '../features/vault/HabitsView';
@@ -30,6 +31,7 @@ import {
   Flame,
   Wallet,
   Layers,
+  LogIn,
 } from 'lucide-react';
 
 interface WorkspaceLayoutProps {
@@ -38,12 +40,13 @@ interface WorkspaceLayoutProps {
 }
 
 export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onToggleTheme }) => {
-  const { user, isGuest } = useAuthStore();
+  const { user, isGuest, supabaseUser } = useAuthStore();
   const { currentView, setCurrentView } = useVaultStore();
   const { showTrashView } = useNoteStore();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRailCollapsed, setIsRailCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
@@ -224,14 +227,25 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
             <Settings className="w-4 h-4" />
           </button>
 
-          {/* User Avatar */}
-          <div
-            onClick={() => setIsSettingsOpen(true)}
-            className="w-7 h-7 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-xs cursor-pointer border border-brand-primary/20 hover:scale-105 transition"
-            title={user?.name || (isGuest ? 'Guest (Offline)' : 'User')}
-          >
-            {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
-          </div>
+          {/* Sign In button or User Avatar */}
+          {!user && !supabaseUser ? (
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-xs font-semibold hover:bg-brand-primary/20 transition cursor-pointer"
+              title="Connect with Supabase"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Connect</span>
+            </button>
+          ) : (
+            <div
+              onClick={() => setIsSettingsOpen(true)}
+              className="w-7 h-7 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center font-bold text-xs cursor-pointer border border-brand-primary/20 hover:scale-105 transition"
+              title={user?.name || (isGuest ? 'Guest (Offline)' : 'User')}
+            >
+              {user?.name ? user.name.charAt(0).toUpperCase() : <User className="w-3.5 h-3.5" />}
+            </div>
+          )}
         </div>
       </header>
 
@@ -288,6 +302,11 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         onClose={() => setIsSettingsOpen(false)}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
+      />
+
+      <SignInModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
 
       {/* Conflict Resolution Dialog (triggered automatically when conflict is active) */}

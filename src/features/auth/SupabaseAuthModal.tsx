@@ -12,9 +12,18 @@ import {
   WifiOff,
   AlertCircle,
   CheckCircle2,
+  X,
 } from 'lucide-react';
 
-export const SupabaseAuthModal: React.FC = () => {
+interface SupabaseAuthModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const SupabaseAuthModal: React.FC<SupabaseAuthModalProps> = ({
+  isOpen = true,
+  onClose,
+}) => {
   const { signInWithEmail, signUpWithEmail, resetPassword, setGuest, authError, clearError } =
     useAuthStore() as any;
 
@@ -25,6 +34,8 @@ export const SupabaseAuthModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  if (!isOpen) return null;
+
   const { url } = getSupabaseConfig();
   let projectHostname = 'supabase.co';
   try {
@@ -32,7 +43,6 @@ export const SupabaseAuthModal: React.FC = () => {
   } catch {
     projectHostname = 'supabase.co';
   }
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,11 +55,13 @@ export const SupabaseAuthModal: React.FC = () => {
         const res = await signInWithEmail(email.trim(), password);
         if (res.success) {
           setSuccessMessage('Signed in successfully!');
+          if (onClose) setTimeout(onClose, 800);
         }
       } else if (mode === 'signup') {
         const res = await signUpWithEmail(email.trim(), password, displayName.trim());
         if (res.success) {
           setSuccessMessage('Account created! Please check your email if confirmation is required.');
+          if (onClose) setTimeout(onClose, 1500);
         }
       } else if (mode === 'forgot') {
         const res = await resetPassword(email.trim());
@@ -64,11 +76,28 @@ export const SupabaseAuthModal: React.FC = () => {
 
   const handleGuest = () => {
     setGuest(true);
+    if (onClose) onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm select-none">
-      <div className="relative w-full max-w-md bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-3xl shadow-2xl overflow-hidden p-8 animate-in fade-in zoom-in-95 duration-200 text-ink-primary dark:text-ink-darkPrimary">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/65 backdrop-blur-sm select-none"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-3xl shadow-2xl overflow-hidden p-8 animate-in fade-in zoom-in-95 duration-200 text-ink-primary dark:text-ink-darkPrimary"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 rounded-xl text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+
         {/* App Logo & Header */}
         <div className="text-center space-y-2 mb-6">
           <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 to-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/20">

@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { safeStorage } from './safeStorage';
 
 const DEFAULT_SUPABASE_URL = 'https://cmpklimagrwwzfjvqzqe.supabase.co';
 const DEFAULT_SUPABASE_ANON_KEY =
@@ -6,12 +7,12 @@ const DEFAULT_SUPABASE_ANON_KEY =
 
 export const getSupabaseConfig = () => {
   let url =
-    (typeof localStorage !== 'undefined' && localStorage.getItem('kv_supabase_url')) ||
+    safeStorage.getItem('kv_supabase_url') ||
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
     DEFAULT_SUPABASE_URL;
 
   let anonKey =
-    (typeof localStorage !== 'undefined' && localStorage.getItem('kv_supabase_anon_key')) ||
+    safeStorage.getItem('kv_supabase_anon_key') ||
     (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
     DEFAULT_SUPABASE_ANON_KEY;
 
@@ -61,10 +62,9 @@ export const getSupabase = (): SupabaseClient => {
 };
 
 export const resetSupabaseConfig = (newUrl?: string, newKey?: string) => {
-  if (typeof localStorage !== 'undefined') {
-    if (newUrl) localStorage.setItem('kv_supabase_url', newUrl);
-    if (newKey) localStorage.setItem('kv_supabase_anon_key', newKey);
-  }
+  if (newUrl) safeStorage.setItem('kv_supabase_url', newUrl);
+  if (newKey) safeStorage.setItem('kv_supabase_anon_key', newKey);
+
   const { url, anonKey } = getSupabaseConfig();
   try {
     supabaseInstance = createClient(url, anonKey, {

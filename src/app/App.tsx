@@ -2,32 +2,40 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../features/auth/authStore';
 import { useNoteStore } from '../features/notes/noteStore';
 import { syncEngine } from '../features/sync/syncEngine';
-import { SignInModal } from '../features/auth/SignInModal';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { useVaultStore } from '../features/vault/vaultStore';
+import { safeStorage } from '../lib/safeStorage';
 
 export const App: React.FC = () => {
-  const { user, isGuest, supabaseUser, initSupabaseAuth } = useAuthStore();
+  const { supabaseUser, initSupabaseAuth } = useAuthStore();
   const { loadInitialData } = useNoteStore();
   const { loadVaultData } = useVaultStore();
 
   const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('notevault_theme');
+    try {
+      const saved = safeStorage.getItem('notevault_theme');
       if (saved) return saved === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+    } catch {
+      // Fallback
     }
     return false;
   });
 
   // Apply dark mode class to html element
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('notevault_theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('notevault_theme', 'light');
+    try {
+      if (isDark) {
+        document.documentElement?.classList.add('dark');
+        safeStorage.setItem('notevault_theme', 'dark');
+      } else {
+        document.documentElement?.classList.remove('dark');
+        safeStorage.setItem('notevault_theme', 'light');
+      }
+    } catch (e) {
+      console.warn('Theme update exception:', e);
     }
   }, [isDark]);
 
@@ -39,15 +47,32 @@ export const App: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      await initSupabaseAuth();
+      try {
+        await initSupabaseAuth();
+      } catch (err) {
+        console.warn('Auth init non-blocking warning:', err);
+      }
       if (!mounted) return;
-      await loadInitialData();
-      await loadVaultData();
-      if (navigator.onLine) {
+
+      try {
+        await loadInitialData();
+      } catch (err) {
+        console.warn('Note load initial data warning:', err);
+      }
+
+      try {
+        await loadVaultData();
+      } catch (err) {
+        console.warn('Vault load initial data warning:', err);
+      }
+
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
         syncEngine.flushOutbox();
       }
     };
+
     init();
+
     return () => {
       mounted = false;
     };
@@ -58,20 +83,16 @@ export const App: React.FC = () => {
     if (supabaseUser?.id) {
       loadInitialData();
       loadVaultData();
-      if (navigator.onLine) {
+      if (typeof navigator !== 'undefined' && navigator.onLine) {
         syncEngine.flushOutbox();
       }
     }
   }, [supabaseUser?.id]);
 
   return (
-    <div className="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden">
-      {/* If not authenticated via Supabase and not in guest mode, display Supabase login */}
-      {!supabaseUser && !user && !isGuest ? (
-        <SignInModal />
-      ) : (
-        <WorkspaceLayout isDark={isDark} onToggleTheme={toggleTheme} />
-      )}
+    <div className="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden bg-canvas-light dark:bg-canvas-dark">
+      <WorkspaceLayout isDark={isDark} onToggleTheme={toggleTheme} />
     </div>
   );
 };
+

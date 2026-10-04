@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { User, Session } from '@supabase/supabase-js';
 import { getSupabase } from '../../lib/supabaseClient';
 import { UserProfile } from '../../types';
+import { safeStorage } from '../../lib/safeStorage';
 
 interface AuthState {
   supabaseUser: User | null;
@@ -27,8 +28,8 @@ const GUEST_STORAGE_KEY = 'notevault_guest_mode';
 
 function loadStoredGuest(): boolean {
   try {
-    if (typeof localStorage === 'undefined') return false;
-    return localStorage.getItem(GUEST_STORAGE_KEY) === 'true';
+    const val = safeStorage.getItem(GUEST_STORAGE_KEY);
+    return val === 'true';
   } catch {
     return false;
   }
@@ -70,9 +71,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       sb.auth.onAuthStateChange((event, session) => {
-        if (session) {
+          if (session) {
           const u = session.user;
-          if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
+          safeStorage.removeItem(GUEST_STORAGE_KEY);
           const profile: UserProfile = {
             id: u.id,
             email: u.email || 'user@supabase.io',
@@ -105,7 +106,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ isLoading: false, authError: error.message });
         return { success: false, error: error.message };
       }
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
+      safeStorage.removeItem(GUEST_STORAGE_KEY);
       const u = data.user;
       const profile: UserProfile = {
         id: u.id,
@@ -187,9 +188,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err) {
       console.warn('Supabase sign out:', err);
     }
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-    } catch {}
+    safeStorage.removeItem(GUEST_STORAGE_KEY);
     set({ session: null, supabaseUser: null, user: null, isGuest: false, authError: null });
   },
 
@@ -200,7 +199,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   setGuest: (isGuest) => {
     try {
       if (isGuest) {
-        if (typeof localStorage !== 'undefined') localStorage.setItem(GUEST_STORAGE_KEY, 'true');
+        safeStorage.setItem(GUEST_STORAGE_KEY, 'true');
         set({
           isGuest: true,
           user: {
@@ -211,7 +210,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           authError: null,
         });
       } else {
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
+        safeStorage.removeItem(GUEST_STORAGE_KEY);
         set({ isGuest: false, user: null });
       }
     } catch {

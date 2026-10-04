@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: 'NoteVault — Google Drive Markdown Notebook',
+        name: 'NoteVault — Supabase Markdown Notebook & Second Brain',
         short_name: 'NoteVault',
-        description: 'OneNote-style, Markdown-first notebook PWA that stores everything in your own Google Drive',
+        description: 'OneNote-style, Markdown-first notebook PWA powered by Supabase and Dexie DB',
         theme_color: '#4F46E5',
         background_color: '#FBFBFA',
         display: 'standalone',
@@ -53,8 +53,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Exclude Google APIs from service worker runtime caching (Dexie owns data layer)
-        navigateFallbackDenylist: [/^\/api\//, /^https:\/\/www\.googleapis\.com/, /^https:\/\/accounts\.google\.com/],
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],
