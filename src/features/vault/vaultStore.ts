@@ -115,7 +115,7 @@ const safeSupabaseCall = async (queryPromise: PromiseLike<any>) => {
 };
 
 export const useVaultStore = create<VaultState>((set, get) => ({
-  currentView: 'notebooks',
+  currentView: 'workspace',
   activePanelId: null,
   panels: [],
   panelFields: [],

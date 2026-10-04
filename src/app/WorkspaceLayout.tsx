@@ -130,18 +130,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         {/* Feature Workspace Switcher (Knowledge Vault Modules) */}
         <div className="flex items-center p-1 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold">
           <button
-            onClick={() => setCurrentView('notebooks')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
-              currentView === 'notebooks'
-                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
-                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Notes</span>
-          </button>
-
-          <button
             onClick={() => setCurrentView('workspace')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
               currentView === 'workspace'
@@ -151,6 +139,18 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
           >
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
             <span className="hidden md:inline">Workspace</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('notebooks')}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
+              currentView === 'notebooks'
+                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
+                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Notes</span>
           </button>
 
           <button
