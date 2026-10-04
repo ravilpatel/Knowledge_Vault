@@ -271,14 +271,17 @@ export type OutboxActionType =
   | 'create_notebook'
   | 'rename_notebook'
   | 'trash_notebook'
+  | 'restore_notebook'
   | 'create_section'
   | 'rename_section'
   | 'trash_section'
+  | 'restore_section'
   | 'create_page'
   | 'update_page'
   | 'rename_page'
   | 'move_page'
   | 'trash_page'
+  | 'restore_page'
   | 'upload_attachment'
   | 'update_meta';
 

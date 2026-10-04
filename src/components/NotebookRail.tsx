@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNoteStore } from '../features/notes/noteStore';
 import {
   Book,
@@ -10,6 +10,7 @@ import {
   Trash2,
   Settings,
   MoreVertical,
+  Edit2,
   FolderPlus,
   Search,
 } from 'lucide-react';
@@ -28,6 +29,7 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
     setActiveNotebook,
     createNotebook,
     renameNotebook,
+    trashNotebook,
     showFavoritesOnly,
     setShowFavoritesOnly,
     selectedTag,
@@ -41,18 +43,30 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
   });
   const [editingNbId, setEditingNbId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [menuOpenNbId, setMenuOpenNbId] = useState<string | null>(null);
   const [showNewNbModal, setShowNewNbModal] = useState(false);
   const [newNbName, setNewNbName] = useState('');
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpenNbId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const toggleExpand = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedNbs((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleStartRename = (id: string, currentName: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleStartRename = (id: string, currentName: string) => {
     setEditingNbId(id);
     setEditName(currentName);
+    setMenuOpenNbId(null);
   };
 
   const handleSaveRename = async (id: string) => {
@@ -85,7 +99,10 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
   }, [pages]);
 
   const favoritesCount = pages.filter((p) => p.favorite && !p.trashed).length;
-  const trashedCount = pages.filter((p) => p.trashed).length + notebooks.filter((n) => n.trashed).length;
+  const trashedCount =
+    pages.filter((p) => p.trashed).length +
+    notebooks.filter((n) => n.trashed).length +
+    sections.filter((s) => s.trashed).length;
 
   return (
     <aside className="w-64 h-full flex flex-col bg-surface-subtle dark:bg-surface-subtleDark border-r border-border-subtle dark:border-border-darkSubtle select-none">
@@ -116,7 +133,12 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
               <div key={nb.id} className="group">
                 <div
                   onClick={() => setActiveNotebook(nb.id)}
-                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-sm transition cursor-pointer ${
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setMenuOpenNbId(nb.id);
+                  }}
+                  className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-sm transition cursor-pointer relative ${
                     isActive
                       ? 'bg-white dark:bg-slate-800 text-brand-primary dark:text-brand-darkPrimary font-semibold shadow-sm border border-slate-200/80 dark:border-slate-700'
                       : 'text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-200/50 dark:hover:bg-slate-800/50'
@@ -151,13 +173,43 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
                       {nbPageCount}
                     </span>
                     <button
-                      onClick={(e) => handleStartRename(nb.id, nb.name, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpenNbId(menuOpenNbId === nb.id ? null : nb.id);
+                      }}
                       className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-slate-300 dark:hover:bg-slate-600 rounded text-ink-muted"
-                      title="Rename"
+                      title="Notebook options"
                     >
                       <MoreVertical className="w-3 h-3" />
                     </button>
                   </div>
+
+                  {/* Dropdown Menu for Notebook */}
+                  {menuOpenNbId === nb.id && (
+                    <div
+                      ref={menuRef}
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-2 top-8 z-50 w-44 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs text-ink-primary dark:text-ink-darkPrimary animate-in fade-in zoom-in-95 duration-100"
+                    >
+                      <button
+                        onClick={() => handleStartRename(nb.id, nb.name)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                      >
+                        <Edit2 className="w-3.5 h-3.5 text-ink-muted" />
+                        <span>Rename Notebook</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          trashNotebook(nb.id);
+                          setMenuOpenNbId(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 transition text-left"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Move to Trash</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sub-tree of sections if expanded */}

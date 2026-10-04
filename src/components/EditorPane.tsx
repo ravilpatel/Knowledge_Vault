@@ -15,6 +15,7 @@ import {
   Clock,
   CheckCircle2,
   CloudUpload,
+  Trash2,
 } from 'lucide-react';
 
 interface EditorPaneProps {
@@ -32,6 +33,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
     togglePageFavorite,
     setPageTags,
     createPage,
+    trashPage,
     activeNotebookId,
     activeSectionId,
   } = useNoteStore();
@@ -203,6 +205,15 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
                 <span className="hidden sm:inline">Preview</span>
               </button>
             </div>
+
+            {/* Trash Note button */}
+            <button
+              onClick={() => trashPage(activePage.id)}
+              className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+              title="Move Note to Trash"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
 

@@ -24,6 +24,7 @@ import {
   Flame,
   Wallet,
   Layers,
+  Trash2,
 } from 'lucide-react';
 
 interface MobileViewProps {
@@ -64,6 +65,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
     updatePageTitle,
     updatePageContent,
     togglePageFavorite,
+    trashPage,
   } = useNoteStore();
 
   const { currentView, setCurrentView } = useVaultStore();
@@ -218,27 +220,40 @@ export const MobileView: React.FC<MobileViewProps> = ({
             </button>
           )}
           <StatusPill />
-          {currentLevel === 'editor' && (
-            <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+          {currentLevel === 'editor' && activePage && (
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                <button
+                  onClick={() => setEditorTab('edit')}
+                  className={`p-1.5 rounded-md ${
+                    editorTab === 'edit'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setEditorTab('preview')}
+                  className={`p-1.5 rounded-md ${
+                    editorTab === 'preview'
+                      ? 'bg-surface dark:bg-surface-dark text-brand-primary'
+                      : 'text-ink-muted'
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <button
-                onClick={() => setEditorTab('edit')}
-                className={`p-1.5 rounded-md ${
-                  editorTab === 'edit'
-                    ? 'bg-surface dark:bg-surface-dark text-brand-primary'
-                    : 'text-ink-muted'
-                }`}
+                onClick={async () => {
+                  await trashPage(activePage.id);
+                  setCurrentLevel('pages');
+                }}
+                className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                title="Move to Trash"
               >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setEditorTab('preview')}
-                className={`p-1.5 rounded-md ${
-                  editorTab === 'preview'
-                    ? 'bg-surface dark:bg-surface-dark text-brand-primary'
-                    : 'text-ink-muted'
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
           )}

@@ -44,6 +44,7 @@ interface NoteState {
   renameNotebook: (id: string, name: string) => Promise<void>;
   trashNotebook: (id: string) => Promise<void>;
   restoreNotebook: (id: string) => Promise<void>;
+  deleteNotebookPermanent: (id: string) => Promise<void>;
   reorderNotebooks: (orderedIds: string[]) => Promise<void>;
 
   // Section mutations
@@ -52,6 +53,7 @@ interface NoteState {
   changeSectionColor: (id: string, color: SectionColor) => Promise<void>;
   trashSection: (id: string) => Promise<void>;
   restoreSection: (id: string) => Promise<void>;
+  deleteSectionPermanent: (id: string) => Promise<void>;
   reorderSections: (orderedIds: string[]) => Promise<void>;
 
   // Page mutations
@@ -62,6 +64,8 @@ interface NoteState {
   setPageTags: (id: string, tags: string[]) => Promise<void>;
   trashPage: (id: string) => Promise<void>;
   restorePage: (id: string) => Promise<void>;
+  deletePagePermanent: (id: string) => Promise<void>;
+  emptyTrash: () => Promise<void>;
   reorderPages: (orderedIds: string[]) => Promise<void>;
   movePage: (pageId: string, targetSectionId: string, targetNotebookId: string) => Promise<void>;
 }
@@ -264,19 +268,73 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     await db.notebooks.update(id, { trashed: true });
     await syncEngine.queueOutbox('trash_notebook', id, id, undefined, { trashed: true });
 
-    const remaining = get().notebooks.filter((n) => n.id !== id && !n.trashed);
-    const nextNb = remaining[0] || null;
+    // Also mark child sections and pages as trashed in DB
+    const { sections, pages } = get();
+    const nbSections = sections.filter((s) => s.notebookId === id);
+    const nbPages = pages.filter((p) => p.notebookId === id);
+
+    for (const sec of nbSections) {
+      await db.sections.update(sec.id, { trashed: true });
+    }
+    for (const pg of nbPages) {
+      await db.pages.update(pg.id, { trashed: true });
+    }
+
+    const remainingNbs = get().notebooks.filter((n) => n.id !== id && !n.trashed);
+    const nextNb = remainingNbs[0] || null;
+    const nextSec = nextNb ? sections.find((s) => s.notebookId === nextNb.id && !s.trashed && s.notebookId !== id) : null;
+    const nextPg = nextSec ? pages.find((p) => p.sectionId === nextSec.id && !p.trashed && p.notebookId !== id) : null;
 
     set((state) => ({
       notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: true } : n)),
+      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: true } : s)),
+      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: true } : p)),
       activeNotebookId: nextNb ? nextNb.id : null,
+      activeSectionId: nextSec ? nextSec.id : null,
+      activePageId: nextPg ? nextPg.id : null,
     }));
   },
 
   restoreNotebook: async (id) => {
     await db.notebooks.update(id, { trashed: false });
+    await syncEngine.queueOutbox('restore_notebook', id, id, undefined, { trashed: false });
+
+    // Also restore its sections and pages
+    const { sections, pages } = get();
+    const nbSections = sections.filter((s) => s.notebookId === id);
+    const nbPages = pages.filter((p) => p.notebookId === id);
+
+    for (const sec of nbSections) {
+      await db.sections.update(sec.id, { trashed: false });
+    }
+    for (const pg of nbPages) {
+      await db.pages.update(pg.id, { trashed: false });
+    }
+
+    const firstSec = nbSections[0] || null;
+    const firstPg = firstSec ? nbPages.find((p) => p.sectionId === firstSec.id) : null;
+
     set((state) => ({
       notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: false } : n)),
+      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: false } : s)),
+      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: false } : p)),
+      activeNotebookId: id,
+      activeSectionId: firstSec ? firstSec.id : null,
+      activePageId: firstPg ? firstPg.id : null,
+      showTrashView: false,
+    }));
+  },
+
+  deleteNotebookPermanent: async (id) => {
+    await db.notebooks.delete(id);
+    const secIds = (await db.sections.where('notebookId').equals(id).toArray()).map((s) => s.id);
+    await db.sections.where('notebookId').equals(id).delete();
+    await db.pages.where('notebookId').equals(id).delete();
+
+    set((state) => ({
+      notebooks: state.notebooks.filter((n) => n.id !== id),
+      sections: state.sections.filter((s) => s.notebookId !== id),
+      pages: state.pages.filter((p) => p.notebookId !== id),
     }));
   },
 
@@ -363,19 +421,59 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     await db.sections.update(id, { trashed: true });
     await syncEngine.queueOutbox('trash_section', id, sec.notebookId, id, { trashed: true });
 
+    // Also mark its pages as trashed
+    const secPages = get().pages.filter((p) => p.sectionId === id);
+    for (const pg of secPages) {
+      await db.pages.update(pg.id, { trashed: true });
+    }
+
     const remainingSecs = get().sections.filter((s) => s.notebookId === sec.notebookId && s.id !== id && !s.trashed);
     const nextSec = remainingSecs[0] || null;
+    const nextPg = nextSec ? get().pages.find((p) => p.sectionId === nextSec.id && !p.trashed) : null;
 
     set((state) => ({
       sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: true } : s)),
+      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: true } : p)),
       activeSectionId: nextSec ? nextSec.id : null,
+      activePageId: nextPg ? nextPg.id : null,
     }));
   },
 
   restoreSection: async (id) => {
+    const sec = get().sections.find((s) => s.id === id);
+    if (!sec) return;
+
+    // Ensure parent notebook is also restored if it was trashed
+    await db.notebooks.update(sec.notebookId, { trashed: false });
     await db.sections.update(id, { trashed: false });
+    await syncEngine.queueOutbox('restore_section', id, sec.notebookId, id, { trashed: false });
+
+    // Also restore its pages
+    const secPages = get().pages.filter((p) => p.sectionId === id);
+    for (const pg of secPages) {
+      await db.pages.update(pg.id, { trashed: false });
+    }
+
+    const firstPg = secPages[0] || null;
+
     set((state) => ({
+      notebooks: state.notebooks.map((n) => (n.id === sec.notebookId ? { ...n, trashed: false } : n)),
       sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: false } : s)),
+      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: false } : p)),
+      activeNotebookId: sec.notebookId,
+      activeSectionId: id,
+      activePageId: firstPg ? firstPg.id : null,
+      showTrashView: false,
+    }));
+  },
+
+  deleteSectionPermanent: async (id) => {
+    await db.sections.delete(id);
+    await db.pages.where('sectionId').equals(id).delete();
+
+    set((state) => ({
+      sections: state.sections.filter((s) => s.id !== id),
+      pages: state.pages.filter((p) => p.sectionId !== id),
     }));
   },
 
@@ -622,9 +720,52 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
 
   restorePage: async (id) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (!page) return;
+
+    // Ensure parent notebook and section are un-trashed too
+    await db.notebooks.update(page.notebookId, { trashed: false });
+    await db.sections.update(page.sectionId, { trashed: false });
     await db.pages.update(id, { trashed: false });
+    await syncEngine.queueOutbox('restore_page', id, page.notebookId, page.sectionId, { trashed: false });
+
     set((state) => ({
+      notebooks: state.notebooks.map((n) => (n.id === page.notebookId ? { ...n, trashed: false } : n)),
+      sections: state.sections.map((s) => (s.id === page.sectionId ? { ...s, trashed: false } : s)),
       pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: false } : p)),
+      activeNotebookId: page.notebookId,
+      activeSectionId: page.sectionId,
+      activePageId: id,
+      showTrashView: false,
+    }));
+  },
+
+  deletePagePermanent: async (id) => {
+    await db.pages.delete(id);
+    set((state) => ({
+      pages: state.pages.filter((p) => p.id !== id),
+    }));
+  },
+
+  emptyTrash: async () => {
+    const trashedNbs = get().notebooks.filter((n) => n.trashed);
+    const trashedSecs = get().sections.filter((s) => s.trashed);
+    const trashedPgs = get().pages.filter((p) => p.trashed);
+
+    for (const nb of trashedNbs) {
+      await db.notebooks.delete(nb.id);
+    }
+    for (const sec of trashedSecs) {
+      await db.sections.delete(sec.id);
+    }
+    for (const pg of trashedPgs) {
+      await db.pages.delete(pg.id);
+    }
+
+    set((state) => ({
+      notebooks: state.notebooks.filter((n) => !n.trashed),
+      sections: state.sections.filter((s) => !s.trashed),
+      pages: state.pages.filter((p) => !p.trashed),
     }));
   },
 

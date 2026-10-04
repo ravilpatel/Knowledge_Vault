@@ -179,6 +179,14 @@ class SyncEngine {
         break;
       }
 
+      case 'restore_notebook': {
+        const nb = await db.notebooks.get(item.entityId);
+        if (nb && nb.driveFolderId) {
+          await DriveClient.restoreFile(nb.driveFolderId);
+        }
+        break;
+      }
+
       case 'create_section': {
         const sec = await db.sections.get(item.entityId);
         if (!sec || sec.trashed) return;
@@ -208,6 +216,14 @@ class SyncEngine {
         const sec = await db.sections.get(item.entityId);
         if (sec && sec.driveFolderId) {
           await DriveClient.trashFile(sec.driveFolderId);
+        }
+        break;
+      }
+
+      case 'restore_section': {
+        const sec = await db.sections.get(item.entityId);
+        if (sec && sec.driveFolderId) {
+          await DriveClient.restoreFile(sec.driveFolderId);
         }
         break;
       }
@@ -343,6 +359,14 @@ class SyncEngine {
         const page = await db.pages.get(item.entityId);
         if (page && page.driveFileId) {
           await DriveClient.trashFile(page.driveFileId);
+        }
+        break;
+      }
+
+      case 'restore_page': {
+        const page = await db.pages.get(item.entityId);
+        if (page && page.driveFileId) {
+          await DriveClient.restoreFile(page.driveFileId);
         }
         break;
       }

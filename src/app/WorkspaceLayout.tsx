@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../features/auth/authStore';
 import { useVaultStore } from '../features/vault/vaultStore';
+import { useNoteStore } from '../features/notes/noteStore';
 import { NotebookRail } from '../components/NotebookRail';
 import { SectionTabs } from '../components/SectionTabs';
 import { PageList } from '../components/PageList';
 import { EditorPane } from '../components/EditorPane';
+import { TrashView } from '../components/TrashView';
 import { StatusPill } from '../components/StatusPill';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { CommandPalette } from '../components/CommandPalette';
@@ -38,6 +40,7 @@ interface WorkspaceLayoutProps {
 export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onToggleTheme }) => {
   const { user, isGuest } = useAuthStore();
   const { currentView, setCurrentView } = useVaultStore();
+  const { showTrashView } = useNoteStore();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -234,20 +237,36 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
       {/* Main Body Depending on Active View */}
       {currentView === 'notebooks' && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Pastel Section Tabs bar */}
-          <SectionTabs />
+          {showTrashView ? (
+            <div className="flex-1 flex overflow-hidden">
+              {!isRailCollapsed && (
+                <NotebookRail
+                  onOpenSettings={() => setIsSettingsOpen(true)}
+                  onOpenSearch={() => setIsSearchOpen(true)}
+                />
+              )}
+              <div className="flex-1 overflow-y-auto bg-surface dark:bg-surface-dark p-6 sm:p-8">
+                <TrashView />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Pastel Section Tabs bar */}
+              <SectionTabs />
 
-          {/* 3-Pane Body: Notebook Rail | Page List | Editor Pane */}
-          <div className="flex-1 flex overflow-hidden">
-            {!isRailCollapsed && (
-              <NotebookRail
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onOpenSearch={() => setIsSearchOpen(true)}
-              />
-            )}
-            <PageList />
-            <EditorPane isDark={isDark} />
-          </div>
+              {/* 3-Pane Body: Notebook Rail | Page List | Editor Pane */}
+              <div className="flex-1 flex overflow-hidden">
+                {!isRailCollapsed && (
+                  <NotebookRail
+                    onOpenSettings={() => setIsSettingsOpen(true)}
+                    onOpenSearch={() => setIsSearchOpen(true)}
+                  />
+                )}
+                <PageList />
+                <EditorPane isDark={isDark} />
+              </div>
+            </>
+          )}
         </div>
       )}
 
