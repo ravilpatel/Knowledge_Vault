@@ -102,15 +102,15 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const updated = activePage.tags.filter((t) => t !== tagToRemove);
+    const updated = (activePage.tags || []).filter((t) => t !== tagToRemove);
     setPageTags(activePage.id, updated);
   };
 
   const handleAddTagSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanTag = newTagInput.trim().replace(/^#/, '').toLowerCase();
-    if (cleanTag && !activePage.tags.includes(cleanTag)) {
-      setPageTags(activePage.id, [...activePage.tags, cleanTag]);
+    if (cleanTag && !(activePage.tags || []).includes(cleanTag)) {
+      setPageTags(activePage.id, [...(activePage.tags || []), cleanTag]);
     }
     setNewTagInput('');
     setIsAddingTag(false);
@@ -221,7 +221,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
         <div className="flex items-center gap-1.5 flex-wrap text-xs">
           <TagIcon className="w-3.5 h-3.5 text-ink-muted dark:text-ink-darkMuted mr-1" />
 
-          {activePage.tags.map((tag) => (
+          {(activePage.tags || []).map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-brand-light dark:bg-brand-primary/15 text-brand-primary dark:text-brand-darkPrimary font-medium text-[11px]"

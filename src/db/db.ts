@@ -51,7 +51,22 @@ export class NoteVaultDatabase extends Dexie {
       settings: 'key',
     });
 
+    this.version(2).stores({
+      notebooks: 'id, driveFolderId, name, order, trashed',
+      sections: 'id, driveFolderId, notebookId, name, order, trashed',
+      pages: 'id, driveFileId, notebookId, sectionId, title, *tags, favorite, updated, localDirty, trashed, order',
+      attachments: 'id, notebookId, driveFileId, filename, relativePath',
+      outbox: '++id, action, entityId, notebookId, sectionId, createdAt, retryCount',
+      syncState: 'id',
+      settings: 'key',
+      todos: 'id, title, urgent, important, completed, dueDate, category, createdAt',
+      habits: 'id, title, category, frequency, streak, bestStreak, createdAt',
+      expenses: 'id, amount, description, category, type, date, createdAt',
+      news: 'id, title, category, source, publishedAt, isRead',
+    });
+
     this.version(3).stores({
+
       notebooks: 'id, driveFolderId, name, order, trashed',
       sections: 'id, driveFolderId, notebookId, name, order, trashed',
       pages: 'id, driveFileId, notebookId, sectionId, title, *tags, favorite, updated, localDirty, trashed, order',

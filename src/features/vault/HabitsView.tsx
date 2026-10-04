@@ -35,9 +35,9 @@ export const HabitsView: React.FC = () => {
 
   const todayStr = last7Days[6].dateStr;
   const totalHabits = habits.length;
-  const completedToday = habits.filter((h) => h.completedDates.includes(todayStr)).length;
+  const completedToday = habits.filter((h) => (h.completedDates || []).includes(todayStr)).length;
   const todayPct = totalHabits > 0 ? Math.round((completedToday / totalHabits) * 100) : 0;
-  const totalStreaks = habits.reduce((acc, h) => acc + h.streak, 0);
+  const totalStreaks = habits.reduce((acc, h) => acc + (h.streak || 0), 0);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -231,7 +231,7 @@ export const HabitsView: React.FC = () => {
               {/* 7-Day Checkoff Circles */}
               <div className="flex items-center justify-end gap-3 flex-1">
                 {last7Days.map((day) => {
-                  const isDone = habit.completedDates.includes(day.dateStr);
+                  const isDone = (habit.completedDates || []).includes(day.dateStr);
 
                   return (
                     <button

@@ -91,7 +91,7 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
     pages
       .filter((p) => !p.trashed)
       .forEach((p) => {
-        p.tags.forEach((t) => {
+        (p.tags || []).forEach((t) => {
           counts[t] = (counts[t] || 0) + 1;
         });
       });

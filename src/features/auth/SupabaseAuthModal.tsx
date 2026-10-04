@@ -26,7 +26,13 @@ export const SupabaseAuthModal: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const { url } = getSupabaseConfig();
-  const projectHostname = new URL(url).hostname;
+  let projectHostname = 'supabase.co';
+  try {
+    projectHostname = new URL(url).hostname;
+  } catch {
+    projectHostname = 'supabase.co';
+  }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

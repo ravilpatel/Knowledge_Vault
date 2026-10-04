@@ -46,7 +46,7 @@ export const PageList: React.FC = () => {
     if (showFavoritesOnly) {
       result = result.filter((p) => p.favorite);
     } else if (selectedTag) {
-      result = result.filter((p) => p.tags.includes(selectedTag));
+      result = result.filter((p) => (p.tags || []).includes(selectedTag));
     } else if (activeSectionId) {
       result = result.filter((p) => p.sectionId === activeSectionId);
     } else if (activeNotebookId) {
@@ -57,9 +57,9 @@ export const PageList: React.FC = () => {
       const q = filterText.toLowerCase();
       result = result.filter(
         (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.content.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
+          (p.title || '').toLowerCase().includes(q) ||
+          (p.content || '').toLowerCase().includes(q) ||
+          (p.tags || []).some((t) => t.toLowerCase().includes(q))
       );
     }
 
@@ -294,9 +294,9 @@ export const PageList: React.FC = () => {
                 <div className="flex items-center justify-between text-[10px] text-ink-muted dark:text-ink-darkMuted">
                   <span>{formatRelativeTime(page.updated)}</span>
 
-                  {page.tags.length > 0 && (
+                  {(page.tags || []).length > 0 && (
                     <div className="flex items-center gap-1 overflow-hidden max-w-[140px]">
-                      {page.tags.slice(0, 2).map((t) => (
+                      {(page.tags || []).slice(0, 2).map((t) => (
                         <span
                           key={t}
                           className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[9px] font-medium text-ink-secondary dark:text-ink-darkSecondary truncate"
@@ -304,9 +304,9 @@ export const PageList: React.FC = () => {
                           #{t}
                         </span>
                       ))}
-                      {page.tags.length > 2 && (
+                      {(page.tags || []).length > 2 && (
                         <span className="text-[9px] font-medium text-ink-muted">
-                          +{page.tags.length - 2}
+                          +{(page.tags || []).length - 2}
                         </span>
                       )}
                     </div>

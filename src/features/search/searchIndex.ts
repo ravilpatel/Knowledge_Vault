@@ -55,7 +55,7 @@ export class SearchEngine {
     const docs: IndexedDoc[] = pages.map((p) => ({
       id: p.id,
       title: p.title,
-      tags: p.tags.join(' '),
+      tags: (p.tags || []).join(' '),
       body: p.content,
       notebookName: nbMap.get(p.notebookId) || 'General',
       sectionName: secMap.get(p.sectionId) || 'General',
@@ -89,7 +89,7 @@ export class SearchEngine {
     this.miniSearch.add({
       id: page.id,
       title: page.title,
-      tags: page.tags.join(' '),
+      tags: (page.tags || []).join(' '),
       body: page.content,
       notebookName: nb?.name || 'General',
       sectionName: sec?.name || 'General',
