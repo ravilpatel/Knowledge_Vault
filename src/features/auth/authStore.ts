@@ -4,19 +4,12 @@ import { getSupabase } from '../../lib/supabaseClient';
 import { UserProfile } from '../../types';
 
 interface AuthState {
-  // Supabase Auth (Primary)
   supabaseUser: User | null;
   session: Session | null;
+  user: UserProfile | null;
+  isGuest: boolean;
   isLoading: boolean;
   authError: string | null;
-
-  // Google Drive Connection (for NoteVault notes)
-  user: UserProfile | null;
-  googleUser: UserProfile | null;
-  isGuest: boolean;
-  isInitializing: boolean;
-  error: string | null;
-  scopeMode: 'drive.file' | 'drive';
 
   // Actions
   initSupabaseAuth: () => Promise<void>;
@@ -27,27 +20,10 @@ interface AuthState {
   setGuest: (isGuest: boolean) => void;
   setUser: (user: UserProfile | null) => void;
   setError: (error: string | null) => void;
-  setScopeMode: (mode: 'drive.file' | 'drive') => void;
+  clearError: () => void;
 }
 
-const GOOGLE_SESSION_KEY = 'notevault_auth_profile';
 const GUEST_STORAGE_KEY = 'notevault_guest_mode';
-
-function loadStoredGoogleUser(): UserProfile | null {
-  try {
-    if (typeof sessionStorage === 'undefined') return null;
-    const raw = sessionStorage.getItem(GOOGLE_SESSION_KEY);
-    if (!raw) return null;
-    const profile = JSON.parse(raw) as UserProfile;
-    if (profile.expiresAt && Date.now() > profile.expiresAt) {
-      sessionStorage.removeItem(GOOGLE_SESSION_KEY);
-      return null;
-    }
-    return profile;
-  } catch {
-    return null;
-  }
-}
 
 function loadStoredGuest(): boolean {
   try {
@@ -58,21 +34,13 @@ function loadStoredGuest(): boolean {
   }
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   supabaseUser: null,
   session: null,
+  user: null,
+  isGuest: loadStoredGuest(),
   isLoading: true,
   authError: null,
-
-  googleUser: loadStoredGoogleUser(),
-  user: loadStoredGoogleUser(),
-  isGuest: loadStoredGuest(),
-  isInitializing: false,
-  error: null,
-  scopeMode:
-    (typeof localStorage !== 'undefined'
-      ? (localStorage.getItem('notevault_scope_mode') as 'drive.file' | 'drive')
-      : null) || 'drive.file',
 
   initSupabaseAuth: async () => {
     set({ isLoading: true });
@@ -84,18 +52,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       if (data?.session) {
         const u = data.session.user;
+        const profile: UserProfile = {
+          id: u.id,
+          email: u.email || 'user@supabase.io',
+          name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
+        };
         set({
           session: data.session,
           supabaseUser: u,
-          user: get().user || {
-            email: u.email || 'user@supabase.io',
-            name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
-            accessToken: '',
-            expiresAt: Date.now() + 3600000,
-            scope: 'supabase',
-          },
+          user: profile,
           isGuest: false,
           isLoading: false,
+          authError: null,
         });
       } else {
         set({ session: null, supabaseUser: null, isLoading: false });
@@ -105,22 +73,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (session) {
           const u = session.user;
           if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
+          const profile: UserProfile = {
+            id: u.id,
+            email: u.email || 'user@supabase.io',
+            name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
+          };
           set({
             session,
             supabaseUser: u,
-            user: get().user || {
-              email: u.email || 'user@supabase.io',
-              name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
-              accessToken: '',
-              expiresAt: Date.now() + 3600000,
-              scope: 'supabase',
-            },
+            user: profile,
             isGuest: false,
             isLoading: false,
             authError: null,
           });
         } else if (event === 'SIGNED_OUT') {
-          set({ session: null, supabaseUser: null, isLoading: false });
+          set({ session: null, supabaseUser: null, user: null, isLoading: false });
         }
       });
     } catch (err: any) {
@@ -140,16 +107,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
       const u = data.user;
+      const profile: UserProfile = {
+        id: u.id,
+        email: u.email || email,
+        name: u.user_metadata?.name || email.split('@')[0],
+      };
       set({
         session: data.session,
         supabaseUser: u,
-        user: get().user || {
-          email: u.email || email,
-          name: u.user_metadata?.name || email.split('@')[0],
-          accessToken: '',
-          expiresAt: Date.now() + 3600000,
-          scope: 'supabase',
-        },
+        user: profile,
         isGuest: false,
         isLoading: false,
         authError: null,
@@ -177,18 +143,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: false, authError: error.message });
         return { success: false, error: error.message };
       }
-      if (data.session) {
-        const u = data.user!;
+      if (data.session && data.user) {
+        const u = data.user;
+        const profile: UserProfile = {
+          id: u.id,
+          email: u.email || email,
+          name: name || email.split('@')[0],
+        };
         set({
           session: data.session,
           supabaseUser: u,
-          user: get().user || {
-            email: u.email || email,
-            name: name || email.split('@')[0],
-            accessToken: '',
-            expiresAt: Date.now() + 3600000,
-            scope: 'supabase',
-          },
+          user: profile,
           isGuest: false,
           isLoading: false,
           authError: null,
@@ -223,42 +188,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.warn('Supabase sign out:', err);
     }
     try {
-      if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
       if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
     } catch {}
-    set({ session: null, supabaseUser: null, user: null, isGuest: false, authError: null, error: null });
+    set({ session: null, supabaseUser: null, user: null, isGuest: false, authError: null });
   },
 
   setUser: (user) => {
-    try {
-      if (user) {
-        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(GOOGLE_SESSION_KEY, JSON.stringify(user));
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(GUEST_STORAGE_KEY);
-        set({ user, googleUser: user, isGuest: false, error: null });
-      } else {
-        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
-        set({ user: null, googleUser: null });
-      }
-    } catch {
-      set({ user, googleUser: user });
-    }
+    set({ user, isGuest: false, authError: null });
   },
 
   setGuest: (isGuest) => {
     try {
       if (isGuest) {
         if (typeof localStorage !== 'undefined') localStorage.setItem(GUEST_STORAGE_KEY, 'true');
-        if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(GOOGLE_SESSION_KEY);
         set({
           isGuest: true,
           user: {
+            id: 'guest_local_user',
             email: 'offline.user@local.vault',
             name: 'Local Guest',
-            accessToken: 'offline_token',
-            expiresAt: Date.now() + 86400000 * 365,
-            scope: 'local',
           },
-          error: null,
           authError: null,
         });
       } else {
@@ -270,12 +219,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  setError: (error) => set({ error, authError: error }),
-
-  setScopeMode: (scopeMode) => {
-    try {
-      if (typeof localStorage !== 'undefined') localStorage.setItem('notevault_scope_mode', scopeMode);
-    } catch {}
-    set({ scopeMode });
-  },
+  setError: (authError) => set({ authError }),
+  clearError: () => set({ authError: null }),
 }));
+
+// Compatibility export
+export const useSupabaseAuthStore = useAuthStore;

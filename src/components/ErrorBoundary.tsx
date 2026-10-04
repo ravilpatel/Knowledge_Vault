@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   private handleResetCache = () => {
     if (
       confirm(
-        'Are you sure you want to clear cached session and local application state? Your local notes stored in IndexedDB and Google Drive will remain safe.'
+        'Are you sure you want to clear cached session and local application state? Your local notes stored in IndexedDB and Supabase Cloud will remain safe.'
       )
     ) {
       try {

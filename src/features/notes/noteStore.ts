@@ -10,6 +10,8 @@ import {
 import { generateUUID } from '../../lib/id';
 import { parsePageMarkdown, serializePageMarkdown } from '../../lib/frontmatter';
 import { syncEngine } from '../sync/syncEngine';
+import { searchEngine } from '../search/searchIndex';
+import { useAuthStore } from '../auth/authStore';
 
 interface NoteState {
   notebooks: NotebookRecord[];
@@ -90,34 +92,49 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   loadInitialData: async () => {
     set({ isLoading: true });
     try {
-      const notebooks = await db.notebooks.toArray();
-      const sections = await db.sections.toArray();
-      const pages = await db.pages.toArray();
+      const { supabaseUser, session } = useAuthStore.getState();
+      const userId = supabaseUser?.id || session?.user?.id;
+
+      // 1. If user is authenticated with Supabase, sync/migrate notes
+      if (userId && navigator.onLine) {
+        await syncEngine.migrateLocalNotesToSupabase(userId);
+      }
+
+      let notebooks = await db.notebooks.toArray();
+      let sections = await db.sections.toArray();
+      let pages = await db.pages.toArray();
 
       if (notebooks.length === 0) {
         // Initialize default starter notebook and section if completely empty
         const defaultNbId = generateUUID();
         const defaultSecId = generateUUID();
         const defaultPageId = generateUUID();
+        const now = new Date().toISOString();
 
         const defaultNb: NotebookRecord = {
           id: defaultNbId,
+          user_id: userId,
           name: 'Personal',
           color: '#4F7CAC',
           icon: 'book',
           order: 0,
           sectionOrder: [defaultSecId],
           trashed: false,
+          created_at: now,
+          updated_at: now,
         };
 
         const defaultSec: SectionRecord = {
           id: defaultSecId,
           notebookId: defaultNbId,
+          user_id: userId,
           name: 'Recipes',
           color: 'peach',
           order: 0,
           pageOrder: [defaultPageId],
           trashed: false,
+          created_at: now,
+          updated_at: now,
         };
 
         const initialContent = `# Classic Roman Carbonara 🍝\n\n> "Simplicity is the ultimate sophistication." — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n\n## Technique Steps\n1. Render guanciale over medium-low heat until crisp and deep amber.\n2. Whisk egg yolks with pecorino and abundant black pepper into a thick paste.\n3. Cook pasta in salted boiling water until al dente (*riserva l'acqua di cottura*).\n4. Toss pasta with rendered fat, temper with pasta water, fold in egg cream off heat.\n\n> [!NOTE]\n> Authentic Roman carbonara contains no heavy cream. The glossy sauce forms naturally from emulsifying hot starchy cooking water with the rich egg-pecorino paste.\n`;
@@ -127,8 +144,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           title: 'Pasta Notes',
           tags: ['cooking', 'italian', 'dinner'],
           favorite: true,
-          created: new Date().toISOString(),
-          updated: new Date().toISOString(),
+          created: now,
+          updated: now,
         };
 
         const rawMarkdown = serializePageMarkdown(initialFrontMatter, initialContent);
@@ -137,6 +154,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           id: defaultPageId,
           notebookId: defaultNbId,
           sectionId: defaultSecId,
+          user_id: userId,
           title: 'Pasta Notes',
           tags: ['cooking', 'italian', 'dinner'],
           favorite: true,
@@ -147,19 +165,23 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           localDirty: true,
           trashed: false,
           order: 0,
+          created_at: now,
+          updated_at: now,
         };
 
         await db.notebooks.put(defaultNb);
         await db.sections.put(defaultSec);
         await db.pages.put(defaultPg);
 
-        // Queue outbox items for sync
+        // Queue outbox items for Supabase sync
         await syncEngine.queueOutbox('create_notebook', defaultNbId, defaultNbId, undefined, { name: defaultNb.name });
         await syncEngine.queueOutbox('create_section', defaultSecId, defaultNbId, defaultSecId, { name: defaultSec.name, color: defaultSec.color });
         await syncEngine.queueOutbox('create_page', defaultPageId, defaultNbId, defaultSecId, {
           title: defaultPg.title,
           rawMarkdown: defaultPg.rawMarkdown,
         });
+
+        await searchEngine.buildIndex();
 
         set({
           notebooks: [defaultNb],
@@ -174,13 +196,15 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       }
 
       // Sort according to order
-      notebooks.sort((a, b) => a.order - b.order);
-      sections.sort((a, b) => a.order - b.order);
-      pages.sort((a, b) => a.order - b.order);
+      notebooks.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      sections.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+      pages.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
       const activeNb = notebooks.find((n) => !n.trashed);
       const activeSec = activeNb ? sections.find((s) => s.notebookId === activeNb.id && !s.trashed) : null;
       const activePg = activeSec ? pages.find((p) => p.sectionId === activeSec.id && !p.trashed) : null;
+
+      await searchEngine.buildIndex();
 
       set({
         notebooks,
@@ -227,16 +251,22 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 
   // Notebook operations
-  createNotebook: async (name, color = '#4F46E5', icon = 'book') => {
+  createNotebook: async (name, color = '#4F7CAC', icon = 'book') => {
     const { notebooks } = get();
+    const userId = useAuthStore.getState().supabaseUser?.id;
+    const now = new Date().toISOString();
+
     const newNotebook: NotebookRecord = {
       id: generateUUID(),
+      user_id: userId,
       name: name.trim() || 'New Notebook',
       color,
       icon,
       order: notebooks.length,
       sectionOrder: [],
       trashed: false,
+      created_at: now,
+      updated_at: now,
     };
 
     await db.notebooks.put(newNotebook);
@@ -255,17 +285,19 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   renameNotebook: async (id, name) => {
     const cleanName = name.trim();
     if (!cleanName) return;
+    const now = new Date().toISOString();
 
-    await db.notebooks.update(id, { name: cleanName });
+    await db.notebooks.update(id, { name: cleanName, updated_at: now });
     await syncEngine.queueOutbox('rename_notebook', id, id, undefined, { name: cleanName });
 
     set((state) => ({
-      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, name: cleanName } : n)),
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, name: cleanName, updated_at: now } : n)),
     }));
   },
 
   trashNotebook: async (id) => {
-    await db.notebooks.update(id, { trashed: true });
+    const now = new Date().toISOString();
+    await db.notebooks.update(id, { trashed: true, updated_at: now });
     await syncEngine.queueOutbox('trash_notebook', id, id, undefined, { trashed: true });
 
     // Also mark child sections and pages as trashed in DB
@@ -274,10 +306,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const nbPages = pages.filter((p) => p.notebookId === id);
 
     for (const sec of nbSections) {
-      await db.sections.update(sec.id, { trashed: true });
+      await db.sections.update(sec.id, { trashed: true, updated_at: now });
     }
     for (const pg of nbPages) {
-      await db.pages.update(pg.id, { trashed: true });
+      await db.pages.update(pg.id, { trashed: true, updated_at: now });
+      await searchEngine.indexPage({ ...pg, trashed: true });
     }
 
     const remainingNbs = get().notebooks.filter((n) => n.id !== id && !n.trashed);
@@ -286,9 +319,9 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const nextPg = nextSec ? pages.find((p) => p.sectionId === nextSec.id && !p.trashed && p.notebookId !== id) : null;
 
     set((state) => ({
-      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: true } : n)),
-      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: true } : s)),
-      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: true } : p)),
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: true, updated_at: now } : n)),
+      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: true, updated_at: now } : s)),
+      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: true, updated_at: now } : p)),
       activeNotebookId: nextNb ? nextNb.id : null,
       activeSectionId: nextSec ? nextSec.id : null,
       activePageId: nextPg ? nextPg.id : null,
@@ -296,7 +329,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
 
   restoreNotebook: async (id) => {
-    await db.notebooks.update(id, { trashed: false });
+    const now = new Date().toISOString();
+    await db.notebooks.update(id, { trashed: false, updated_at: now });
     await syncEngine.queueOutbox('restore_notebook', id, id, undefined, { trashed: false });
 
     // Also restore its sections and pages
@@ -305,19 +339,20 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const nbPages = pages.filter((p) => p.notebookId === id);
 
     for (const sec of nbSections) {
-      await db.sections.update(sec.id, { trashed: false });
+      await db.sections.update(sec.id, { trashed: false, updated_at: now });
     }
     for (const pg of nbPages) {
-      await db.pages.update(pg.id, { trashed: false });
+      await db.pages.update(pg.id, { trashed: false, updated_at: now });
+      await searchEngine.indexPage({ ...pg, trashed: false });
     }
 
     const firstSec = nbSections[0] || null;
     const firstPg = firstSec ? nbPages.find((p) => p.sectionId === firstSec.id) : null;
 
     set((state) => ({
-      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: false } : n)),
-      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: false } : s)),
-      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: false } : p)),
+      notebooks: state.notebooks.map((n) => (n.id === id ? { ...n, trashed: false, updated_at: now } : n)),
+      sections: state.sections.map((s) => (s.notebookId === id ? { ...s, trashed: false, updated_at: now } : s)),
+      pages: state.pages.map((p) => (p.notebookId === id ? { ...p, trashed: false, updated_at: now } : p)),
       activeNotebookId: id,
       activeSectionId: firstSec ? firstSec.id : null,
       activePageId: firstPg ? firstPg.id : null,
@@ -344,6 +379,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     });
     for (const nb of updated) {
       await db.notebooks.update(nb.id, { order: nb.order });
+      await syncEngine.queueOutbox('create_notebook', nb.id, nb.id, undefined, { order: nb.order });
     }
     set({ notebooks: updated });
   },
@@ -352,20 +388,25 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   createSection: async (notebookId, name, color = 'peach') => {
     const { sections, notebooks } = get();
     const nbSections = sections.filter((s) => s.notebookId === notebookId);
+    const userId = useAuthStore.getState().supabaseUser?.id;
+    const now = new Date().toISOString();
 
     const newSection: SectionRecord = {
       id: generateUUID(),
       notebookId,
+      user_id: userId,
       name: name.trim() || 'New Section',
       color,
       order: nbSections.length,
       pageOrder: [],
       trashed: false,
+      created_at: now,
+      updated_at: now,
     };
 
     await db.sections.put(newSection);
 
-    // Update notebook's section order
+    // Update parent notebook section order
     const parentNb = notebooks.find((n) => n.id === notebookId);
     if (parentNb) {
       const newSecOrder = [...parentNb.sectionOrder, newSection.id];
@@ -392,38 +433,42 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     const sec = get().sections.find((s) => s.id === id);
     if (!sec) return;
+    const now = new Date().toISOString();
 
-    await db.sections.update(id, { name: cleanName });
+    await db.sections.update(id, { name: cleanName, updated_at: now });
     await syncEngine.queueOutbox('rename_section', id, sec.notebookId, id, { name: cleanName });
 
     set((state) => ({
-      sections: state.sections.map((s) => (s.id === id ? { ...s, name: cleanName } : s)),
+      sections: state.sections.map((s) => (s.id === id ? { ...s, name: cleanName, updated_at: now } : s)),
     }));
   },
 
   changeSectionColor: async (id, color) => {
     const sec = get().sections.find((s) => s.id === id);
     if (!sec) return;
+    const now = new Date().toISOString();
 
-    await db.sections.update(id, { color });
+    await db.sections.update(id, { color, updated_at: now });
     await syncEngine.queueOutbox('update_meta', id, sec.notebookId, id, { color });
 
     set((state) => ({
-      sections: state.sections.map((s) => (s.id === id ? { ...s, color } : s)),
+      sections: state.sections.map((s) => (s.id === id ? { ...s, color, updated_at: now } : s)),
     }));
   },
 
   trashSection: async (id) => {
     const sec = get().sections.find((s) => s.id === id);
     if (!sec) return;
+    const now = new Date().toISOString();
 
-    await db.sections.update(id, { trashed: true });
+    await db.sections.update(id, { trashed: true, updated_at: now });
     await syncEngine.queueOutbox('trash_section', id, sec.notebookId, id, { trashed: true });
 
     // Also mark its pages as trashed
     const secPages = get().pages.filter((p) => p.sectionId === id);
     for (const pg of secPages) {
-      await db.pages.update(pg.id, { trashed: true });
+      await db.pages.update(pg.id, { trashed: true, updated_at: now });
+      await searchEngine.indexPage({ ...pg, trashed: true });
     }
 
     const remainingSecs = get().sections.filter((s) => s.notebookId === sec.notebookId && s.id !== id && !s.trashed);
@@ -431,8 +476,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const nextPg = nextSec ? get().pages.find((p) => p.sectionId === nextSec.id && !p.trashed) : null;
 
     set((state) => ({
-      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: true } : s)),
-      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: true } : p)),
+      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: true, updated_at: now } : s)),
+      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: true, updated_at: now } : p)),
       activeSectionId: nextSec ? nextSec.id : null,
       activePageId: nextPg ? nextPg.id : null,
     }));
@@ -441,24 +486,26 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   restoreSection: async (id) => {
     const sec = get().sections.find((s) => s.id === id);
     if (!sec) return;
+    const now = new Date().toISOString();
 
     // Ensure parent notebook is also restored if it was trashed
-    await db.notebooks.update(sec.notebookId, { trashed: false });
-    await db.sections.update(id, { trashed: false });
+    await db.notebooks.update(sec.notebookId, { trashed: false, updated_at: now });
+    await db.sections.update(id, { trashed: false, updated_at: now });
     await syncEngine.queueOutbox('restore_section', id, sec.notebookId, id, { trashed: false });
 
     // Also restore its pages
     const secPages = get().pages.filter((p) => p.sectionId === id);
     for (const pg of secPages) {
-      await db.pages.update(pg.id, { trashed: false });
+      await db.pages.update(pg.id, { trashed: false, updated_at: now });
+      await searchEngine.indexPage({ ...pg, trashed: false });
     }
 
     const firstPg = secPages[0] || null;
 
     set((state) => ({
-      notebooks: state.notebooks.map((n) => (n.id === sec.notebookId ? { ...n, trashed: false } : n)),
-      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: false } : s)),
-      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: false } : p)),
+      notebooks: state.notebooks.map((n) => (n.id === sec.notebookId ? { ...n, trashed: false, updated_at: now } : n)),
+      sections: state.sections.map((s) => (s.id === id ? { ...s, trashed: false, updated_at: now } : s)),
+      pages: state.pages.map((p) => (p.sectionId === id ? { ...p, trashed: false, updated_at: now } : p)),
       activeNotebookId: sec.notebookId,
       activeSectionId: id,
       activePageId: firstPg ? firstPg.id : null,
@@ -483,6 +530,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     });
     for (const s of updated) {
       await db.sections.update(s.id, { order: s.order });
+      await syncEngine.queueOutbox('create_section', s.id, s.notebookId, s.id, { order: s.order });
     }
     set({ sections: updated });
   },
@@ -491,6 +539,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   createPage: async (notebookId, sectionId, title = 'Untitled Page', content = '') => {
     const { pages, sections } = get();
     const secPages = pages.filter((p) => p.sectionId === sectionId);
+    const userId = useAuthStore.getState().supabaseUser?.id;
 
     const pageId = generateUUID();
     const now = new Date().toISOString();
@@ -510,6 +559,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       id: pageId,
       notebookId,
       sectionId,
+      user_id: userId,
       title: frontMatter.title,
       tags: [],
       favorite: false,
@@ -520,11 +570,13 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       localDirty: true,
       trashed: false,
       order: secPages.length,
+      created_at: now,
+      updated_at: now,
     };
 
     await db.pages.put(newPage);
 
-    // Update section page order
+    // Update parent section page order
     const parentSec = sections.find((s) => s.id === sectionId);
     if (parentSec) {
       const newPageOrder = [...parentSec.pageOrder, pageId];
@@ -535,6 +587,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       title: newPage.title,
       rawMarkdown: newPage.rawMarkdown,
     });
+
+    await searchEngine.indexPage(newPage);
 
     set((state) => ({
       pages: [...state.pages, newPage],
@@ -563,10 +617,20 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     const rawMarkdown = serializePageMarkdown(updatedFrontMatter, content);
 
+    const updatedRecord: PageRecord = {
+      ...page,
+      content,
+      rawMarkdown,
+      updated: now,
+      updated_at: now,
+      localDirty: true,
+    };
+
     await db.pages.update(id, {
       content,
       rawMarkdown,
       updated: now,
+      updated_at: now,
       localDirty: true,
     });
 
@@ -576,10 +640,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       updated: now,
     });
 
+    await searchEngine.indexPage(updatedRecord);
+
     set((state) => ({
-      pages: state.pages.map((p) =>
-        p.id === id ? { ...p, content, rawMarkdown, updated: now, localDirty: true } : p
-      ),
+      pages: state.pages.map((p) => (p.id === id ? updatedRecord : p)),
     }));
   },
 
@@ -603,10 +667,20 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
 
+    const updatedRecord: PageRecord = {
+      ...page,
+      title: cleanTitle,
+      rawMarkdown,
+      updated: now,
+      updated_at: now,
+      localDirty: true,
+    };
+
     await db.pages.update(id, {
       title: cleanTitle,
       rawMarkdown,
       updated: now,
+      updated_at: now,
       localDirty: true,
     });
 
@@ -616,10 +690,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       updated: now,
     });
 
+    await searchEngine.indexPage(updatedRecord);
+
     set((state) => ({
-      pages: state.pages.map((p) =>
-        p.id === id ? { ...p, title: cleanTitle, rawMarkdown, updated: now, localDirty: true } : p
-      ),
+      pages: state.pages.map((p) => (p.id === id ? updatedRecord : p)),
     }));
   },
 
@@ -643,10 +717,20 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
 
+    const updatedRecord: PageRecord = {
+      ...page,
+      favorite: newFavorite,
+      rawMarkdown,
+      updated: now,
+      updated_at: now,
+      localDirty: true,
+    };
+
     await db.pages.update(id, {
       favorite: newFavorite,
       rawMarkdown,
       updated: now,
+      updated_at: now,
       localDirty: true,
     });
 
@@ -656,10 +740,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       updated: now,
     });
 
+    await searchEngine.indexPage(updatedRecord);
+
     set((state) => ({
-      pages: state.pages.map((p) =>
-        p.id === id ? { ...p, favorite: newFavorite, rawMarkdown, updated: now, localDirty: true } : p
-      ),
+      pages: state.pages.map((p) => (p.id === id ? updatedRecord : p)),
     }));
   },
 
@@ -682,10 +766,20 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     const rawMarkdown = serializePageMarkdown(updatedFrontMatter, page.content);
 
+    const updatedRecord: PageRecord = {
+      ...page,
+      tags,
+      rawMarkdown,
+      updated: now,
+      updated_at: now,
+      localDirty: true,
+    };
+
     await db.pages.update(id, {
       tags,
       rawMarkdown,
       updated: now,
+      updated_at: now,
       localDirty: true,
     });
 
@@ -695,25 +789,27 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       updated: now,
     });
 
+    await searchEngine.indexPage(updatedRecord);
+
     set((state) => ({
-      pages: state.pages.map((p) =>
-        p.id === id ? { ...p, tags, rawMarkdown, updated: now, localDirty: true } : p
-      ),
+      pages: state.pages.map((p) => (p.id === id ? updatedRecord : p)),
     }));
   },
 
   trashPage: async (id) => {
     const page = get().pages.find((p) => p.id === id);
     if (!page) return;
+    const now = new Date().toISOString();
 
-    await db.pages.update(id, { trashed: true });
+    await db.pages.update(id, { trashed: true, updated_at: now });
     await syncEngine.queueOutbox('trash_page', id, page.notebookId, page.sectionId, { trashed: true });
+    await searchEngine.indexPage({ ...page, trashed: true });
 
     const secPages = get().pages.filter((p) => p.sectionId === page.sectionId && p.id !== id && !p.trashed);
     const nextPg = secPages[0] || null;
 
     set((state) => ({
-      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: true } : p)),
+      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: true, updated_at: now } : p)),
       activePageId: nextPg ? nextPg.id : null,
     }));
   },
@@ -721,17 +817,19 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   restorePage: async (id) => {
     const page = get().pages.find((p) => p.id === id);
     if (!page) return;
+    const now = new Date().toISOString();
 
     // Ensure parent notebook and section are un-trashed too
-    await db.notebooks.update(page.notebookId, { trashed: false });
-    await db.sections.update(page.sectionId, { trashed: false });
-    await db.pages.update(id, { trashed: false });
+    await db.notebooks.update(page.notebookId, { trashed: false, updated_at: now });
+    await db.sections.update(page.sectionId, { trashed: false, updated_at: now });
+    await db.pages.update(id, { trashed: false, updated_at: now });
     await syncEngine.queueOutbox('restore_page', id, page.notebookId, page.sectionId, { trashed: false });
+    await searchEngine.indexPage({ ...page, trashed: false });
 
     set((state) => ({
-      notebooks: state.notebooks.map((n) => (n.id === page.notebookId ? { ...n, trashed: false } : n)),
-      sections: state.sections.map((s) => (s.id === page.sectionId ? { ...s, trashed: false } : s)),
-      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: false } : p)),
+      notebooks: state.notebooks.map((n) => (n.id === page.notebookId ? { ...n, trashed: false, updated_at: now } : n)),
+      sections: state.sections.map((s) => (s.id === page.sectionId ? { ...s, trashed: false, updated_at: now } : s)),
+      pages: state.pages.map((p) => (p.id === id ? { ...p, trashed: false, updated_at: now } : p)),
       activeNotebookId: page.notebookId,
       activeSectionId: page.sectionId,
       activePageId: id,
@@ -740,6 +838,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
 
   deletePagePermanent: async (id) => {
+    const page = get().pages.find((p) => p.id === id);
+    if (page) {
+      await searchEngine.indexPage({ ...page, trashed: true });
+    }
     await db.pages.delete(id);
     set((state) => ({
       pages: state.pages.filter((p) => p.id !== id),
@@ -775,6 +877,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     });
     for (const p of updated) {
       await db.pages.update(p.id, { order: p.order });
+      await syncEngine.queueOutbox('create_page', p.id, p.notebookId, p.sectionId, { order: p.order });
     }
     set({ pages: updated });
   },
@@ -782,10 +885,12 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   movePage: async (pageId, targetSectionId, targetNotebookId) => {
     const page = get().pages.find((p) => p.id === pageId);
     if (!page) return;
+    const now = new Date().toISOString();
 
     await db.pages.update(pageId, {
       sectionId: targetSectionId,
       notebookId: targetNotebookId,
+      updated_at: now,
       localDirty: true,
     });
 
@@ -796,7 +901,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
     set((state) => ({
       pages: state.pages.map((p) =>
-        p.id === pageId ? { ...p, sectionId: targetSectionId, notebookId: targetNotebookId, localDirty: true } : p
+        p.id === pageId ? { ...p, sectionId: targetSectionId, notebookId: targetNotebookId, updated_at: now, localDirty: true } : p
       ),
     }));
   },

@@ -4,7 +4,6 @@ import { useNoteStore } from '../features/notes/noteStore';
 import { useSyncStore } from '../features/sync/syncStore';
 import { useVaultStore } from '../features/vault/vaultStore';
 import { syncEngine } from '../features/sync/syncEngine';
-import { signInWithGoogle } from '../features/auth/googleAuth';
 import { TrashView } from './TrashView';
 import {
   Settings,
@@ -15,9 +14,10 @@ import {
   Download,
   Moon,
   Sun,
-  CheckCircle2,
+  ShieldCheck,
   X,
 } from 'lucide-react';
+import { getSupabaseConfig } from '../lib/supabaseClient';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isDark,
   onToggleTheme,
 }) => {
-  const { user, googleUser, scopeMode, setScopeMode, signOut } = useAuthStore() as any;
+  const { user, supabaseUser, isGuest, signOut } = useAuthStore();
   const { notebooks, sections, pages, loadInitialData } = useNoteStore();
   const { todos, habits, expenses, news, panels, panelFields, panelEntries } = useVaultStore();
   const { status, pendingCount } = useSyncStore();
@@ -43,21 +43,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleRebuildFromDrive = async () => {
+  const { url } = getSupabaseConfig();
+  let projectHostname = 'supabase.co';
+  try {
+    projectHostname = new URL(url).hostname;
+  } catch {
+    projectHostname = 'supabase.co';
+  }
+
+  const handleRebuildFromSupabase = async () => {
     if (
       !confirm(
-        'Are you sure you want to rebuild local data? This tests Section 4.6 (Recovery Guarantee): your local database will be cleared and completely repopulated directly from your Google Drive NoteVault folder.'
+        'Are you sure you want to rebuild local data from Supabase Cloud? Your local Dexie cache will be cleared and repopulated directly from your Supabase database.'
       )
     ) {
       return;
     }
 
     setIsRebuilding(true);
-    setRebuildStatus('Clearing local cache and rebuilding from Drive...');
+    setRebuildStatus('Clearing local cache and rebuilding from Supabase...');
     try {
-      await syncEngine.rebuildFromDrive();
+      await syncEngine.rebuildFromSupabase();
       await loadInitialData();
-      setRebuildStatus('Recovery complete! All notes restored from Drive.');
+      setRebuildStatus('Recovery complete! All notes and sections restored from Supabase.');
       setTimeout(() => setRebuildStatus(null), 4000);
     } catch (err: any) {
       setRebuildStatus(`Rebuild failed: ${err.message || err}`);
@@ -68,7 +76,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleExportVault = () => {
     const exportData = {
-      vaultVersion: 3,
+      vaultVersion: 4,
       exportedAt: new Date().toISOString(),
       notebooks: notebooks.filter((n) => !n.trashed),
       sections: sections.filter((s) => !s.trashed),
@@ -113,7 +121,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 NoteVault Settings
               </h3>
               <p className="text-[11px] text-ink-muted dark:text-ink-darkMuted">
-                Preferences, cloud sync status, and trash recovery
+                Preferences, Supabase cloud sync status, and trash recovery
               </p>
             </div>
           </div>
@@ -165,54 +173,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold">{user?.name || 'User Account'}</h4>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 font-semibold border border-emerald-500/20">
-                          Active Session
+                        <h4 className="text-xs font-bold">{user?.name || (isGuest ? 'Local Guest' : 'User Account')}</h4>
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold border ${
+                          isGuest 
+                            ? 'bg-amber-500/10 text-amber-600 border-amber-500/20' 
+                            : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                        }`}>
+                          {isGuest ? 'Offline Guest' : 'Supabase Session'}
                         </span>
                       </div>
-                      <p className="text-[11px] text-ink-muted">{user?.email || 'Logged in'}</p>
+                      <p className="text-[11px] text-ink-muted">{user?.email || (isGuest ? 'Local storage only' : 'Connected')}</p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      signOut();
-                      onClose();
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-
-                {/* Google Drive Status for NoteVault Notes */}
-                <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle/60 dark:border-border-darkSubtle/60">
-                  <div>
-                    <span className="text-ink-muted">Notes Storage: </span>
-                    <span className="font-semibold text-ink-primary dark:text-ink-darkPrimary">
-                      {googleUser?.accessToken ? 'Google Drive (Connected)' : 'Google Drive (Not Connected)'}
-                    </span>
-                  </div>
-
-                  {!googleUser?.accessToken && (
+                  {!isGuest && (
                     <button
-                      onClick={async () => {
-                        try {
-                          await signInWithGoogle();
-                        } catch (err: any) {
-                          alert(`Google Drive sign-in: ${err.message || err}`);
-                        }
+                      onClick={() => {
+                        signOut();
+                        onClose();
                       }}
-                      className="px-2.5 py-1 rounded-lg bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-hover transition shadow-2xs"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border-subtle dark:border-border-darkSubtle text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                     >
-                      Connect Google Drive
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
                     </button>
                   )}
                 </div>
 
+                {/* Supabase Cloud Connection Status */}
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-border-subtle/60 dark:border-border-darkSubtle/60">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                    <span className="text-ink-muted">Backend Database: </span>
+                    <span className="font-semibold text-ink-primary dark:text-ink-darkPrimary">
+                      {projectHostname}
+                    </span>
+                  </div>
+
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-[11px]">
+                    {supabaseUser ? 'Authenticated' : isGuest ? 'Guest Mode' : 'Ready'}
+                  </span>
+                </div>
+
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-border-subtle/60 dark:border-border-darkSubtle/60">
-                  <span className="text-ink-muted">Drive Outbox Sync:</span>
+                  <span className="text-ink-muted">Supabase Outbox Queue:</span>
                   <span className="font-semibold capitalize text-brand-primary dark:text-brand-darkPrimary">
                     {status} ({pendingCount} pending)
                   </span>
@@ -234,57 +238,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              {/* Google Drive Scope Setting */}
-              <div className="space-y-2 py-2 border-b border-border-subtle dark:border-border-darkSubtle">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold">Google Drive Scope Mode</h4>
-                    <p className="text-[11px] text-ink-muted">
-                      drive.file accesses only app-created files; drive provides full folder import
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <button
-                    onClick={() => setScopeMode('drive.file')}
-                    className={`p-3 rounded-xl border text-left transition ${
-                      scopeMode === 'drive.file'
-                        ? 'border-brand-primary bg-brand-light/50 dark:bg-brand-primary/10 font-bold'
-                        : 'border-border-subtle dark:border-border-darkSubtle hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold">drive.file (Recommended)</span>
-                      {scopeMode === 'drive.file' && <CheckCircle2 className="w-4 h-4 text-brand-primary" />}
-                    </div>
-                    <p className="text-[10px] text-ink-muted font-normal">
-                      Only accesses files created or opened by NoteVault. Safest privacy level.
-                    </p>
-                  </button>
-
-                  <button
-                    onClick={() => setScopeMode('drive')}
-                    className={`p-3 rounded-xl border text-left transition ${
-                      scopeMode === 'drive'
-                        ? 'border-brand-primary bg-brand-light/50 dark:bg-brand-primary/10 font-bold'
-                        : 'border-border-subtle dark:border-border-darkSubtle hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold">drive (Full Access)</span>
-                      {scopeMode === 'drive' && <CheckCircle2 className="w-4 h-4 text-brand-primary" />}
-                    </div>
-                    <p className="text-[10px] text-ink-muted font-normal">
-                      Can discover notes manually placed in Drive by the web UI or external tools.
-                    </p>
-                  </button>
-                </div>
-              </div>
-
               {/* Recovery & Sync Actions */}
               <div className="space-y-3 py-2 border-b border-border-subtle dark:border-border-darkSubtle">
-                <h4 className="text-xs font-bold">Cloud Sync & Recovery</h4>
+                <h4 className="text-xs font-bold">Supabase Cloud Sync & Recovery</h4>
 
                 {rebuildStatus && (
                   <div className="p-3 rounded-xl bg-brand-light dark:bg-brand-primary/10 border border-brand-primary/20 text-xs text-brand-primary flex items-center gap-2">
@@ -303,13 +259,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
 
                   <button
-                    onClick={handleRebuildFromDrive}
-                    disabled={isRebuilding}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold transition"
-                    title="Section 4.6 Recovery Test: Wipe local Dexie database and rebuild completely from Drive"
+                    onClick={handleRebuildFromSupabase}
+                    disabled={isRebuilding || isGuest}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 text-xs font-semibold transition disabled:opacity-50"
+                    title="Wipe local Dexie database and rebuild completely from Supabase Cloud"
                   >
                     <Cloud className="w-3.5 h-3.5" />
-                    <span>Rebuild Local DB from Drive (Test 4.6)</span>
+                    <span>Rebuild Local DB from Supabase</span>
                   </button>
 
                   <button

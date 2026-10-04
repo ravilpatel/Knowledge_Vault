@@ -4,6 +4,7 @@
  * Knowledge Vault — Supabase Data Sync & Exporter
  * 
  * Fetches, seeds, and sets up data for:
+ * - Notebooks, Sections & Pages (OneNote Markdown Notes)
  * - Projects
  * - People & Contacts
  * - Habits & Daily Logs
@@ -62,13 +63,17 @@ if (!SUPABASE_ANON_KEY) {
   process.exit(1);
 }
 
-// 2. Sample Datasets for Projects, People, Habits, Companies, Tasks
+// 2. Sample Datasets for Notebooks, Projects, People, Habits, Companies, Tasks
 function getStarterData(userId) {
   const today = new Date().toISOString().slice(0, 10);
   const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const twoDaysAgo = new Date(Date.now() - 86400000 * 2).toISOString().slice(0, 10);
   const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
   const nextWeek = new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10);
+
+  const nbId = crypto.randomUUID();
+  const secId = crypto.randomUUID();
+  const pageId = crypto.randomUUID();
 
   const comp1Id = crypto.randomUUID();
   const comp2Id = crypto.randomUUID();
@@ -86,6 +91,50 @@ function getStarterData(userId) {
   const habit3Id = crypto.randomUUID();
 
   return {
+    notebooks: [
+      {
+        id: nbId,
+        user_id: userId,
+        name: 'Personal & Research',
+        color: '#4F7CAC',
+        icon: 'book',
+        sort_order: 0,
+        section_order: [secId],
+        trashed: false,
+      },
+    ],
+
+    sections: [
+      {
+        id: secId,
+        notebook_id: nbId,
+        user_id: userId,
+        name: 'Culinary Arts & Recipes',
+        color: 'peach',
+        icon: null,
+        sort_order: 0,
+        page_order: [pageId],
+        trashed: false,
+      },
+    ],
+
+    pages: [
+      {
+        id: pageId,
+        notebook_id: nbId,
+        section_id: secId,
+        user_id: userId,
+        title: 'Classic Roman Carbonara 🍝',
+        tags: ['cooking', 'italian', 'dinner', 'pasta'],
+        favorite: true,
+        content: `# Classic Roman Carbonara 🍝\n\n> "Simplicity is the ultimate sophistication." — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n\n## Technique Steps\n1. Render guanciale over medium-low heat until crisp and deep amber.\n2. Whisk egg yolks with pecorino and abundant black pepper into a thick paste.\n3. Cook pasta in salted boiling water until al dente (*riserva l'acqua di cottura*).\n4. Toss pasta with rendered fat, temper with pasta water, fold in egg cream off heat.\n\n> [!NOTE]\n> Authentic Roman carbonara contains no heavy cream. The glossy sauce forms naturally from emulsifying hot starchy cooking water with the rich egg-pecorino paste.\n`,
+        raw_markdown: `---\nid: ${pageId}\ntitle: Classic Roman Carbonara 🍝\ntags: [cooking, italian, dinner, pasta]\nfavorite: true\n---\n\n# Classic Roman Carbonara 🍝\n\n> "Simplicity is the ultimate sophistication." — Leonardo da Vinci\n\n## Core Ingredients\n- [x] **Guanciale** (200g, cured pork jowl diced into lardons)\n- [x] **Pecorino Romano** (100g, finely microplaned)\n- [x] **Fresh Eggs** (4 large yolks + 1 whole egg)\n- [ ] **Rigatoni or Spaghetti** (400g bronze-die cut)\n- [x] **Tellicherry Black Pepper** (freshly cracked)\n`,
+        sort_order: 0,
+        trashed: false,
+        custom_front_matter: {},
+      },
+    ],
+
     projects: [
       {
         id: proj1Id,
@@ -93,7 +142,7 @@ function getStarterData(userId) {
         name: 'NoteVault + Knowledge Vault 2.0 PWA',
         status: 'active',
         description:
-          'Unified second brain combining Google Drive OneNote Markdown storage with Supabase relational panels, Eisenhower decision matrix, and daily habits.',
+          'Unified second brain combining OneNote Markdown notes with Supabase relational panels, Eisenhower decision matrix, and daily habits.',
       },
       {
         id: proj2Id,
@@ -243,7 +292,7 @@ function getStarterData(userId) {
         id: crypto.randomUUID(),
         user_id: userId,
         title: 'Review Q4 Architecture Specifications with Supabase Team',
-        description: 'Verify Postgres Row Level Security policies and Dexie IndexedDB v4 migration.',
+        description: 'Verify Postgres Row Level Security policies and Dexie IndexedDB v5 migration.',
         urgent: true,
         important: true,
         priority: 'p1',
@@ -255,7 +304,7 @@ function getStarterData(userId) {
         tags: ['Architecture', 'Supabase', 'P1', 'Engineering'],
         subtasks: [
           { id: 'st-1', text: 'Audit RLS security policies on all tables', completed: true },
-          { id: 'st-2', text: 'Confirm Dexie outbox retry and conflict handling', completed: false },
+          { id: 'st-2', text: 'Confirm Dexie outbox retry and Supabase sync', completed: false },
         ],
       },
       {
@@ -327,8 +376,8 @@ function getStarterData(userId) {
       {
         id: crypto.randomUUID(),
         user_id: userId,
-        name: 'Dexie.js (IndexedDB v4)',
-        description: 'Client-side relational database caching 11 tables for zero-latency instant offline capability.',
+        name: 'Dexie.js (IndexedDB v5)',
+        description: 'Client-side relational database caching tables for zero-latency instant offline capability.',
       },
     ],
   };
@@ -450,9 +499,12 @@ async function main() {
 
   // If --seed flag is passed, populate starter datasets
   if (shouldSeed) {
-    console.log('\n🌱 Seeding full starter datasets to Supabase for all 5 domains...');
+    console.log('\n🌱 Seeding full starter datasets to Supabase for all domains (Notebooks + Vault)...');
     const starter = getStarterData(userId);
 
+    await insertTable('notebooks', starter.notebooks, token);
+    await insertTable('sections', starter.sections, token);
+    await insertTable('pages', starter.pages, token);
     await insertTable('projects', starter.projects, token);
     await insertTable('companies', starter.companies, token);
     await insertTable('people', starter.people, token);
@@ -466,6 +518,9 @@ async function main() {
   // Fetch all domain tables
   console.log('\n📥 Fetching all tables from Supabase...');
   let [
+    notebooks,
+    sections,
+    pages,
     projects,
     people,
     companies,
@@ -477,6 +532,9 @@ async function main() {
     panelEntries,
     technologies,
   ] = await Promise.all([
+    fetchTable('notebooks', token),
+    fetchTable('sections', token),
+    fetchTable('pages', token),
     fetchTable('projects', token),
     fetchTable('people', token),
     fetchTable('companies', token),
@@ -490,9 +548,12 @@ async function main() {
   ]);
 
   // If database tables are empty, auto-seed and fetch again
-  if (projects.length === 0 && people.length === 0 && companies.length === 0) {
+  if (projects.length === 0 && people.length === 0 && companies.length === 0 && notebooks.length === 0) {
     console.log('💡 Domain tables empty. Auto-populating initial starter data to Supabase...');
     const starter = getStarterData(userId);
+    await insertTable('notebooks', starter.notebooks, token);
+    await insertTable('sections', starter.sections, token);
+    await insertTable('pages', starter.pages, token);
     await insertTable('projects', starter.projects, token);
     await insertTable('companies', starter.companies, token);
     await insertTable('people', starter.people, token);
@@ -503,6 +564,9 @@ async function main() {
 
     // Refresh data
     [
+      notebooks,
+      sections,
+      pages,
       projects,
       people,
       companies,
@@ -511,6 +575,9 @@ async function main() {
       todos,
       technologies,
     ] = await Promise.all([
+      fetchTable('notebooks', token),
+      fetchTable('sections', token),
+      fetchTable('pages', token),
       fetchTable('projects', token),
       fetchTable('people', token),
       fetchTable('companies', token),
@@ -533,8 +600,9 @@ async function main() {
   const q3 = todos.filter((t) => t.urgent && !t.important);
   const q4 = todos.filter((t) => !t.urgent && !t.important);
 
-  console.log('\n📊 Summary of Fetched Data:');
+  console.log('\n📊 Summary of Fetched Supabase Data:');
   console.log('---------------------------------------------------------------');
+  console.log(`📓 Notebooks:          ${notebooks.length} notebooks (${sections.length} sections, ${pages.length} pages)`);
   console.log(`📁 Projects:           ${projects.length} total (${activeProjects.length} active)`);
   console.log(`👥 People & Contacts:   ${people.length} contacts`);
   console.log(`🏢 Companies:          ${companies.length} organizations`);
@@ -554,6 +622,9 @@ async function main() {
     fs.mkdirSync(dataDir, { recursive: true });
   }
 
+  fs.writeFileSync(path.join(dataDir, 'notebooks.json'), JSON.stringify(notebooks, null, 2));
+  fs.writeFileSync(path.join(dataDir, 'sections.json'), JSON.stringify(sections, null, 2));
+  fs.writeFileSync(path.join(dataDir, 'pages.json'), JSON.stringify(pages, null, 2));
   fs.writeFileSync(path.join(dataDir, 'projects.json'), JSON.stringify(projects, null, 2));
   fs.writeFileSync(path.join(dataDir, 'people.json'), JSON.stringify(people, null, 2));
   fs.writeFileSync(path.join(dataDir, 'companies.json'), JSON.stringify(companies, null, 2));
@@ -569,6 +640,9 @@ async function main() {
       supabaseUrl: SUPABASE_URL,
       userId,
       counts: {
+        notebooks: notebooks.length,
+        sections: sections.length,
+        pages: pages.length,
         projects: projects.length,
         people: people.length,
         companies: companies.length,
@@ -580,6 +654,9 @@ async function main() {
         technologies: technologies.length,
       },
     },
+    notebooks,
+    sections,
+    pages,
     projects,
     people,
     companies,
@@ -598,6 +675,9 @@ async function main() {
   );
 
   console.log(`\n💾 Saved formatted JSON exports to:`);
+  console.log(`   - ${path.join(dataDir, 'notebooks.json')}`);
+  console.log(`   - ${path.join(dataDir, 'sections.json')}`);
+  console.log(`   - ${path.join(dataDir, 'pages.json')}`);
   console.log(`   - ${path.join(dataDir, 'projects.json')}`);
   console.log(`   - ${path.join(dataDir, 'people.json')}`);
   console.log(`   - ${path.join(dataDir, 'companies.json')}`);
@@ -606,6 +686,19 @@ async function main() {
   console.log(`   - ${path.join(dataDir, 'vault_export.json')} (Consolidated multi-domain export)`);
 
   if (shouldSummary) {
+    console.log('\n================== NOTEBOOKS & PAGES ==================');
+    notebooks.forEach((nb) => {
+      console.log(`📓 Notebook: ${nb.name}`);
+      const nbSections = sections.filter((s) => s.notebook_id === nb.id);
+      nbSections.forEach((s) => {
+        console.log(`   📁 Section: ${s.name} (${s.color})`);
+        const secPages = pages.filter((p) => p.section_id === s.id);
+        secPages.forEach((p) => {
+          console.log(`      📄 Page: ${p.title} [Tags: ${(p.tags || []).join(', ')}]`);
+        });
+      });
+    });
+
     console.log('\n================== PROJECTS ==================');
     projects.forEach((p) => console.log(`• [${p.status?.toUpperCase() || 'ACTIVE'}] ${p.name}: ${p.description || 'No description'}`));
 

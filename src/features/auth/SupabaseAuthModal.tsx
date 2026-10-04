@@ -76,7 +76,7 @@ export const SupabaseAuthModal: React.FC = () => {
           </div>
           <h1 className="text-xl font-extrabold tracking-tight">Knowledge Vault</h1>
           <p className="text-xs text-ink-muted dark:text-ink-darkMuted leading-relaxed">
-            Second Brain Workspace &bull; Supabase Cloud &bull; Google Drive Notes
+            Second Brain Workspace &bull; Supabase Cloud Notes &bull; Offline Dexie DB
           </p>
         </div>
 

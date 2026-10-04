@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../features/auth/authStore';
 import { useNoteStore } from '../features/notes/noteStore';
-import { initGoogleAuth } from '../features/auth/googleAuth';
 import { syncEngine } from '../features/sync/syncEngine';
 import { SignInModal } from '../features/auth/SignInModal';
 import { WorkspaceLayout } from './WorkspaceLayout';
-
 import { useVaultStore } from '../features/vault/vaultStore';
 
 export const App: React.FC = () => {
-  const { user, isGuest, supabaseUser, initSupabaseAuth } = useAuthStore() as any;
+  const { user, isGuest, supabaseUser, initSupabaseAuth } = useAuthStore();
   const { loadInitialData } = useNoteStore();
   const { loadVaultData } = useVaultStore();
 
@@ -37,19 +35,23 @@ export const App: React.FC = () => {
     setIsDark((prev) => !prev);
   };
 
-  // Bootstrap data, Supabase Auth and Google Auth
+  // Bootstrap data and Supabase Auth
   useEffect(() => {
-    if (initSupabaseAuth) {
-      initSupabaseAuth();
-    }
+    initSupabaseAuth();
     loadInitialData();
     loadVaultData();
-    initGoogleAuth();
+  }, []);
 
-    if (user && !isGuest && navigator.onLine) {
-      syncEngine.flushOutbox();
+  // When user signs in or changes, refresh data and flush outbox
+  useEffect(() => {
+    if (supabaseUser?.id) {
+      loadInitialData();
+      loadVaultData();
+      if (navigator.onLine) {
+        syncEngine.flushOutbox();
+      }
     }
-  }, [user?.accessToken, supabaseUser?.id]);
+  }, [supabaseUser?.id]);
 
   return (
     <div className="h-full min-h-[100dvh] w-full flex flex-col overflow-hidden">

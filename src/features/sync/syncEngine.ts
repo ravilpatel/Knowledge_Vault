@@ -1,15 +1,14 @@
 import { db } from '../../db/db';
-import { DriveClient } from '../drive/driveClient';
+import { getSupabase } from '../../lib/supabaseClient';
 import { useAuthStore } from '../auth/authStore';
 import { useSyncStore } from './syncStore';
 import { OutboxActionType, OutboxItem, PageRecord, NotebookRecord, SectionRecord } from '../../types';
-import { sanitizeFilename, generateUUID } from '../../lib/id';
+import { generateUUID } from '../../lib/id';
 import { parsePageMarkdown, serializePageMarkdown } from '../../lib/frontmatter';
 
 class SyncEngine {
   private flushTimer: any = null;
   private isFlushing = false;
-  private rootFolderId: string | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -28,7 +27,7 @@ class SyncEngine {
         }
       });
 
-      // Periodic check every 60s
+      // Periodic background check every 60s
       setInterval(() => {
         this.flushOutbox();
       }, 60000);
@@ -36,7 +35,7 @@ class SyncEngine {
   }
 
   /**
-   * Queue an operation to the local outbox
+   * Queue an operation to the local Dexie outbox
    */
   async queueOutbox(
     action: OutboxActionType,
@@ -58,11 +57,11 @@ class SyncEngine {
     await db.outbox.add(item);
     await this.updatePendingCount();
 
-    // Debounce flush (1.5s as per spec 6.2)
+    // Debounce flush (1s)
     if (this.flushTimer) clearTimeout(this.flushTimer);
     this.flushTimer = setTimeout(() => {
       this.flushOutbox();
-    }, 1500);
+    }, 1000);
   }
 
   async updatePendingCount(): Promise<number> {
@@ -72,21 +71,12 @@ class SyncEngine {
   }
 
   /**
-   * Resolves or caches the NoteVault root folder in Google Drive
-   */
-  async ensureRootFolder(): Promise<string> {
-    if (this.rootFolderId) return this.rootFolderId;
-    const rootId = await DriveClient.getOrCreateRootFolder();
-    this.rootFolderId = rootId;
-    return rootId;
-  }
-
-  /**
-   * Flushes outbox operations to Google Drive
+   * Flushes local outbox operations to Supabase
    */
   async flushOutbox(): Promise<void> {
     const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-    const { user, isGuest } = useAuthStore.getState();
+    const { session, supabaseUser, isGuest } = useAuthStore.getState();
+    const userId = supabaseUser?.id || session?.user?.id;
 
     const pending = await this.updatePendingCount();
 
@@ -95,7 +85,7 @@ class SyncEngine {
       return;
     }
 
-    if (isGuest || !user || !user.accessToken) {
+    if (isGuest || !userId) {
       // Offline guest mode: data stays local in IndexedDB
       useSyncStore.getState().setStatus(pending > 0 ? 'offline' : 'synced');
       return;
@@ -107,12 +97,12 @@ class SyncEngine {
     useSyncStore.getState().setStatus('syncing');
 
     try {
-      const rootFolderId = await this.ensureRootFolder();
+      const sb = getSupabase();
       const items = await db.outbox.orderBy('id').toArray();
 
       for (const item of items) {
         try {
-          await this.processOutboxItem(item, rootFolderId);
+          await this.processOutboxItem(item, userId, sb);
           if (item.id) {
             await db.outbox.delete(item.id);
           }
@@ -126,7 +116,7 @@ class SyncEngine {
           }
           useSyncStore.getState().setErrorMessage(err.message || 'Sync error encountered');
           useSyncStore.getState().setStatus('error');
-          break; // Stop on error to preserve order
+          break; // Stop on error to preserve FIFO ordering
         }
       }
 
@@ -139,123 +129,100 @@ class SyncEngine {
     } catch (err: any) {
       console.error('Fatal flushOutbox error:', err);
       useSyncStore.getState().setStatus('error');
-      useSyncStore.getState().setErrorMessage(err.message || 'Failed to connect to Google Drive');
+      useSyncStore.getState().setErrorMessage(err.message || 'Failed to connect to Supabase Cloud');
     } finally {
       this.isFlushing = false;
     }
   }
 
   /**
-   * Process individual outbox item
+   * Process individual outbox item against Supabase REST API
    */
-  private async processOutboxItem(item: OutboxItem, rootFolderId: string): Promise<void> {
+  private async processOutboxItem(item: OutboxItem, userId: string, sb: any): Promise<void> {
     switch (item.action) {
-      case 'create_notebook': {
-        const nb = await db.notebooks.get(item.entityId);
-        if (!nb || nb.trashed) return;
-        if (!nb.driveFolderId) {
-          const folder = await DriveClient.createFolder(nb.name, rootFolderId);
-          await db.notebooks.update(nb.id, { driveFolderId: folder.id });
-
-          // Also create _attachments folder inside notebook
-          await DriveClient.createFolder('_attachments', folder.id);
-        }
-        break;
-      }
-
-      case 'rename_notebook': {
-        const nb = await db.notebooks.get(item.entityId);
-        if (nb && nb.driveFolderId) {
-          await DriveClient.renameFile(nb.driveFolderId, item.payload.name);
-        }
-        break;
-      }
-
-      case 'trash_notebook': {
-        const nb = await db.notebooks.get(item.entityId);
-        if (nb && nb.driveFolderId) {
-          await DriveClient.trashFile(nb.driveFolderId);
-        }
-        break;
-      }
-
+      case 'create_notebook':
+      case 'rename_notebook':
+      case 'trash_notebook':
       case 'restore_notebook': {
         const nb = await db.notebooks.get(item.entityId);
-        if (nb && nb.driveFolderId) {
-          await DriveClient.restoreFile(nb.driveFolderId);
-        }
+        if (!nb) return;
+
+        const row = {
+          id: nb.id,
+          user_id: userId,
+          name: nb.name,
+          color: nb.color || '#4F7CAC',
+          icon: nb.icon || 'book',
+          sort_order: nb.order ?? 0,
+          section_order: nb.sectionOrder || [],
+          trashed: Boolean(nb.trashed),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await sb.from('notebooks').upsert(row);
+        if (error) throw error;
+        await db.notebooks.update(nb.id, { user_id: userId, updated_at: row.updated_at });
         break;
       }
 
-      case 'create_section': {
+      case 'create_section':
+      case 'rename_section':
+      case 'trash_section':
+      case 'restore_section':
+      case 'update_meta': {
         const sec = await db.sections.get(item.entityId);
-        if (!sec || sec.trashed) return;
+        if (!sec) return;
 
-        const parentNb = await db.notebooks.get(sec.notebookId);
-        if (!parentNb || !parentNb.driveFolderId) {
-          // Parent notebook folder not yet created
-          throw new Error('Parent notebook folder not ready');
-        }
+        const row = {
+          id: sec.id,
+          notebook_id: sec.notebookId,
+          user_id: userId,
+          name: sec.name,
+          color: sec.color || 'peach',
+          icon: sec.icon || null,
+          sort_order: sec.order ?? 0,
+          page_order: sec.pageOrder || [],
+          trashed: Boolean(sec.trashed),
+          updated_at: new Date().toISOString(),
+        };
 
-        if (!sec.driveFolderId) {
-          const folder = await DriveClient.createFolder(sec.name, parentNb.driveFolderId);
-          await db.sections.update(sec.id, { driveFolderId: folder.id });
-        }
-        break;
-      }
-
-      case 'rename_section': {
-        const sec = await db.sections.get(item.entityId);
-        if (sec && sec.driveFolderId) {
-          await DriveClient.renameFile(sec.driveFolderId, item.payload.name);
-        }
-        break;
-      }
-
-      case 'trash_section': {
-        const sec = await db.sections.get(item.entityId);
-        if (sec && sec.driveFolderId) {
-          await DriveClient.trashFile(sec.driveFolderId);
-        }
-        break;
-      }
-
-      case 'restore_section': {
-        const sec = await db.sections.get(item.entityId);
-        if (sec && sec.driveFolderId) {
-          await DriveClient.restoreFile(sec.driveFolderId);
-        }
+        const { error } = await sb.from('sections').upsert(row);
+        if (error) throw error;
+        await db.sections.update(sec.id, { user_id: userId, updated_at: row.updated_at });
         break;
       }
 
       case 'create_page':
-      case 'update_page': {
+      case 'update_page':
+      case 'rename_page':
+      case 'move_page':
+      case 'trash_page':
+      case 'restore_page': {
         const page = await db.pages.get(item.entityId);
-        if (!page || page.trashed) return;
+        if (!page) return;
 
-        const parentSec = await db.sections.get(page.sectionId);
-        const parentFolderId = parentSec?.driveFolderId;
-        if (!parentFolderId) {
-          throw new Error('Parent section folder not ready in Drive');
-        }
+        // Check for remote conflict if updating existing page
+        if (item.action === 'update_page' && page.updated_at) {
+          const { data: remoteData } = await sb
+            .from('pages')
+            .select('id, title, content, raw_markdown, updated_at')
+            .eq('id', page.id)
+            .maybeSingle();
 
-        const fileName = `${sanitizeFilename(page.title)}.md`;
-
-        if (page.driveFileId) {
-          // SECTION 6.4: CONFLICT HANDLING:
-          // Before an update, compare stored remoteVersion with current remote
-          const remoteMeta = await DriveClient.getFileMetadata(page.driveFileId);
-          const currentRemoteVersion = remoteMeta.headRevisionId || remoteMeta.version || remoteMeta.modifiedTime;
-
-          if (page.remoteVersion && currentRemoteVersion && page.remoteVersion !== currentRemoteVersion && page.localDirty) {
-            // Keep both!
-            const remoteText = await DriveClient.downloadFileText(page.driveFileId);
-            const parsedRemote = parsePageMarkdown(remoteText, page.title);
-
-            // 1. Create conflict copy for local version
+          if (
+            remoteData &&
+            remoteData.updated_at &&
+            page.updated_at &&
+            new Date(remoteData.updated_at).getTime() > new Date(page.updated_at).getTime() &&
+            page.localDirty &&
+            remoteData.content !== page.content
+          ) {
+            // Keep both: Create conflict copy
             const timestampStr = new Date().toISOString().replace(/:/g, '-').slice(0, 16).replace('T', ' ');
             const conflictTitle = `${page.title} (conflict ${timestampStr})`;
             const conflictPageId = generateUUID();
+
+            const parsedRemote = parsePageMarkdown(remoteData.raw_markdown || remoteData.content, remoteData.title);
 
             const conflictFrontMatter = {
               ...parsedRemote.frontMatter,
@@ -269,8 +236,9 @@ class SyncEngine {
               id: conflictPageId,
               notebookId: page.notebookId,
               sectionId: page.sectionId,
+              user_id: userId,
               title: conflictTitle,
-              tags: page.tags,
+              tags: page.tags || [],
               favorite: false,
               content: page.content,
               rawMarkdown: conflictRaw,
@@ -278,96 +246,57 @@ class SyncEngine {
               updated: new Date().toISOString(),
               localDirty: true,
               trashed: false,
-              order: page.order + 1,
+              order: (page.order || 0) + 1,
             };
 
             await db.pages.put(conflictRecord);
 
-            // 2. Overwrite main page record with remote version
-            await db.pages.update(page.id, {
-              title: parsedRemote.frontMatter.title,
-              tags: parsedRemote.frontMatter.tags || [],
-              favorite: Boolean(parsedRemote.frontMatter.favorite),
-              content: parsedRemote.body,
-              rawMarkdown: remoteText,
-              updated: parsedRemote.frontMatter.updated || new Date().toISOString(),
-              remoteVersion: currentRemoteVersion,
-              localDirty: false,
-            });
-
-            // 3. Trigger Conflict Modal in UI
+            // Trigger conflict modal in UI
             useSyncStore.getState().setActiveConflict({
               pageId: page.id,
               title: page.title,
               localContent: page.content,
-              remoteContent: parsedRemote.body,
+              remoteContent: remoteData.content,
               localUpdated: page.updated,
-              remoteUpdated: parsedRemote.frontMatter.updated || 'Remote',
+              remoteUpdated: remoteData.updated_at,
               localRecord: page,
               remoteRecord: parsedRemote.frontMatter,
             });
 
-            // Queue creation of the conflict file in Drive
+            // Queue the conflict page for sync
             await this.queueOutbox('create_page', conflictPageId, page.notebookId, page.sectionId, {
               title: conflictTitle,
               rawMarkdown: conflictRaw,
             });
-
             return;
           }
-
-          // Versions match, normal update
-          const updatedFile = await DriveClient.uploadTextFile(fileName, page.rawMarkdown, parentFolderId, page.driveFileId);
-          await db.pages.update(page.id, {
-            remoteVersion: updatedFile.headRevisionId || updatedFile.version || updatedFile.modifiedTime,
-            localDirty: false,
-          });
-        } else {
-          // New file upload
-          const createdFile = await DriveClient.uploadTextFile(fileName, page.rawMarkdown, parentFolderId);
-          await db.pages.update(page.id, {
-            driveFileId: createdFile.id,
-            remoteVersion: createdFile.headRevisionId || createdFile.version || createdFile.modifiedTime,
-            localDirty: false,
-          });
         }
-        break;
-      }
 
-      case 'rename_page': {
-        const page = await db.pages.get(item.entityId);
-        if (page && page.driveFileId) {
-          const newFileName = `${sanitizeFilename(item.payload.title)}.md`;
-          await DriveClient.renameFile(page.driveFileId, newFileName);
-        }
-        break;
-      }
+        const now = new Date().toISOString();
+        const row = {
+          id: page.id,
+          notebook_id: page.notebookId,
+          section_id: page.sectionId,
+          user_id: userId,
+          title: page.title,
+          tags: page.tags || [],
+          favorite: Boolean(page.favorite),
+          content: page.content || '',
+          raw_markdown: page.rawMarkdown || '',
+          sort_order: page.order ?? 0,
+          trashed: Boolean(page.trashed),
+          custom_front_matter: page.customFrontMatter || {},
+          updated_at: now,
+        };
 
-      case 'move_page': {
-        const page = await db.pages.get(item.entityId);
-        if (!page || !page.driveFileId) return;
+        const { error } = await sb.from('pages').upsert(row);
+        if (error) throw error;
 
-        const oldSec = await db.sections.get(item.payload.oldSectionId);
-        const newSec = await db.sections.get(item.payload.newSectionId);
-        if (oldSec?.driveFolderId && newSec?.driveFolderId) {
-          await DriveClient.moveFile(page.driveFileId, newSec.driveFolderId, oldSec.driveFolderId);
-        }
-        break;
-      }
-
-      case 'trash_page': {
-        const page = await db.pages.get(item.entityId);
-        if (page && page.driveFileId) {
-          await DriveClient.trashFile(page.driveFileId);
-        }
-        break;
-      }
-
-      case 'restore_page': {
-        const page = await db.pages.get(item.entityId);
-        if (page && page.driveFileId) {
-          await DriveClient.restoreFile(page.driveFileId);
-        }
+        await db.pages.update(page.id, {
+          user_id: userId,
+          updated_at: now,
+          localDirty: false,
+        });
         break;
       }
 
@@ -375,128 +304,241 @@ class SyncEngine {
         const att = await db.attachments.get(item.entityId);
         if (!att || !att.blob) return;
 
-        const nb = await db.notebooks.get(att.notebookId);
-        if (!nb || !nb.driveFolderId) return;
+        const storagePath = `${userId}/${att.filename}`;
 
-        // Find or create _attachments folder
-        const nbChildren = await DriveClient.listChildren(nb.driveFolderId);
-        let attachFolder = nbChildren.find((f) => f.name === '_attachments' && f.mimeType === 'application/vnd.google-apps.folder');
-        if (!attachFolder) {
-          attachFolder = await DriveClient.createFolder('_attachments', nb.driveFolderId);
+        // Attempt Supabase Storage upload
+        try {
+          const { error: uploadError } = await sb.storage
+            .from('notevault-attachments')
+            .upload(storagePath, att.blob, {
+              upsert: true,
+              contentType: att.mimeType,
+            });
+
+          if (!uploadError) {
+            const { data: pubUrlData } = sb.storage
+              .from('notevault-attachments')
+              .getPublicUrl(storagePath);
+
+            await db.attachments.update(att.id, {
+              storagePath: pubUrlData?.publicUrl || storagePath,
+              user_id: userId,
+              localDirty: false,
+            });
+
+            // Also record in note_attachments metadata table
+            await sb.from('note_attachments').upsert({
+              id: att.id,
+              notebook_id: att.notebookId,
+              user_id: userId,
+              filename: att.filename,
+              relative_path: att.relativePath,
+              storage_path: pubUrlData?.publicUrl || storagePath,
+              mime_type: att.mimeType,
+              size: att.size || 0,
+              created_at: att.created || new Date().toISOString(),
+            });
+          }
+        } catch (storageErr) {
+          console.warn('Supabase storage upload optional warning:', storageErr);
         }
-
-        const uploaded = await DriveClient.uploadBinaryAttachment(att.filename, att.blob, attachFolder.id);
-        await db.attachments.update(att.id, {
-          driveFileId: uploaded.id,
-          localDirty: false,
-        });
         break;
       }
     }
   }
 
   /**
-   * SECTION 4.6: RECOVERY GUARANTEE
-   * Rebuilds all notebooks, sections, pages, tags, favorites, and search index purely from Google Drive.
+   * Migrates all local Dexie notes to Supabase upon first login
    */
-  async rebuildFromDrive(): Promise<void> {
-    const { user, isGuest } = useAuthStore.getState();
-    if (isGuest || !user || !user.accessToken) {
-      throw new Error('Sign in with Google Drive to rebuild local data');
+  async migrateLocalNotesToSupabase(userId: string): Promise<void> {
+    try {
+      const sb = getSupabase();
+
+      // Check if remote already has notebooks for this user
+      const { data: remoteNotebooks, error } = await sb
+        .from('notebooks')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+
+      if (error) {
+        console.warn('Could not check remote notebooks:', error.message);
+        return;
+      }
+
+      const localNotebooks = await db.notebooks.toArray();
+      const localSections = await db.sections.toArray();
+      const localPages = await db.pages.toArray();
+
+      // If remote is empty and local has notes, upload all local notes
+      if ((!remoteNotebooks || remoteNotebooks.length === 0) && localNotebooks.length > 0) {
+        console.log('🔄 Migrating local notes to Supabase for user:', userId);
+
+        for (const nb of localNotebooks) {
+          await sb.from('notebooks').upsert({
+            id: nb.id,
+            user_id: userId,
+            name: nb.name,
+            color: nb.color || '#4F7CAC',
+            icon: nb.icon || 'book',
+            sort_order: nb.order ?? 0,
+            section_order: nb.sectionOrder || [],
+            trashed: Boolean(nb.trashed),
+            updated_at: nb.updated_at || new Date().toISOString(),
+          });
+          await db.notebooks.update(nb.id, { user_id: userId });
+        }
+
+        for (const sec of localSections) {
+          await sb.from('sections').upsert({
+            id: sec.id,
+            notebook_id: sec.notebookId,
+            user_id: userId,
+            name: sec.name,
+            color: sec.color || 'peach',
+            icon: sec.icon || null,
+            sort_order: sec.order ?? 0,
+            page_order: sec.pageOrder || [],
+            trashed: Boolean(sec.trashed),
+            updated_at: sec.updated_at || new Date().toISOString(),
+          });
+          await db.sections.update(sec.id, { user_id: userId });
+        }
+
+        for (const pg of localPages) {
+          await sb.from('pages').upsert({
+            id: pg.id,
+            notebook_id: pg.notebookId,
+            section_id: pg.sectionId,
+            user_id: userId,
+            title: pg.title,
+            tags: pg.tags || [],
+            favorite: Boolean(pg.favorite),
+            content: pg.content || '',
+            raw_markdown: pg.rawMarkdown || '',
+            sort_order: pg.order ?? 0,
+            trashed: Boolean(pg.trashed),
+            custom_front_matter: pg.customFrontMatter || {},
+            updated_at: pg.updated_at || new Date().toISOString(),
+          });
+          await db.pages.update(pg.id, { user_id: userId, localDirty: false });
+        }
+
+        console.log('✅ Local notes successfully migrated to Supabase Cloud!');
+      } else if (remoteNotebooks && remoteNotebooks.length > 0) {
+        // User already has remote data, pull latest from Supabase
+        await this.pullFromSupabase(userId);
+      }
+    } catch (err) {
+      console.warn('Note migration warning:', err);
+    }
+  }
+
+  /**
+   * Pulls all notebooks, sections, and pages from Supabase into local Dexie
+   */
+  async pullFromSupabase(userId: string): Promise<void> {
+    const sb = getSupabase();
+
+    const [nbRes, secRes, pgRes] = await Promise.all([
+      sb.from('notebooks').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
+      sb.from('sections').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
+      sb.from('pages').select('*').eq('user_id', userId).order('sort_order', { ascending: true }),
+    ]);
+
+    if (nbRes.data && nbRes.data.length > 0) {
+      for (const row of nbRes.data) {
+        const record: NotebookRecord = {
+          id: row.id,
+          user_id: row.user_id,
+          name: row.name,
+          color: row.color,
+          icon: row.icon,
+          order: row.sort_order ?? 0,
+          sectionOrder: Array.isArray(row.section_order) ? row.section_order : [],
+          trashed: Boolean(row.trashed),
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        await db.notebooks.put(record);
+      }
+    }
+
+    if (secRes.data && secRes.data.length > 0) {
+      for (const row of secRes.data) {
+        const record: SectionRecord = {
+          id: row.id,
+          notebookId: row.notebook_id,
+          user_id: row.user_id,
+          name: row.name,
+          color: row.color,
+          icon: row.icon,
+          order: row.sort_order ?? 0,
+          pageOrder: Array.isArray(row.page_order) ? row.page_order : [],
+          trashed: Boolean(row.trashed),
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        await db.sections.put(record);
+      }
+    }
+
+    if (pgRes.data && pgRes.data.length > 0) {
+      for (const row of pgRes.data) {
+        const record: PageRecord = {
+          id: row.id,
+          notebookId: row.notebook_id,
+          sectionId: row.section_id,
+          user_id: row.user_id,
+          title: row.title,
+          tags: Array.isArray(row.tags) ? row.tags : [],
+          favorite: Boolean(row.favorite),
+          content: row.content || '',
+          rawMarkdown: row.raw_markdown || row.content || '',
+          created: row.created_at || new Date().toISOString(),
+          updated: row.updated_at || new Date().toISOString(),
+          localDirty: false,
+          trashed: Boolean(row.trashed),
+          order: row.sort_order ?? 0,
+          customFrontMatter: row.custom_front_matter || {},
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+        };
+        await db.pages.put(record);
+      }
+    }
+  }
+
+  /**
+   * RECOVERY GUARANTEE:
+   * Rebuilds all notebooks, sections, and pages cleanly from Supabase Cloud.
+   */
+  async rebuildFromSupabase(): Promise<void> {
+    const { supabaseUser, session, isGuest } = useAuthStore.getState();
+    const userId = supabaseUser?.id || session?.user?.id;
+
+    if (isGuest || !userId) {
+      throw new Error('Sign in to Supabase to rebuild local data from cloud');
     }
 
     useSyncStore.getState().setStatus('syncing');
 
     try {
-      const rootFolderId = await this.ensureRootFolder();
-
-      // Clear local database
+      // Clear local notebook cache
       await db.pages.clear();
       await db.sections.clear();
       await db.notebooks.clear();
-      await db.attachments.clear();
       await db.outbox.clear();
 
-      // 1. List notebooks (folders directly under NoteVault root)
-      const rootChildren = await DriveClient.listChildren(rootFolderId, true);
-      const notebookFolders = rootChildren.filter(
-        (f) => f.mimeType === 'application/vnd.google-apps.folder' && f.name !== '_attachments'
-      );
-
-      let nbOrder = 0;
-      for (const nbFolder of notebookFolders) {
-        const nbRecord: NotebookRecord = {
-          id: generateUUID(),
-          driveFolderId: nbFolder.id,
-          name: nbFolder.name,
-          color: '#4F7CAC',
-          icon: 'book',
-          order: nbOrder++,
-          sectionOrder: [],
-          trashed: Boolean(nbFolder.trashed),
-        };
-        await db.notebooks.put(nbRecord);
-
-        // 2. List sections (subfolders under notebook)
-        const nbChildren = await DriveClient.listChildren(nbFolder.id, true);
-        const sectionFolders = nbChildren.filter(
-          (f) => f.mimeType === 'application/vnd.google-apps.folder' && f.name !== '_attachments'
-        );
-
-        let secOrder = 0;
-        for (const secFolder of sectionFolders) {
-          const secRecord: SectionRecord = {
-            id: generateUUID(),
-            driveFolderId: secFolder.id,
-            notebookId: nbRecord.id,
-            name: secFolder.name,
-            color: 'peach',
-            order: secOrder++,
-            pageOrder: [],
-            trashed: Boolean(secFolder.trashed),
-          };
-          await db.sections.put(secRecord);
-
-          // 3. List pages (.md files under section)
-          const secChildren = await DriveClient.listChildren(secFolder.id, true);
-          const pageFiles = secChildren.filter((f) => f.name.endsWith('.md'));
-
-          let pgOrder = 0;
-          for (const pageFile of pageFiles) {
-            const rawContent = await DriveClient.downloadFileText(pageFile.id);
-            const fallbackTitle = pageFile.name.replace(/\.md$/, '');
-            const parsed = parsePageMarkdown(rawContent, fallbackTitle);
-
-            const pgRecord: PageRecord = {
-              id: parsed.frontMatter.id || generateUUID(),
-              driveFileId: pageFile.id,
-              notebookId: nbRecord.id,
-              sectionId: secRecord.id,
-              title: parsed.frontMatter.title || fallbackTitle,
-              tags: parsed.frontMatter.tags || [],
-              favorite: Boolean(parsed.frontMatter.favorite),
-              content: parsed.body,
-              rawMarkdown: rawContent,
-              created: parsed.frontMatter.created || pageFile.modifiedTime || new Date().toISOString(),
-              updated: parsed.frontMatter.updated || pageFile.modifiedTime || new Date().toISOString(),
-              remoteVersion: pageFile.headRevisionId || pageFile.version || pageFile.modifiedTime,
-              localDirty: false,
-              trashed: Boolean(pageFile.trashed),
-              order: pgOrder++,
-              customFrontMatter: parsed.frontMatter,
-            };
-            await db.pages.put(pgRecord);
-          }
-        }
-      }
+      await this.pullFromSupabase(userId);
 
       useSyncStore.getState().setStatus('synced');
       useSyncStore.getState().setLastSyncTime(Date.now());
       useSyncStore.getState().setErrorMessage(null);
     } catch (err: any) {
-      console.error('Rebuild from Drive failed:', err);
+      console.error('Rebuild from Supabase failed:', err);
       useSyncStore.getState().setStatus('error');
-      useSyncStore.getState().setErrorMessage(err.message || 'Failed to rebuild local data from Google Drive');
+      useSyncStore.getState().setErrorMessage(err.message || 'Failed to rebuild local data from Supabase');
       throw err;
     }
   }

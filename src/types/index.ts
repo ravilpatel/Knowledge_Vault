@@ -226,9 +226,9 @@ export interface PageFrontMatter {
 
 export interface PageRecord {
   id: string; // UUID (front-matter id)
-  driveFileId?: string; // Google Drive file ID (runtime primary key)
   notebookId: string; // Parent Notebook ID
   sectionId: string; // Parent Section ID (or 'general' if root notebook page)
+  user_id?: string; // Supabase user UUID
   title: string;
   tags: string[];
   favorite: boolean;
@@ -236,42 +236,48 @@ export interface PageRecord {
   rawMarkdown: string; // Full markdown content including front matter
   created: string; // ISO date
   updated: string; // ISO date
-  remoteVersion?: string; // Drive headRevisionId / modifiedTime
   localDirty: boolean; // True if locally edited and pending sync
   trashed: boolean;
   order: number;
   customFrontMatter?: Record<string, unknown>; // Preserved unknown YAML keys
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface SectionRecord {
-  id: string; // Section UUID or Drive folder ID
-  driveFolderId?: string;
+  id: string; // Section UUID
   notebookId: string;
+  user_id?: string;
   name: string;
   color: SectionColor;
   icon?: string;
   order: number;
   pageOrder: string[];
   trashed: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface NotebookRecord {
-  id: string; // Notebook UUID or Drive folder ID
-  driveFolderId?: string;
+  id: string; // Notebook UUID
+  user_id?: string;
   name: string;
   color?: string;
   icon?: string;
   order: number;
   sectionOrder: string[];
   trashed: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface AttachmentRecord {
   id: string;
   notebookId: string;
-  driveFileId?: string;
+  user_id?: string;
   filename: string;
   relativePath: string; // e.g. ../_attachments/20260103-a1b2c3-diagram.png
+  storagePath?: string; // Supabase Storage public/signed URL or path
   mimeType: string;
   blob?: Blob;
   size: number;
@@ -311,7 +317,6 @@ export interface OutboxItem {
 
 export interface SyncStateRecord {
   id: string; // 'singleton'
-  startPageToken?: string;
   lastSyncTime?: number;
   status: 'synced' | 'syncing' | 'offline' | 'error';
   pendingCount: number;
@@ -337,12 +342,13 @@ export interface SectionManifest {
 }
 
 export interface UserProfile {
+  id?: string;
   email: string;
   name: string;
   picture?: string;
-  accessToken: string;
-  expiresAt: number;
-  scope: string;
+  accessToken?: string;
+  expiresAt?: number;
+  scope?: string;
 }
 
 export interface ConflictItem {

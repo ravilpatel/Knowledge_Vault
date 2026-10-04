@@ -107,6 +107,31 @@ export class NoteVaultDatabase extends Dexie {
       tags: 'id, user_id, name',
       user_settings: 'id, user_id',
     });
+
+    this.version(5).stores({
+      notebooks: 'id, user_id, name, order, trashed, updated_at',
+      sections: 'id, notebookId, user_id, name, color, order, trashed, updated_at',
+      pages: 'id, notebookId, sectionId, user_id, title, *tags, favorite, updated, localDirty, trashed, order, updated_at',
+      attachments: 'id, notebookId, user_id, filename, relativePath',
+      outbox: '++id, action, entityId, notebookId, sectionId, createdAt, retryCount',
+      syncState: 'id',
+      settings: 'key',
+      todos: 'id, title, urgent, important, completed, dueDate, category, createdAt',
+      habits: 'id, title, category, frequency, streak, bestStreak, createdAt',
+      habit_logs: 'id, habit_id, user_id, date, completed',
+      expenses: 'id, amount, description, category, type, date, createdAt',
+      news: 'id, title, category, source, publishedAt, isRead',
+      panels: 'id, user_id, name, sort_order, created_at',
+      panel_fields: 'id, panel_id, field_key, field_type, field_order',
+      panel_entries: 'id, panel_id, user_id, created_at, updated_at',
+      people: 'id, user_id, name, created_at',
+      companies: 'id, user_id, name, created_at',
+      technologies: 'id, user_id, name, created_at',
+      projects: 'id, user_id, name, created_at',
+      categories: 'id, user_id, name',
+      tags: 'id, user_id, name',
+      user_settings: 'id, user_id',
+    });
   }
 }
 

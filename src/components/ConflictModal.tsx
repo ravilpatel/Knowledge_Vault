@@ -92,7 +92,7 @@ export const ConflictModal: React.FC = () => {
             <div>
               <h3 className="text-sm font-bold">Sync Conflict Detected: {activeConflict.title}</h3>
               <p className="text-xs opacity-90">
-                This note was modified both locally and on Google Drive. Choose how to resolve it.
+                This note was modified both locally and on Supabase Cloud. Choose how to resolve it.
               </p>
             </div>
           </div>
@@ -125,7 +125,7 @@ export const ConflictModal: React.FC = () => {
           <div className="flex flex-col h-full overflow-hidden">
             <div className="p-3 bg-surface-subtle dark:bg-surface-subtleDark border-b border-border-subtle dark:border-border-darkSubtle flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-primary dark:text-ink-darkPrimary">
-                <Cloud className="w-3.5 h-3.5 text-indigo-500" /> Google Drive Remote Version
+                <Cloud className="w-3.5 h-3.5 text-indigo-500" /> Supabase Cloud Remote Version
               </span>
               <span className="text-[11px] text-ink-muted">
                 Edited {formatRelativeTime(activeConflict.remoteUpdated)}
@@ -147,7 +147,7 @@ export const ConflictModal: React.FC = () => {
             <button
               onClick={handleKeepLocal}
               className="px-3.5 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark text-xs font-semibold text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Overwrite Google Drive with your local version"
+              title="Overwrite Supabase Cloud with your local version"
             >
               Keep Local Only
             </button>
@@ -155,7 +155,7 @@ export const ConflictModal: React.FC = () => {
             <button
               onClick={handleKeepRemote}
               className="px-3.5 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark text-xs font-semibold text-ink-primary dark:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-              title="Discard your local edits and keep Drive's version"
+              title="Discard your local edits and keep Supabase's version"
             >
               Keep Remote Only
             </button>

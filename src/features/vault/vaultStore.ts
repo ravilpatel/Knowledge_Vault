@@ -814,7 +814,7 @@ export const useVaultStore = create<VaultState>((set, get) => ({
             name: 'NoteVault + Knowledge Vault 2.0 PWA',
             status: 'Active',
             description:
-              'Unified personal knowledge ecosystem combining OneNote-style Google Drive Markdown notes with Supabase-powered Workspace Panels, Eisenhower tasks, and habit streaks.',
+              'Unified personal knowledge ecosystem combining OneNote-style Supabase Markdown notes with Workspace Panels, Eisenhower tasks, and habit streaks.',
             created_at: new Date().toISOString(),
           },
           {
