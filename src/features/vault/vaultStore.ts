@@ -3,6 +3,8 @@ import { db } from '../../db/db';
 import { getSupabase } from '../../lib/supabaseClient';
 import {
   TodoItem,
+  TaskScope,
+  TaskStatus,
   HabitItem,
   ExpenseItem,
   NewsItem,
@@ -65,8 +67,11 @@ interface VaultState {
   updateEntry: (entryId: string, data: Record<string, any>) => Promise<void>;
   deleteEntry: (entryId: string) => Promise<void>;
 
-  // Task / Eisenhower Actions
+  // Task / Kanban Actions
   addTodo: (todo: Omit<TodoItem, 'id' | 'createdAt'>) => Promise<TodoItem>;
+  updateTodo: (id: string, updates: Partial<TodoItem>) => Promise<void>;
+  updateTodoStatus: (id: string, status: TaskStatus) => Promise<void>;
+  updateTodoScope: (id: string, scope: TaskScope) => Promise<void>;
   toggleTodoComplete: (id: string) => Promise<void>;
   updateTodoQuadrant: (id: string, urgent: boolean, important: boolean) => Promise<void>;
   deleteTodo: (id: string) => Promise<void>;
@@ -344,16 +349,27 @@ export const useVaultStore = create<VaultState>((set, get) => ({
           if (tRes.status === 'fulfilled' && tRes.value.data) {
             const remoteTodos: TodoItem[] = tRes.value.data.map((r: any) => ({
               id: r.id,
+              user_id: r.user_id,
               title: r.title,
               description: r.description || '',
               urgent: !!r.urgent,
               important: !!r.important,
               dueDate: r.due_date || undefined,
+              dueTime: r.due_time || undefined,
               completed: !!r.completed || r.status === 'done',
               completedAt: r.completed_at || undefined,
               category: r.category || 'General',
-              priority: (r.priority === 'p1' ? 'high' : r.priority === 'p2' ? 'medium' : 'low') as 'low' | 'medium' | 'high',
+              scope: (r.scope || 'work') as TaskScope,
+              status: (r.status || (r.completed ? 'done' : 'todo')) as TaskStatus,
+              priority: (r.priority || (r.urgent && r.important ? 'p1' : r.important ? 'p2' : 'p3')) as any,
+              projectId: r.project_id || undefined,
+              tags: Array.isArray(r.tags) ? r.tags : [],
+              subtasks: Array.isArray(r.subtasks) ? r.subtasks : [],
+              estimatedMinutes: r.estimated_minutes || undefined,
+              recurrence: r.recurrence || 'none',
+              orderIndex: r.order_index ?? 0,
               createdAt: r.created_at || new Date().toISOString(),
+              updatedAt: r.updated_at || undefined,
             }));
             if (remoteTodos.length > 0) {
               await db.todos.clear();
@@ -1075,7 +1091,16 @@ export const useVaultStore = create<VaultState>((set, get) => ({
   addTodo: async (item) => {
     const id = generateUUID();
     const now = new Date().toISOString();
-    const newTodo: TodoItem = { ...item, id, createdAt: now };
+    const newTodo: TodoItem = {
+      ...item,
+      id,
+      scope: item.scope || 'work',
+      status: item.status || (item.completed ? 'done' : 'todo'),
+      priority: item.priority || (item.urgent && item.important ? 'p1' : item.important ? 'p2' : 'p3'),
+      tags: item.tags || [],
+      subtasks: item.subtasks || [],
+      createdAt: now,
+    };
 
     await db.todos.put(newTodo);
     set((state) => ({ todos: [newTodo, ...state.todos] }));
@@ -1085,42 +1110,113 @@ export const useVaultStore = create<VaultState>((set, get) => ({
       sb.from('todos').insert({
         id: newTodo.id,
         title: newTodo.title,
-        description: newTodo.description,
+        description: newTodo.description || '',
         urgent: newTodo.urgent,
         important: newTodo.important,
         due_date: newTodo.dueDate,
+        due_time: newTodo.dueTime,
         completed: newTodo.completed,
+        completed_at: newTodo.completedAt,
+        status: newTodo.status,
+        scope: newTodo.scope,
+        priority: newTodo.priority,
+        project_id: newTodo.projectId || null,
+        tags: newTodo.tags,
+        subtasks: newTodo.subtasks,
+        estimated_minutes: newTodo.estimatedMinutes || null,
+        recurrence: newTodo.recurrence || 'none',
+        order_index: newTodo.orderIndex || 0,
       })
     );
 
     return newTodo;
   },
 
-  toggleTodoComplete: async (id) => {
-    const target = get().todos.find((t) => t.id === id);
-    if (!target) return;
-    const completed = !target.completed;
-    const completedAt = completed ? new Date().toISOString() : undefined;
-
-    await db.todos.update(id, { completed, completedAt });
+  updateTodo: async (id, updates) => {
+    const now = new Date().toISOString();
+    const finalUpdates = { ...updates, updatedAt: now };
+    await db.todos.update(id, finalUpdates);
     set((state) => ({
-      todos: state.todos.map((t) => (t.id === id ? { ...t, completed, completedAt } : t)),
+      todos: state.todos.map((t) => (t.id === id ? { ...t, ...finalUpdates } : t)),
+    }));
+
+    const sbPayload: Record<string, any> = { updated_at: now };
+    if (updates.title !== undefined) sbPayload.title = updates.title;
+    if (updates.description !== undefined) sbPayload.description = updates.description;
+    if (updates.urgent !== undefined) sbPayload.urgent = updates.urgent;
+    if (updates.important !== undefined) sbPayload.important = updates.important;
+    if (updates.dueDate !== undefined) sbPayload.due_date = updates.dueDate;
+    if (updates.dueTime !== undefined) sbPayload.due_time = updates.dueTime;
+    if (updates.completed !== undefined) sbPayload.completed = updates.completed;
+    if (updates.completedAt !== undefined) sbPayload.completed_at = updates.completedAt;
+    if (updates.status !== undefined) sbPayload.status = updates.status;
+    if (updates.scope !== undefined) sbPayload.scope = updates.scope;
+    if (updates.priority !== undefined) sbPayload.priority = updates.priority;
+    if (updates.projectId !== undefined) sbPayload.project_id = updates.projectId;
+    if (updates.tags !== undefined) sbPayload.tags = updates.tags;
+    if (updates.subtasks !== undefined) sbPayload.subtasks = updates.subtasks;
+
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('todos').update(sbPayload).eq('id', id));
+  },
+
+  updateTodoStatus: async (id, status) => {
+    const isDone = status === 'done';
+    const completedAt = isDone ? new Date().toISOString() : undefined;
+    const now = new Date().toISOString();
+
+    await db.todos.update(id, { status, completed: isDone, completedAt, updatedAt: now });
+    set((state) => ({
+      todos: state.todos.map((t) =>
+        t.id === id ? { ...t, status, completed: isDone, completedAt, updatedAt: now } : t
+      ),
     }));
 
     const sb = getSupabase();
     safeSupabaseCall(
-      sb.from('todos').update({ completed, completed_at: completedAt }).eq('id', id)
+      sb.from('todos').update({ status, completed: isDone, completed_at: completedAt, updated_at: now }).eq('id', id)
+    );
+  },
+
+  updateTodoScope: async (id, scope) => {
+    const now = new Date().toISOString();
+    await db.todos.update(id, { scope, updatedAt: now });
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, scope, updatedAt: now } : t)),
+    }));
+
+    const sb = getSupabase();
+    safeSupabaseCall(sb.from('todos').update({ scope, updated_at: now }).eq('id', id));
+  },
+
+  toggleTodoComplete: async (id) => {
+    const target = get().todos.find((t) => t.id === id);
+    if (!target) return;
+    const completed = !target.completed;
+    const status: TaskStatus = completed ? 'done' : 'todo';
+    const completedAt = completed ? new Date().toISOString() : undefined;
+    const now = new Date().toISOString();
+
+    await db.todos.update(id, { completed, status, completedAt, updatedAt: now });
+    set((state) => ({
+      todos: state.todos.map((t) => (t.id === id ? { ...t, completed, status, completedAt, updatedAt: now } : t)),
+    }));
+
+    const sb = getSupabase();
+    safeSupabaseCall(
+      sb.from('todos').update({ completed, status, completed_at: completedAt, updated_at: now }).eq('id', id)
     );
   },
 
   updateTodoQuadrant: async (id, urgent, important) => {
-    await db.todos.update(id, { urgent, important });
+    const now = new Date().toISOString();
+    await db.todos.update(id, { urgent, important, updatedAt: now });
     set((state) => ({
-      todos: state.todos.map((t) => (t.id === id ? { ...t, urgent, important } : t)),
+      todos: state.todos.map((t) => (t.id === id ? { ...t, urgent, important, updatedAt: now } : t)),
     }));
 
     const sb = getSupabase();
-    safeSupabaseCall(sb.from('todos').update({ urgent, important }).eq('id', id));
+    safeSupabaseCall(sb.from('todos').update({ urgent, important, updated_at: now }).eq('id', id));
   },
 
   deleteTodo: async (id) => {

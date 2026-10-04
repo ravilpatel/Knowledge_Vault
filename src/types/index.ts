@@ -131,18 +131,39 @@ export interface UserSettings {
 
 export type SectionColor = 'peach' | 'sage' | 'lavender' | 'sky' | 'butter' | 'rose';
 
+export type TaskScope = 'work' | 'personal';
+export type TaskStatus = 'todo' | 'in_progress' | 'blocked' | 'done';
+export type TaskPriority = 'p1' | 'p2' | 'p3' | 'p4' | 'high' | 'medium' | 'low';
+
+export interface TaskSubtask {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface TodoItem {
   id: string;
+  user_id?: string;
   title: string;
   description?: string;
   urgent: boolean;
   important: boolean;
   dueDate?: string; // YYYY-MM-DD
+  dueTime?: string;
   completed: boolean;
   completedAt?: string;
   category?: string;
-  priority?: 'low' | 'medium' | 'high';
+  scope?: TaskScope;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  projectId?: string;
+  tags?: string[];
+  subtasks?: TaskSubtask[];
+  estimatedMinutes?: number;
+  recurrence?: string;
+  orderIndex?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface HabitItem {
