@@ -327,7 +327,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
 
   deleteNotebookPermanent: async (id) => {
     await db.notebooks.delete(id);
-    const secIds = (await db.sections.where('notebookId').equals(id).toArray()).map((s) => s.id);
     await db.sections.where('notebookId').equals(id).delete();
     await db.pages.where('notebookId').equals(id).delete();
 
