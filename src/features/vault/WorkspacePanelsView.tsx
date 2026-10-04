@@ -444,55 +444,53 @@ export const WorkspacePanelsView: React.FC = () => {
     : [];
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-4 md:p-6 space-y-4 select-none">
-      {/* ─── Top Header & Controls ─── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
-        <div className="flex items-center gap-3">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-3 md:p-4 space-y-2.5 select-none">
+      {/* ─── Top Header & Controls (Minimal Height) ─── */}
+      <div className="flex items-center justify-between gap-3 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle px-3.5 py-1.5 md:py-2 rounded-xl shadow-xs flex-wrap sm:flex-nowrap flex-shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
           {activePanelId && (
             <button
               onClick={() => {
                 setActivePanelId(null);
                 setSearchQuery('');
               }}
-              className="p-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle hover:bg-surface-subtle dark:hover:bg-surface-subtleDark text-ink-secondary dark:text-ink-darkSecondary transition shadow-xs"
+              className="p-1.5 rounded-lg border border-border-subtle dark:border-border-darkSubtle hover:bg-surface-subtle dark:hover:bg-surface-subtleDark text-ink-secondary dark:text-ink-darkSecondary transition shadow-xs flex-shrink-0"
               title="Back to All Columns"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
             </button>
           )}
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight">
-                {activePanel ? activePanel.name : 'Workspace Columns'}
-              </h2>
-            </div>
-            <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            <h2 className="text-sm md:text-base font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight truncate">
+              {activePanel ? activePanel.name : 'Workspace Columns'}
+            </h2>
+            <span className="text-[11px] text-ink-muted dark:text-ink-darkMuted bg-surface-subtle dark:bg-surface-subtleDark px-2 py-0.5 rounded-md border border-border-subtle/50 dark:border-border-darkSubtle/50 font-normal whitespace-nowrap">
               {activePanel
-                ? `${activeEntries.length} entries • ${activeFields.length} custom schema fields`
-                : `${panels.length} workspace boards • ${panelEntries.length} total entries`}
-            </p>
+                ? `${activeEntries.length} entries • ${activeFields.length} fields`
+                : `${panels.length} boards • ${panelEntries.length} total entries`}
+            </span>
           </div>
         </div>
 
         {/* Global Toolbar Actions */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-muted pointer-events-none" />
             <input
               type="text"
-              placeholder={activePanelId ? "Search in this panel..." : "Search across all columns..."}
+              placeholder={activePanelId ? "Search in panel..." : "Search across columns..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-7 py-1.5 rounded-xl text-xs border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 w-44 md:w-56 text-ink-primary dark:text-ink-darkPrimary transition"
+              className="pl-8 pr-7 py-1 rounded-lg text-xs border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-1 focus:ring-brand-primary/40 w-36 sm:w-48 md:w-56 text-ink-primary dark:text-ink-darkPrimary transition"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-2 text-ink-muted hover:text-ink-primary"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink-primary"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3 h-3" />
               </button>
             )}
           </div>
@@ -502,7 +500,7 @@ export const WorkspacePanelsView: React.FC = () => {
             <div className="relative">
               <button
                 onClick={() => setIsColumnPickerOpen(!isColumnPickerOpen)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition shadow-xs ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition shadow-xs ${
                   isColumnPickerOpen
                     ? 'bg-brand-primary text-white border-brand-primary'
                     : 'bg-surface dark:bg-surface-dark border-border-subtle dark:border-border-darkSubtle text-ink-secondary dark:text-ink-darkSecondary hover:bg-surface-subtle dark:hover:bg-surface-subtleDark'
@@ -518,8 +516,8 @@ export const WorkspacePanelsView: React.FC = () => {
               </button>
 
               {isColumnPickerOpen && (
-                <div className="absolute right-0 top-full mt-2 w-56 p-2 rounded-2xl bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle shadow-xl z-40 animate-in fade-in zoom-in-95 duration-100">
-                  <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-border-subtle/60 px-2 text-[11px] font-bold text-ink-primary dark:text-ink-darkPrimary">
+                <div className="absolute right-0 top-full mt-1.5 w-56 p-2 rounded-xl bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle shadow-xl z-40 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-border-subtle/60 px-2 text-[11px] font-bold text-ink-primary dark:text-ink-darkPrimary">
                     <span>Visible Columns</span>
                     <button
                       onClick={() => setHiddenColumnIds([])}
@@ -528,7 +526,7 @@ export const WorkspacePanelsView: React.FC = () => {
                       Show All
                     </button>
                   </div>
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                  <div className="space-y-0.5 max-h-48 overflow-y-auto">
                     {panels.map((p) => {
                       const isVisible = !hiddenColumnIds.includes(p.id) && !p.dashboard_hidden;
                       return (
@@ -541,7 +539,7 @@ export const WorkspacePanelsView: React.FC = () => {
                               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                               style={{ backgroundColor: p.color || '#4F46E5' }}
                             />
-                            <span className="truncate text-ink-primary dark:text-ink-darkPrimary font-medium">
+                            <span className="truncate text-ink-primary dark:text-ink-darkPrimary font-medium text-xs">
                               {p.name}
                             </span>
                           </div>
@@ -562,10 +560,10 @@ export const WorkspacePanelsView: React.FC = () => {
 
           {activePanelId && (
             /* Layout Mode Toggle (when zoomed into single panel) */
-            <div className="flex items-center p-0.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs">
+            <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs">
               <button
                 onClick={() => setLayoutMode('grid')}
-                className={`p-1.5 rounded-lg transition ${
+                className={`p-1 rounded-md transition ${
                   layoutMode === 'grid'
                     ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs font-semibold'
                     : 'text-ink-muted hover:text-ink-primary'
@@ -576,7 +574,7 @@ export const WorkspacePanelsView: React.FC = () => {
               </button>
               <button
                 onClick={() => setLayoutMode('table')}
-                className={`p-1.5 rounded-lg transition ${
+                className={`p-1 rounded-md transition ${
                   layoutMode === 'table'
                     ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs font-semibold'
                     : 'text-ink-muted hover:text-ink-primary'
@@ -588,34 +586,26 @@ export const WorkspacePanelsView: React.FC = () => {
             </div>
           )}
 
-          {/* New Record Action */}
-          <button
-            onClick={() => openNewEntryModal(activePanelId || undefined)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
-            title="Create New Record"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Entry</span>
-          </button>
-
           {/* New Panel Action */}
-          <button
-            onClick={openNewPanelModal}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark text-ink-primary dark:text-ink-darkPrimary text-xs font-semibold hover:bg-surface-subtle dark:hover:bg-surface-subtleDark transition shadow-xs"
-            title="Create New Board Column"
-          >
-            <Plus className="w-3.5 h-3.5 text-brand-primary" />
-            <span>New Board</span>
-          </button>
+          {!activePanelId && (
+            <button
+              onClick={openNewPanelModal}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
+              title="Create New Board Column"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Board</span>
+            </button>
+          )}
         </div>
       </div>
 
       {/* ─── Navigation Subtabs ─── */}
       {!activePanelId && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs flex-shrink-0">
           <button
             onClick={() => setSubTab('panels')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
               subTab === 'panels'
                 ? 'bg-brand-primary text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
@@ -627,7 +617,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
           <button
             onClick={() => setSubTab('people')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
               subTab === 'people'
                 ? 'bg-brand-primary text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
@@ -639,7 +629,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
           <button
             onClick={() => setSubTab('companies')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
               subTab === 'companies'
                 ? 'bg-brand-primary text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
@@ -651,7 +641,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
           <button
             onClick={() => setSubTab('projects')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
               subTab === 'projects'
                 ? 'bg-brand-primary text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
@@ -663,7 +653,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
           <button
             onClick={() => setSubTab('technologies')}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg font-semibold transition ${
               subTab === 'technologies'
                 ? 'bg-brand-primary text-white shadow-xs'
                 : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
@@ -698,7 +688,7 @@ export const WorkspacePanelsView: React.FC = () => {
             /* ══════════════════════════════════════════════════════════════════
                COLUMN SCROLLABLE WORKSPACE PANELS FORMAT (LEGACY KNOWLEDGE VAULT)
                ══════════════════════════════════════════════════════════════════ */
-            <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto pb-3 pt-1 px-1 items-start">
+            <div className="flex-1 min-h-0 flex gap-3.5 overflow-x-auto pb-2 pt-0.5 px-0.5 items-stretch h-full">
               {visiblePanels.length === 0 ? (
                 <div className="w-full p-12 text-center text-xs text-ink-muted border border-dashed border-border-subtle dark:border-border-darkSubtle rounded-2xl bg-surface/50 dark:bg-surface-dark/50">
                   <FolderKanban className="w-10 h-10 mx-auto mb-3 text-brand-primary opacity-40" />
@@ -746,7 +736,7 @@ export const WorkspacePanelsView: React.FC = () => {
                   return (
                     <div
                       key={panel.id}
-                      className="w-80 min-w-[320px] max-w-[340px] flex-shrink-0 flex flex-col h-[calc(100vh-200px)] max-h-[calc(100vh-200px)] bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs overflow-hidden transition-all duration-150 group/column"
+                      className="w-80 min-w-[320px] max-w-[340px] flex-shrink-0 flex flex-col h-full bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs overflow-hidden transition-all duration-150 group/column"
                       style={{ borderTop: `4px solid ${panel.color || '#4F46E5'}` }}
                     >
                       {/* Column Header */}
@@ -974,8 +964,17 @@ export const WorkspacePanelsView: React.FC = () => {
                   No records found in {activePanel?.name}
                 </p>
                 <p className="mt-1">
-                  Click "+ New Entry" above to add your first structured entry to this panel.
+                  Add your first structured entry to this panel.
                 </p>
+                {activePanel && (
+                  <button
+                    onClick={() => openNewEntryModal(activePanel.id)}
+                    className="mt-3 inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold shadow-xs hover:bg-brand-hover transition"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Record</span>
+                  </button>
+                )}
               </div>
             ) : layoutMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
