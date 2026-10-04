@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useVaultStore } from './vaultStore';
 import { Panel, PanelField, PanelEntry, FieldType } from '../../types';
 import {
@@ -26,6 +26,11 @@ import {
   Cpu,
   Star,
   User,
+  Columns3,
+  Eye,
+  Maximize2,
+  Clock,
+  ChevronDown,
 } from 'lucide-react';
 import {
   PeopleView,
@@ -42,6 +47,9 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   Layers,
   Sparkles,
   FileText,
+  Briefcase,
+  Building2,
+  Cpu,
 };
 
 const COLOR_PRESETS = [
@@ -81,12 +89,20 @@ export const WorkspacePanelsView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<'grid' | 'table'>('grid');
 
+  // Column visibility filter state
+  const [hiddenColumnIds, setHiddenColumnIds] = useState<string[]>([]);
+  const [isColumnPickerOpen, setIsColumnPickerOpen] = useState(false);
+
   // Modals state
   const [isPanelModalOpen, setIsPanelModalOpen] = useState(false);
   const [editingPanel, setEditingPanel] = useState<Panel | null>(null);
 
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<PanelEntry | null>(null);
+  const [targetPanelId, setTargetPanelId] = useState<string | null>(null);
+
+  // Detail Modal state
+  const [detailEntry, setDetailEntry] = useState<{ entry: PanelEntry; panel: Panel } | null>(null);
 
   // Panel modal form state
   const [panelName, setPanelName] = useState('');
@@ -103,19 +119,34 @@ export const WorkspacePanelsView: React.FC = () => {
   // Entry modal form state (key-value dictionary)
   const [entryFormData, setEntryFormData] = useState<Record<string, any>>({});
 
-  const activePanel = panels.find((p) => p.id === activePanelId);
-  const activeFields = panelFields
-    .filter((f) => f.panel_id === activePanelId)
-    .sort((a, b) => a.field_order - b.field_order);
-  const activeEntries = panelEntries.filter((e) => e.panel_id === activePanelId);
+  // Active panel data when zoomed into single panel
+  const activePanel = useMemo(() => panels.find((p) => p.id === activePanelId), [panels, activePanelId]);
+  const activeFields = useMemo(
+    () =>
+      panelFields
+        .filter((f) => f.panel_id === activePanelId)
+        .sort((a, b) => a.field_order - b.field_order),
+    [panelFields, activePanelId]
+  );
+  const activeEntries = useMemo(
+    () => panelEntries.filter((e) => e.panel_id === activePanelId),
+    [panelEntries, activePanelId]
+  );
 
-  const filteredEntries = activeEntries.filter((entry) => {
-    if (!searchQuery.trim()) return true;
+  const filteredActiveEntries = useMemo(() => {
+    if (!searchQuery.trim()) return activeEntries;
     const q = searchQuery.toLowerCase();
-    return Object.values(entry.data).some((val) =>
-      String(val || '').toLowerCase().includes(q)
+    return activeEntries.filter((entry) =>
+      Object.values(entry.data || {}).some((val) =>
+        String(val || '').toLowerCase().includes(q)
+      )
     );
-  });
+  }, [activeEntries, searchQuery]);
+
+  // Panels filtered by visibility
+  const visiblePanels = useMemo(() => {
+    return panels.filter((p) => !hiddenColumnIds.includes(p.id) && !p.dashboard_hidden);
+  }, [panels, hiddenColumnIds]);
 
   // Handlers for Panel Modal
   const openNewPanelModal = () => {
@@ -221,10 +252,16 @@ export const WorkspacePanelsView: React.FC = () => {
   };
 
   // Handlers for Entry Modal
-  const openNewEntryModal = () => {
+  const openNewEntryModal = (panelId?: string) => {
+    const pId = panelId || activePanelId || (panels[0]?.id ?? null);
+    if (!pId) return;
+
+    setTargetPanelId(pId);
     setEditingEntry(null);
+
+    const fields = panelFields.filter((f) => f.panel_id === pId);
     const initial: Record<string, any> = {};
-    activeFields.forEach((f) => {
+    fields.forEach((f) => {
       if (f.field_type === 'select' && f.options && f.options.length > 0) {
         initial[f.field_key] = f.options[0];
       } else if (f.field_type === 'date') {
@@ -233,33 +270,185 @@ export const WorkspacePanelsView: React.FC = () => {
         initial[f.field_key] = '';
       }
     });
+
     setEntryFormData(initial);
     setIsEntryModalOpen(true);
   };
 
-  const openEditEntryModal = (entry: PanelEntry) => {
+  const openEditEntryModal = (entry: PanelEntry, panelId?: string) => {
+    const pId = panelId || entry.panel_id || activePanelId;
+    setTargetPanelId(pId);
     setEditingEntry(entry);
-    setEntryFormData({ ...entry.data });
+    setEntryFormData({ ...(entry.data || {}) });
     setIsEntryModalOpen(true);
   };
 
   const handleSaveEntry = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activePanelId) return;
+    const pId = targetPanelId || editingEntry?.panel_id || activePanelId;
+    if (!pId) return;
 
     if (editingEntry) {
       await updateEntry(editingEntry.id, entryFormData);
     } else {
-      await createEntry(activePanelId, entryFormData);
+      await createEntry(pId, entryFormData);
     }
 
     setIsEntryModalOpen(false);
+    if (detailEntry && editingEntry && detailEntry.entry.id === editingEntry.id) {
+      setDetailEntry({
+        ...detailEntry,
+        entry: {
+          ...detailEntry.entry,
+          data: entryFormData,
+          updated_at: new Date().toISOString(),
+        },
+      });
+    }
   };
 
+  const toggleColumnVisibility = (panelId: string) => {
+    setHiddenColumnIds((prev) =>
+      prev.includes(panelId) ? prev.filter((id) => id !== panelId) : [...prev, panelId]
+    );
+  };
+
+  // Helper to resolve entity labels
+  const resolveEntityName = (type: 'people' | 'projects' | 'companies' | 'technologies', idOrName: string) => {
+    if (!idOrName) return '';
+    if (type === 'people') {
+      const p = people.find((item) => item.id === idOrName || item.name === idOrName);
+      return p ? p.name : idOrName;
+    }
+    if (type === 'projects') {
+      const pr = projects.find((item) => item.id === idOrName || item.name === idOrName);
+      return pr ? pr.name : idOrName;
+    }
+    if (type === 'companies') {
+      const c = companies.find((item) => item.id === idOrName || item.name === idOrName);
+      return c ? c.name : idOrName;
+    }
+    if (type === 'technologies') {
+      const t = technologies.find((item) => item.id === idOrName || item.name === idOrName);
+      return t ? t.name : idOrName;
+    }
+    return idOrName;
+  };
+
+  // Render a field value cleanly
+  const renderFieldValue = (field: PanelField, val: any) => {
+    if (val === undefined || val === null || val === '') return null;
+
+    switch (field.field_type) {
+      case 'url':
+        return (
+          <a
+            href={String(val).startsWith('http') ? String(val) : `https://${val}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-brand-primary dark:text-brand-darkPrimary hover:underline inline-flex items-center gap-1 break-all font-medium text-[11px]"
+          >
+            <span className="truncate max-w-[200px]">{String(val)}</span>
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          </a>
+        );
+
+      case 'date':
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] text-ink-muted dark:text-ink-darkMuted font-medium">
+            <Calendar className="w-3 h-3 text-brand-primary" />
+            <span>{String(val)}</span>
+          </span>
+        );
+
+      case 'textarea':
+        return (
+          <p className="text-[11px] text-ink-secondary dark:text-ink-darkSecondary line-clamp-3 leading-relaxed bg-surface-subtle/50 dark:bg-surface-subtleDark/50 p-2 rounded-lg border border-border-subtle/40 dark:border-border-darkSubtle/40 whitespace-pre-line">
+            {String(val)}
+          </p>
+        );
+
+      case 'select':
+        return (
+          <span className="inline-block px-2 py-0.5 rounded-md bg-brand-primary/10 text-brand-primary dark:text-brand-darkPrimary text-[10px] font-semibold border border-brand-primary/20">
+            {String(val)}
+          </span>
+        );
+
+      case 'tags':
+        const tagsArr = Array.isArray(val)
+          ? val
+          : String(val)
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean);
+        return (
+          <div className="flex flex-wrap gap-1">
+            {tagsArr.map((tag, idx) => (
+              <span
+                key={idx}
+                className="px-1.5 py-0.5 rounded-md bg-surface-subtle dark:bg-surface-subtleDark text-[10px] font-medium text-ink-secondary dark:text-ink-darkSecondary border border-border-subtle/60 dark:border-border-darkSubtle/60"
+              >
+                #{tag}
+              </span>
+            ))}
+          </div>
+        );
+
+      case 'rating':
+        const ratingNum = Number(val) || 0;
+        return (
+          <div className="flex items-center gap-0.5 text-amber-500">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-3 h-3 ${
+                  star <= ratingNum ? 'fill-amber-500 text-amber-500' : 'text-slate-300 dark:text-slate-700'
+                }`}
+              />
+            ))}
+          </div>
+        );
+
+      case 'people_link':
+        const personName = resolveEntityName('people', String(val));
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] text-brand-primary dark:text-brand-darkPrimary font-semibold bg-brand-primary/10 px-2 py-0.5 rounded-md border border-brand-primary/20">
+            <User className="w-3 h-3" />
+            <span className="truncate max-w-[150px]">{personName}</span>
+          </span>
+        );
+
+      case 'projects_link':
+        const projectName = resolveEntityName('projects', String(val));
+        return (
+          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            <Briefcase className="w-3 h-3" />
+            <span className="truncate max-w-[150px]">{projectName}</span>
+          </span>
+        );
+
+      default:
+        return (
+          <span className="text-[11px] text-ink-primary dark:text-ink-darkPrimary font-medium">
+            {String(val)}
+          </span>
+        );
+    }
+  };
+
+  const targetPanelForModal = panels.find((p) => p.id === (targetPanelId || activePanelId));
+  const targetFieldsForModal = targetPanelForModal
+    ? panelFields
+        .filter((f) => f.panel_id === targetPanelForModal.id)
+        .sort((a, b) => a.field_order - b.field_order)
+    : [];
+
   return (
-    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-6 space-y-5 select-none">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
+    <div className="flex-1 flex flex-col h-full bg-canvas-light dark:bg-canvas-dark overflow-hidden p-4 md:p-6 space-y-4 select-none">
+      {/* ─── Top Header & Controls ─── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle p-4 rounded-2xl shadow-xs">
         <div className="flex items-center gap-3">
           {activePanelId && (
             <button
@@ -267,8 +456,8 @@ export const WorkspacePanelsView: React.FC = () => {
                 setActivePanelId(null);
                 setSearchQuery('');
               }}
-              className="p-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-secondary dark:text-ink-darkSecondary transition"
-              title="Back to All Panels"
+              className="p-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle hover:bg-surface-subtle dark:hover:bg-surface-subtleDark text-ink-secondary dark:text-ink-darkSecondary transition shadow-xs"
+              title="Back to All Columns"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -276,261 +465,515 @@ export const WorkspacePanelsView: React.FC = () => {
 
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-bold text-ink-primary dark:text-ink-darkPrimary">
-                {activePanel ? activePanel.name : 'Workspace Panels'}
+              <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight">
+                {activePanel ? activePanel.name : 'Workspace Columns'}
               </h2>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 capitalize">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 capitalize">
                 <Cloud className="w-3 h-3" />
                 <span>Supabase: {supabaseSyncStatus}</span>
               </span>
             </div>
             <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
               {activePanel
-                ? `${activeEntries.length} records &bull; ${activeFields.length} custom schema fields`
-                : 'Custom user-defined databases and EAV entities with Supabase cloud persistence.'}
+                ? `${activeEntries.length} entries • ${activeFields.length} custom schema fields`
+                : `${panels.length} workspace boards • ${panelEntries.length} total entries`}
             </p>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2.5">
-          {activePanelId ? (
-            <>
-              {/* Search in panel */}
-              <div className="relative">
-                <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
-                <input
-                  type="text"
-                  placeholder="Filter records..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 rounded-xl text-xs border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 w-44 text-ink-primary dark:text-ink-darkPrimary"
-                />
-              </div>
-
-              {/* Layout toggle */}
-              <div className="flex items-center p-0.5 rounded-lg bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs">
-                <button
-                  onClick={() => setLayoutMode('grid')}
-                  className={`p-1.5 rounded-md ${
-                    layoutMode === 'grid'
-                      ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs'
-                      : 'text-ink-muted'
-                  }`}
-                  title="Card Grid"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setLayoutMode('table')}
-                  className={`p-1.5 rounded-md ${
-                    layoutMode === 'table'
-                      ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs'
-                      : 'text-ink-muted'
-                  }`}
-                  title="Table / List"
-                >
-                  <List className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Panel settings */}
-              {activePanel && (
-                <button
-                  onClick={() => openEditPanelModal(activePanel)}
-                  className="p-2 rounded-xl border border-border-subtle dark:border-border-darkSubtle hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-muted hover:text-ink-primary transition"
-                  title="Configure Panel & Fields"
-                >
-                  <Settings2 className="w-4 h-4" />
-                </button>
-              )}
-
-              {/* Add Entry */}
+        {/* Global Toolbar Actions */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-ink-muted" />
+            <input
+              type="text"
+              placeholder={activePanelId ? "Search in this panel..." : "Search across all columns..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8 pr-7 py-1.5 rounded-xl text-xs border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20 w-44 md:w-56 text-ink-primary dark:text-ink-darkPrimary transition"
+            />
+            {searchQuery && (
               <button
-                onClick={openNewEntryModal}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2 top-2 text-ink-muted hover:text-ink-primary"
               >
-                <Plus className="w-4 h-4" />
-                <span>New Entry</span>
+                <X className="w-3.5 h-3.5" />
               </button>
-            </>
-          ) : (
-            <button
-              onClick={openNewPanelModal}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              <span>New Panel</span>
-            </button>
+            )}
+          </div>
+
+          {!activePanelId && (
+            /* Visible Columns Popover Toggle */
+            <div className="relative">
+              <button
+                onClick={() => setIsColumnPickerOpen(!isColumnPickerOpen)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition shadow-xs ${
+                  isColumnPickerOpen
+                    ? 'bg-brand-primary text-white border-brand-primary'
+                    : 'bg-surface dark:bg-surface-dark border-border-subtle dark:border-border-darkSubtle text-ink-secondary dark:text-ink-darkSecondary hover:bg-surface-subtle dark:hover:bg-surface-subtleDark'
+                }`}
+                title="Toggle visible columns"
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Columns</span>
+                <span className="px-1.5 py-0.2 rounded-full bg-black/10 dark:bg-white/10 text-[10px]">
+                  {visiblePanels.length}/{panels.length}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </button>
+
+              {isColumnPickerOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 p-2 rounded-2xl bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle shadow-xl z-40 animate-in fade-in zoom-in-95 duration-100">
+                  <div className="flex items-center justify-between pb-2 mb-1.5 border-b border-border-subtle/60 px-2 text-[11px] font-bold text-ink-primary dark:text-ink-darkPrimary">
+                    <span>Visible Columns</span>
+                    <button
+                      onClick={() => setHiddenColumnIds([])}
+                      className="text-[10px] text-brand-primary font-normal hover:underline"
+                    >
+                      Show All
+                    </button>
+                  </div>
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {panels.map((p) => {
+                      const isVisible = !hiddenColumnIds.includes(p.id) && !p.dashboard_hidden;
+                      return (
+                        <label
+                          key={p.id}
+                          className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-surface-subtle dark:hover:bg-surface-subtleDark cursor-pointer text-xs transition"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: p.color || '#4F46E5' }}
+                            />
+                            <span className="truncate text-ink-primary dark:text-ink-darkPrimary font-medium">
+                              {p.name}
+                            </span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isVisible}
+                            onChange={() => toggleColumnVisibility(p.id)}
+                            className="rounded text-brand-primary focus:ring-0"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
+
+          {activePanelId && (
+            /* Layout Mode Toggle (when zoomed into single panel) */
+            <div className="flex items-center p-0.5 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle text-xs">
+              <button
+                onClick={() => setLayoutMode('grid')}
+                className={`p-1.5 rounded-lg transition ${
+                  layoutMode === 'grid'
+                    ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs font-semibold'
+                    : 'text-ink-muted hover:text-ink-primary'
+                }`}
+                title="Card Grid"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => setLayoutMode('table')}
+                className={`p-1.5 rounded-lg transition ${
+                  layoutMode === 'table'
+                    ? 'bg-surface dark:bg-surface-dark text-brand-primary shadow-xs font-semibold'
+                    : 'text-ink-muted hover:text-ink-primary'
+                }`}
+                title="Table List"
+              >
+                <List className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* New Record Action */}
+          <button
+            onClick={() => openNewEntryModal(activePanelId || undefined)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
+            title="Create New Record"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Entry</span>
+          </button>
+
+          {/* New Panel Action */}
+          <button
+            onClick={openNewPanelModal}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark text-ink-primary dark:text-ink-darkPrimary text-xs font-semibold hover:bg-surface-subtle dark:hover:bg-surface-subtleDark transition shadow-xs"
+            title="Create New Board Column"
+          >
+            <Plus className="w-3.5 h-3.5 text-brand-primary" />
+            <span>New Board</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto space-y-4">
-        {!activePanelId && (
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
-            <button
-              onClick={() => setSubTab('panels')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                subTab === 'panels'
-                  ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-              }`}
-            >
-              <FolderKanban className="w-3.5 h-3.5" />
-              <span>Custom Boards ({panels.length})</span>
-            </button>
+      {/* ─── Navigation Subtabs ─── */}
+      {!activePanelId && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border-subtle dark:border-border-darkSubtle text-xs">
+          <button
+            onClick={() => setSubTab('panels')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+              subTab === 'panels'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+            }`}
+          >
+            <Columns3 className="w-3.5 h-3.5" />
+            <span>Custom Boards ({panels.length})</span>
+          </button>
 
-            <button
-              onClick={() => setSubTab('people')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                subTab === 'people'
-                  ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>People & Contacts ({people.length})</span>
-            </button>
+          <button
+            onClick={() => setSubTab('people')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+              subTab === 'people'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>People & Contacts ({people.length})</span>
+          </button>
 
-            <button
-              onClick={() => setSubTab('companies')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                subTab === 'companies'
-                  ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-              }`}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Companies ({companies.length})</span>
-            </button>
+          <button
+            onClick={() => setSubTab('companies')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+              subTab === 'companies'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Companies ({companies.length})</span>
+          </button>
 
-            <button
-              onClick={() => setSubTab('projects')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                subTab === 'projects'
-                  ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-              }`}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Projects ({projects.length})</span>
-            </button>
+          <button
+            onClick={() => setSubTab('projects')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+              subTab === 'projects'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Projects ({projects.length})</span>
+          </button>
 
-            <button
-              onClick={() => setSubTab('technologies')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition ${
-                subTab === 'technologies'
-                  ? 'bg-brand-primary text-white shadow-xs'
-                  : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
-              }`}
-            >
-              <Cpu className="w-3.5 h-3.5" />
-              <span>Technologies ({technologies.length})</span>
-            </button>
-          </div>
-        )}
+          <button
+            onClick={() => setSubTab('technologies')}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-semibold transition ${
+              subTab === 'technologies'
+                ? 'bg-brand-primary text-white shadow-xs'
+                : 'text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark'
+            }`}
+          >
+            <Cpu className="w-3.5 h-3.5" />
+            <span>Technologies ({technologies.length})</span>
+          </button>
+        </div>
+      )}
 
+      {/* ─── Main Content Display ─── */}
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         {!activePanelId ? (
           subTab === 'people' ? (
-            <PeopleView />
+            <div className="flex-1 overflow-y-auto">
+              <PeopleView />
+            </div>
           ) : subTab === 'companies' ? (
-            <CompaniesView />
+            <div className="flex-1 overflow-y-auto">
+              <CompaniesView />
+            </div>
           ) : subTab === 'projects' ? (
-            <ProjectsView />
+            <div className="flex-1 overflow-y-auto">
+              <ProjectsView />
+            </div>
           ) : subTab === 'technologies' ? (
-            <TechnologiesView />
+            <div className="flex-1 overflow-y-auto">
+              <TechnologiesView />
+            </div>
           ) : (
-            /* Level 1: All Panels Pinned Grid */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {panels.map((panel) => {
-              const IconComp = ICON_MAP[panel.icon || 'Folder'] || Folder;
-              const count = panelEntries.filter((e) => e.panel_id === panel.id).length;
-              const fields = panelFields.filter((f) => f.panel_id === panel.id);
-
-              return (
-                <div
-                  key={panel.id}
-                  onClick={() => setActivePanelId(panel.id)}
-                  className="group relative p-5 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark hover:border-brand-primary/40 dark:hover:border-brand-darkPrimary/40 transition-all hover:shadow-md cursor-pointer flex flex-col justify-between h-44"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center font-bold"
-                        style={{
-                          backgroundColor: `${panel.color || '#4F46E5'}20`,
-                          color: panel.color || '#4F46E5',
-                        }}
-                      >
-                        <IconComp className="w-5 h-5" />
-                      </div>
-
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditPanelModal(panel);
-                          }}
-                          className="p-1 rounded text-ink-muted hover:text-ink-primary"
-                          title="Edit Panel"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm(`Delete panel "${panel.name}" and all its records?`)) {
-                              deletePanel(panel.id);
-                            }
-                          }}
-                          className="p-1 rounded text-ink-muted hover:text-rose-500"
-                          title="Delete Panel"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <h3 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary truncate">
-                      {panel.name}
-                    </h3>
-
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      {fields.slice(0, 3).map((f) => (
-                        <span
-                          key={f.id}
-                          className="text-[10px] text-ink-muted font-medium bg-surface-subtle dark:bg-surface-subtleDark px-1.5 py-0.5 rounded border border-border-subtle/50"
-                        >
-                          {f.field_label}
-                        </span>
-                      ))}
-                      {fields.length > 3 && (
-                        <span className="text-[10px] text-ink-muted font-medium">
-                          +{fields.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-border-subtle/60 dark:border-border-darkSubtle/60 text-xs">
-                    <span className="font-semibold text-brand-primary dark:text-brand-darkPrimary">
-                      {count} {count === 1 ? 'record' : 'records'}
-                    </span>
-                    <span className="text-[11px] text-ink-muted group-hover:text-ink-primary transition">
-                      Open Panel &rarr;
-                    </span>
-                  </div>
+            /* ══════════════════════════════════════════════════════════════════
+               COLUMN SCROLLABLE WORKSPACE PANELS FORMAT (LEGACY KNOWLEDGE VAULT)
+               ══════════════════════════════════════════════════════════════════ */
+            <div className="flex-1 min-h-0 flex gap-4 overflow-x-auto pb-3 pt-1 px-1 items-start">
+              {visiblePanels.length === 0 ? (
+                <div className="w-full p-12 text-center text-xs text-ink-muted border border-dashed border-border-subtle dark:border-border-darkSubtle rounded-2xl bg-surface/50 dark:bg-surface-dark/50">
+                  <FolderKanban className="w-10 h-10 mx-auto mb-3 text-brand-primary opacity-40" />
+                  <p className="font-bold text-ink-primary dark:text-ink-darkPrimary text-sm">
+                    No Visible Workspace Columns
+                  </p>
+                  <p className="mt-1 max-w-sm mx-auto">
+                    {panels.length > 0
+                      ? 'All columns are currently hidden. Use the "Columns" dropdown above to show them.'
+                      : 'Create your first custom board using the "+ New Board" button.'}
+                  </p>
+                  {panels.length > 0 ? (
+                    <button
+                      onClick={() => setHiddenColumnIds([])}
+                      className="mt-4 px-4 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold shadow-xs"
+                    >
+                      Show All Columns
+                    </button>
+                  ) : (
+                    <button
+                      onClick={openNewPanelModal}
+                      className="mt-4 px-4 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold shadow-xs"
+                    >
+                      + Create Board
+                    </button>
+                  )}
                 </div>
-              );
-            })}
-          </div>
+              ) : (
+                visiblePanels.map((panel) => {
+                  const IconComp = ICON_MAP[panel.icon || 'Folder'] || Folder;
+                  const fields = panelFields
+                    .filter((f) => f.panel_id === panel.id)
+                    .sort((a, b) => a.field_order - b.field_order);
+                  const allEntries = panelEntries.filter((e) => e.panel_id === panel.id);
+
+                  // Filter entries inside column based on search
+                  const entries = allEntries.filter((entry) => {
+                    if (!searchQuery.trim()) return true;
+                    const q = searchQuery.toLowerCase();
+                    return Object.values(entry.data || {}).some((val) =>
+                      String(val || '').toLowerCase().includes(q)
+                    );
+                  });
+
+                  return (
+                    <div
+                      key={panel.id}
+                      className="w-80 min-w-[320px] max-w-[340px] flex-shrink-0 flex flex-col h-[calc(100vh-200px)] max-h-[calc(100vh-200px)] bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-xs overflow-hidden transition-all duration-150 group/column"
+                      style={{ borderTop: `4px solid ${panel.color || '#4F46E5'}` }}
+                    >
+                      {/* Column Header */}
+                      <div className="p-3.5 border-b border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/50 dark:bg-surface-subtleDark/50 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                            style={{
+                              backgroundColor: `${panel.color || '#4F46E5'}20`,
+                              color: panel.color || '#4F46E5',
+                            }}
+                          >
+                            <IconComp className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3
+                              className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary truncate cursor-pointer hover:underline"
+                              onClick={() => setActivePanelId(panel.id)}
+                              title={`${panel.name} (Click to zoom)`}
+                            >
+                              {panel.name}
+                            </h3>
+                            <div className="flex items-center gap-1 text-[10px] text-ink-muted">
+                              <span>
+                                {entries.length} {entries.length === 1 ? 'record' : 'records'}
+                              </span>
+                              {searchQuery && allEntries.length !== entries.length && (
+                                <span>(of {allEntries.length})</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Column Header Actions */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            onClick={() => openNewEntryModal(panel.id)}
+                            className="p-1 rounded-lg text-ink-muted hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition"
+                            title={`Add new entry to ${panel.name}`}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setActivePanelId(panel.id)}
+                            className="p-1 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark transition"
+                            title="Focus single panel"
+                          >
+                            <Maximize2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => openEditPanelModal(panel)}
+                            className="p-1 rounded-lg text-ink-muted hover:text-ink-primary hover:bg-surface dark:hover:bg-surface-dark transition"
+                            title="Configure Panel & Schema Fields"
+                          >
+                            <Settings2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Column Content: Vertically Scrollable List of Entries */}
+                      <div className="flex-1 overflow-y-auto p-3 space-y-2.5 min-h-0 bg-canvas-subtle/20 dark:bg-canvas-darkSubtle/20">
+                        {fields.length === 0 ? (
+                          <div className="text-center py-10 px-4 text-ink-muted text-xs">
+                            <FileText className="w-6 h-6 mx-auto mb-2 opacity-30 text-ink-muted" />
+                            <p className="font-semibold text-ink-primary dark:text-ink-darkPrimary">
+                              No fields configured
+                            </p>
+                            <p className="text-[11px] mt-1 text-ink-muted">
+                              Define fields to structure records in this board.
+                            </p>
+                            <button
+                              onClick={() => openEditPanelModal(panel)}
+                              className="mt-3 px-3 py-1 rounded-lg bg-surface dark:bg-surface-dark border border-border-subtle text-[11px] font-semibold text-brand-primary shadow-xs hover:bg-surface-subtle"
+                            >
+                              Configure Fields
+                            </button>
+                          </div>
+                        ) : entries.length === 0 ? (
+                          <div className="text-center py-10 px-4 text-ink-muted text-xs">
+                            <FolderKanban className="w-6 h-6 mx-auto mb-2 opacity-30 text-ink-muted" />
+                            <p className="font-semibold text-ink-primary dark:text-ink-darkPrimary">
+                              {searchQuery ? 'No matching entries' : 'No records yet'}
+                            </p>
+                            <p className="text-[11px] mt-1 text-ink-muted">
+                              {searchQuery
+                                ? 'Try a different search keyword.'
+                                : `Add the first record to ${panel.name}.`}
+                            </p>
+                            <button
+                              onClick={() => openNewEntryModal(panel.id)}
+                              className="mt-3 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-[11px] font-semibold shadow-xs hover:bg-brand-primary/20"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Record</span>
+                            </button>
+                          </div>
+                        ) : (
+                          entries.map((entry) => {
+                            const primaryField = fields[0];
+                            const primaryTitle = primaryField
+                              ? entry.data?.[primaryField.field_key] || entry.data?.title || 'Untitled'
+                              : entry.data?.title || 'Untitled';
+
+                            return (
+                              <div
+                                key={entry.id}
+                                onClick={() => setDetailEntry({ entry, panel })}
+                                className="group/card relative p-3 rounded-xl bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle hover:border-brand-primary/50 dark:hover:border-brand-darkPrimary/50 shadow-xs hover:shadow-sm transition-all cursor-pointer space-y-2 select-text"
+                                style={{
+                                  borderLeft: `3.5px solid ${panel.color || '#4F46E5'}`,
+                                }}
+                              >
+                                {/* Card Title & Quick Actions */}
+                                <div className="flex items-start justify-between gap-2">
+                                  <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary leading-snug line-clamp-2">
+                                    {String(primaryTitle)}
+                                  </h4>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover/card:opacity-100 transition flex-shrink-0">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        openEditEntryModal(entry, panel.id);
+                                      }}
+                                      className="p-1 rounded hover:bg-surface-subtle text-ink-muted hover:text-ink-primary"
+                                      title="Edit Record"
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (confirm('Delete this record permanently?')) {
+                                          deleteEntry(entry.id);
+                                        }
+                                      }}
+                                      className="p-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 text-ink-muted hover:text-rose-500"
+                                      title="Delete Record"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* All Custom Content Fields */}
+                                <div className="space-y-1.5 pt-0.5">
+                                  {fields.slice(1).map((field) => {
+                                    const val = entry.data?.[field.field_key];
+                                    if (val === undefined || val === null || val === '') return null;
+
+                                    return (
+                                      <div key={field.id} className="space-y-0.5">
+                                        {field.field_type !== 'textarea' && (
+                                          <div className="text-[9px] font-bold text-ink-muted dark:text-ink-darkMuted uppercase tracking-wider">
+                                            {field.field_label}
+                                          </div>
+                                        )}
+                                        <div>{renderFieldValue(field, val)}</div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Card Footer: Timestamp */}
+                                <div className="flex items-center justify-between pt-1.5 border-t border-border-subtle/40 dark:border-border-darkSubtle/40 text-[9px] text-ink-muted">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Clock className="w-2.5 h-2.5" />
+                                    <span>
+                                      {new Date(entry.updated_at || entry.created_at || '').toLocaleDateString(
+                                        undefined,
+                                        { month: 'short', day: 'numeric' }
+                                      )}
+                                    </span>
+                                  </span>
+                                  <span className="opacity-0 group-hover/card:opacity-100 transition text-brand-primary text-[10px] font-semibold">
+                                    View →
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Column Footer: Quick Add bar */}
+                      <div className="p-2 border-t border-border-subtle dark:border-border-darkSubtle bg-surface-subtle/30 dark:bg-surface-subtleDark/30">
+                        <button
+                          onClick={() => openNewEntryModal(panel.id)}
+                          className="w-full py-1.5 px-2 rounded-xl text-xs font-semibold text-ink-secondary dark:text-ink-darkSecondary hover:text-brand-primary hover:bg-surface dark:hover:bg-surface-dark transition flex items-center justify-center gap-1.5 border border-dashed border-border-subtle hover:border-brand-primary/40"
+                        >
+                          <Plus className="w-3.5 h-3.5 text-brand-primary" />
+                          <span>Add Record</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* End Card: Create New Board */}
+              <div
+                onClick={openNewPanelModal}
+                className="w-72 min-w-[280px] flex-shrink-0 h-40 border-2 border-dashed border-border-subtle dark:border-border-darkSubtle hover:border-brand-primary/50 dark:hover:border-brand-darkPrimary/50 rounded-2xl flex flex-col items-center justify-center p-6 text-center cursor-pointer transition bg-surface/30 dark:bg-surface-dark/30 hover:bg-surface-subtle/50 dark:hover:bg-surface-subtleDark/50 group"
+              >
+                <div className="w-9 h-9 rounded-xl bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-2 group-hover:scale-110 transition">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary">
+                  Add New Board
+                </h4>
+                <p className="text-[11px] text-ink-muted mt-0.5">
+                  Create a custom schema column
+                </p>
+              </div>
+            </div>
           )
         ) : (
-          /* Level 2: Selected Panel Entries View */
-          <div className="h-full flex flex-col">
-            {filteredEntries.length === 0 ? (
+          /* ══════════════════════════════════════════════════════════════════
+             LEVEL 2: ZOOMED SINGLE PANEL FULL VIEW (GRID OR TABLE)
+             ══════════════════════════════════════════════════════════════════ */
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-4">
+            {filteredActiveEntries.length === 0 ? (
               <div className="p-12 text-center text-xs text-ink-muted border border-dashed border-border-subtle dark:border-border-darkSubtle rounded-2xl bg-surface/50 dark:bg-surface-dark/50">
                 <FileText className="w-8 h-8 mx-auto mb-2 text-brand-primary opacity-50" />
                 <p className="font-bold text-ink-primary dark:text-ink-darkPrimary text-sm">
@@ -542,14 +985,15 @@ export const WorkspacePanelsView: React.FC = () => {
               </div>
             ) : layoutMode === 'grid' ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                {filteredEntries.map((entry) => {
+                {filteredActiveEntries.map((entry) => {
                   const titleField = activeFields[0];
-                  const primaryTitle = titleField ? entry.data[titleField.field_key] : 'Entry';
+                  const primaryTitle = titleField ? entry.data?.[titleField.field_key] : 'Entry';
 
                   return (
                     <div
                       key={entry.id}
-                      className="group relative p-4 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs hover:border-brand-primary/40 transition space-y-2.5"
+                      onClick={() => activePanel && setDetailEntry({ entry, panel: activePanel })}
+                      className="group relative p-4 rounded-2xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-xs hover:border-brand-primary/40 transition space-y-2.5 cursor-pointer"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary truncate">
@@ -557,14 +1001,22 @@ export const WorkspacePanelsView: React.FC = () => {
                         </h4>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition flex-shrink-0">
                           <button
-                            onClick={() => openEditEntryModal(entry)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditEntryModal(entry);
+                            }}
                             className="p-1 rounded text-ink-muted hover:text-ink-primary"
                             title="Edit Record"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => deleteEntry(entry.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('Delete this record permanently?')) {
+                                deleteEntry(entry.id);
+                              }
+                            }}
                             className="p-1 rounded text-ink-muted hover:text-rose-500"
                             title="Delete Record"
                           >
@@ -575,7 +1027,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
                       <div className="space-y-1.5 text-xs text-ink-secondary dark:text-ink-darkSecondary">
                         {activeFields.slice(1).map((field) => {
-                          const val = entry.data[field.field_key];
+                          const val = entry.data?.[field.field_key];
                           if (val === undefined || val === null || val === '') return null;
 
                           return (
@@ -583,71 +1035,7 @@ export const WorkspacePanelsView: React.FC = () => {
                               <span className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider block">
                                 {field.field_label}
                               </span>
-
-                              {field.field_type === 'url' ? (
-                                <a
-                                  href={String(val)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-brand-primary hover:underline inline-flex items-center gap-1 break-all"
-                                >
-                                  <span>{String(val)}</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              ) : field.field_type === 'date' ? (
-                                <span className="inline-flex items-center gap-1 text-ink-muted">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>{String(val)}</span>
-                                </span>
-                              ) : field.field_type === 'textarea' ? (
-                                <p className="line-clamp-2 text-ink-muted">{String(val)}</p>
-                              ) : field.field_type === 'select' ? (
-                                <span className="inline-block px-2 py-0.5 rounded-full bg-brand-light dark:bg-brand-primary/10 text-brand-primary dark:text-brand-darkPrimary text-[10px] font-semibold">
-                                  {String(val)}
-                                </span>
-                              ) : field.field_type === 'tags' ? (
-                                <div className="flex flex-wrap gap-1 mt-0.5">
-                                  {String(val)
-                                    .split(',')
-                                    .map((t) => t.trim())
-                                    .filter(Boolean)
-                                    .map((tag, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="px-1.5 py-0.5 rounded bg-surface-subtle dark:bg-surface-subtleDark text-[10px] text-ink-muted border border-border-subtle/50"
-                                      >
-                                        #{tag}
-                                      </span>
-                                    ))}
-                                </div>
-                              ) : field.field_type === 'rating' ? (
-                                <div className="flex items-center gap-0.5 text-amber-500 mt-0.5">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                      key={star}
-                                      className={`w-3 h-3 ${star <= Number(val) ? 'fill-current' : 'opacity-25'}`}
-                                    />
-                                  ))}
-                                </div>
-                              ) : field.field_type === 'people_link' ? (
-                                <span className="inline-flex items-center gap-1 text-brand-primary font-medium">
-                                  <User className="w-3 h-3" />
-                                  <span>
-                                    {people.find((p) => p.id === val || p.name === val)?.name || String(val)}
-                                  </span>
-                                </span>
-                              ) : field.field_type === 'projects_link' ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                                  <Briefcase className="w-3 h-3" />
-                                  <span>
-                                    {projects.find((pr) => pr.id === val || pr.name === val)?.name || String(val)}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-ink-primary dark:text-ink-darkPrimary">
-                                  {String(val)}
-                                </span>
-                              )}
+                              <div>{renderFieldValue(field, val)}</div>
                             </div>
                           );
                         })}
@@ -675,13 +1063,14 @@ export const WorkspacePanelsView: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-subtle/60 dark:divide-border-darkSubtle/60">
-                    {filteredEntries.map((entry) => (
+                    {filteredActiveEntries.map((entry) => (
                       <tr
                         key={entry.id}
-                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition group"
+                        onClick={() => activePanel && setDetailEntry({ entry, panel: activePanel })}
+                        className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition group cursor-pointer"
                       >
                         {activeFields.map((f) => {
-                          const val = entry.data[f.field_key];
+                          const val = entry.data?.[f.field_key];
                           if (val === undefined || val === null || val === '') {
                             return (
                               <td key={f.id} className="p-3 text-ink-muted">
@@ -690,68 +1079,33 @@ export const WorkspacePanelsView: React.FC = () => {
                             );
                           }
                           return (
-                            <td key={f.id} className="p-3 max-w-[200px] truncate text-ink-primary dark:text-ink-darkPrimary">
-                              {f.field_type === 'url' ? (
-                                <a
-                                  href={String(val)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-brand-primary hover:underline inline-flex items-center gap-1"
-                                >
-                                  <span className="truncate">{String(val)}</span>
-                                  <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                                </a>
-                              ) : f.field_type === 'tags' ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {String(val)
-                                    .split(',')
-                                    .map((t) => t.trim())
-                                    .filter(Boolean)
-                                    .map((t, idx) => (
-                                      <span
-                                        key={idx}
-                                        className="px-1.5 py-0.5 rounded bg-surface-subtle dark:bg-surface-subtleDark text-[10px] text-ink-muted border border-border-subtle/50"
-                                      >
-                                        #{t}
-                                      </span>
-                                    ))}
-                                </div>
-                              ) : f.field_type === 'rating' ? (
-                                <div className="flex items-center gap-0.5 text-amber-500">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <Star
-                                      key={star}
-                                      className={`w-3 h-3 ${star <= Number(val) ? 'fill-current' : 'opacity-25'}`}
-                                    />
-                                  ))}
-                                </div>
-                              ) : f.field_type === 'people_link' ? (
-                                <span className="inline-flex items-center gap-1 text-brand-primary font-medium">
-                                  <User className="w-3 h-3" />
-                                  <span>{people.find((p) => p.id === val || p.name === val)?.name || String(val)}</span>
-                                </span>
-                              ) : f.field_type === 'projects_link' ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                                  <Briefcase className="w-3 h-3" />
-                                  <span>{projects.find((pr) => pr.id === val || pr.name === val)?.name || String(val)}</span>
-                                </span>
-                              ) : (
-                                String(val)
-                              )}
+                            <td
+                              key={f.id}
+                              className="p-3 max-w-[200px] truncate text-ink-primary dark:text-ink-darkPrimary"
+                            >
+                              {renderFieldValue(f, val)}
                             </td>
                           );
                         })}
                         <td className="p-3 text-right">
                           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
                             <button
-                              onClick={() => openEditEntryModal(entry)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditEntryModal(entry);
+                              }}
                               className="p-1 rounded text-ink-muted hover:text-ink-primary"
                               title="Edit"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => deleteEntry(entry.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm('Delete this record?')) {
+                                  deleteEntry(entry.id);
+                                }
+                              }}
                               className="p-1 rounded text-ink-muted hover:text-rose-500"
                               title="Delete"
                             >
@@ -775,7 +1129,7 @@ export const WorkspacePanelsView: React.FC = () => {
           <div className="relative w-full max-w-lg bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[85vh] text-ink-primary dark:text-ink-darkPrimary animate-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle dark:border-border-darkSubtle mb-4">
               <h3 className="text-sm font-bold">
-                {editingPanel ? 'Configure Workspace Panel' : 'Create New Panel'}
+                {editingPanel ? 'Configure Workspace Board' : 'Create New Board'}
               </h3>
               <button
                 onClick={() => setIsPanelModalOpen(false)}
@@ -788,7 +1142,7 @@ export const WorkspacePanelsView: React.FC = () => {
             <form onSubmit={handleSavePanel} className="space-y-4 overflow-y-auto flex-1 pr-1 text-xs">
               <div>
                 <label className="block text-[11px] font-semibold text-ink-muted mb-1">
-                  Panel Name
+                  Board / Panel Name
                 </label>
                 <input
                   type="text"
@@ -802,7 +1156,7 @@ export const WorkspacePanelsView: React.FC = () => {
 
               <div>
                 <label className="block text-[11px] font-semibold text-ink-muted mb-1">Theme Color</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {COLOR_PRESETS.map((c) => (
                     <button
                       key={c}
@@ -913,21 +1267,40 @@ export const WorkspacePanelsView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-border-subtle dark:border-border-darkSubtle flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsPanelModalOpen(false)}
-                  className="px-3 py-1.5 rounded-xl border border-border-subtle text-xs"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!panelName.trim() || draftFields.length === 0}
-                  className="px-4 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition disabled:opacity-50"
-                >
-                  Save Panel
-                </button>
+              <div className="pt-3 border-t border-border-subtle dark:border-border-darkSubtle flex items-center justify-between gap-2">
+                {editingPanel ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (confirm(`Delete board "${editingPanel.name}" and all its records?`)) {
+                        deletePanel(editingPanel.id);
+                        setIsPanelModalOpen(false);
+                      }
+                    }}
+                    className="px-3 py-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold transition"
+                  >
+                    Delete Board
+                  </button>
+                ) : (
+                  <div />
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsPanelModalOpen(false)}
+                    className="px-3 py-1.5 rounded-xl border border-border-subtle text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!panelName.trim() || draftFields.length === 0}
+                    className="px-4 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition disabled:opacity-50"
+                  >
+                    Save Board
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -935,13 +1308,16 @@ export const WorkspacePanelsView: React.FC = () => {
       )}
 
       {/* ─── Modal 2: Create / Edit Panel Entry ─── */}
-      {isEntryModalOpen && activePanel && (
+      {isEntryModalOpen && targetPanelForModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
           <div className="relative w-full max-w-md bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[85vh] text-ink-primary dark:text-ink-darkPrimary animate-in zoom-in-95 duration-100">
             <div className="flex items-center justify-between pb-3 border-b border-border-subtle dark:border-border-darkSubtle mb-4">
-              <h3 className="text-sm font-bold">
-                {editingEntry ? `Edit Record in ${activePanel.name}` : `New Entry in ${activePanel.name}`}
-              </h3>
+              <div>
+                <h3 className="text-sm font-bold">
+                  {editingEntry ? `Edit Record in ${targetPanelForModal.name}` : `New Entry in ${targetPanelForModal.name}`}
+                </h3>
+                <p className="text-[11px] text-ink-muted">Fill in the structured fields below.</p>
+              </div>
               <button
                 onClick={() => setIsEntryModalOpen(false)}
                 className="p-1 rounded text-ink-muted hover:text-ink-primary"
@@ -951,7 +1327,7 @@ export const WorkspacePanelsView: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveEntry} className="space-y-3.5 overflow-y-auto flex-1 pr-1 text-xs">
-              {activeFields.map((field) => {
+              {targetFieldsForModal.map((field) => {
                 const val = entryFormData[field.field_key] || '';
 
                 return (
@@ -969,6 +1345,7 @@ export const WorkspacePanelsView: React.FC = () => {
                         required={field.is_required}
                         rows={3}
                         value={val}
+                        placeholder={`Enter ${field.field_label.toLowerCase()}...`}
                         onChange={(e) =>
                           setEntryFormData({ ...entryFormData, [field.field_key]: e.target.value })
                         }
@@ -1095,6 +1472,113 @@ export const WorkspacePanelsView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Modal 3: View Full Entry Details ─── */}
+      {detailEntry && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+          <div className="relative w-full max-w-lg bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[85vh] text-ink-primary dark:text-ink-darkPrimary animate-in zoom-in-95 duration-100">
+            {/* Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-border-subtle dark:border-border-darkSubtle mb-4">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center font-bold"
+                  style={{
+                    backgroundColor: `${detailEntry.panel.color || '#4F46E5'}20`,
+                    color: detailEntry.panel.color || '#4F46E5',
+                  }}
+                >
+                  {React.createElement(ICON_MAP[detailEntry.panel.icon || 'Folder'] || Folder, {
+                    className: 'w-4 h-4',
+                  })}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-ink-primary dark:text-ink-darkPrimary">
+                    {detailEntry.entry.data?.title || 'Record Details'}
+                  </h3>
+                  <p className="text-[10px] text-ink-muted">
+                    Board: <span className="font-semibold">{detailEntry.panel.name}</span>
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setDetailEntry(null)}
+                className="p-1 rounded text-ink-muted hover:text-ink-primary"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-3.5 overflow-y-auto flex-1 pr-1 text-xs">
+              {panelFields
+                .filter((f) => f.panel_id === detailEntry.panel.id)
+                .sort((a, b) => a.field_order - b.field_order)
+                .map((field) => {
+                  const val = detailEntry.entry.data?.[field.field_key];
+                  if (val === undefined || val === null || val === '') return null;
+
+                  return (
+                    <div
+                      key={field.id}
+                      className="p-3 rounded-xl bg-surface-subtle/60 dark:bg-surface-subtleDark/60 border border-border-subtle/50 space-y-1"
+                    >
+                      <div className="text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                        {field.field_label}
+                      </div>
+                      <div className="text-xs">{renderFieldValue(field, val)}</div>
+                    </div>
+                  );
+                })}
+
+              <div className="pt-2 text-[10px] text-ink-muted flex items-center justify-between border-t border-border-subtle/50">
+                <span>
+                  Created: {new Date(detailEntry.entry.created_at || '').toLocaleString()}
+                </span>
+                {detailEntry.entry.updated_at && (
+                  <span>
+                    Updated: {new Date(detailEntry.entry.updated_at).toLocaleString()}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-4 border-t border-border-subtle dark:border-border-darkSubtle flex items-center justify-between gap-2">
+              <button
+                onClick={() => {
+                  if (confirm('Delete this record permanently?')) {
+                    deleteEntry(detailEntry.entry.id);
+                    setDetailEntry(null);
+                  }
+                }}
+                className="px-3 py-1.5 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold transition"
+              >
+                Delete
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDetailEntry(null)}
+                  className="px-3 py-1.5 rounded-xl border border-border-subtle text-xs"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    openEditEntryModal(detailEntry.entry, detailEntry.panel.id);
+                  }}
+                  className="px-4 py-1.5 rounded-xl bg-brand-primary text-white text-xs font-semibold hover:bg-brand-hover transition shadow-xs"
+                >
+                  Edit Record
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
