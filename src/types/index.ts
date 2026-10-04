@@ -1,6 +1,6 @@
 export type ViewMode = 'edit' | 'split' | 'preview';
 
-export type WorkspaceView = 'notebooks' | 'workspace' | 'tasks' | 'habits' | 'finance' | 'intel';
+export type WorkspaceView = 'notebooks' | 'workspace' | 'tasks' | 'habits' | 'finance';
 
 export type FieldType =
   | 'text'

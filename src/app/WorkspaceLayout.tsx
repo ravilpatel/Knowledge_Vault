@@ -14,7 +14,6 @@ import { MobileView } from '../components/mobile/MobileView';
 import { TasksView } from '../features/vault/TasksView';
 import { HabitsView } from '../features/vault/HabitsView';
 import { FinanceView } from '../features/vault/FinanceView';
-import { IntelView } from '../features/vault/IntelView';
 import { WorkspacePanelsView } from '../features/vault/WorkspacePanelsView';
 import {
   BookOpen,
@@ -28,7 +27,6 @@ import {
   CheckSquare,
   Flame,
   Wallet,
-  Globe,
   Layers,
 } from 'lucide-react';
 
@@ -188,18 +186,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
             <Wallet className="w-3.5 h-3.5" />
             <span className="hidden md:inline">Finance</span>
           </button>
-
-          <button
-            onClick={() => setCurrentView('intel')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition ${
-              currentView === 'intel'
-                ? 'bg-surface dark:bg-surface-dark text-brand-primary dark:text-brand-darkPrimary shadow-xs font-bold'
-                : 'text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5 text-blue-500" />
-            <span className="hidden md:inline">Intel</span>
-          </button>
         </div>
 
         {/* Global Search Omnibar Trigger */}
@@ -269,7 +255,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
       {currentView === 'tasks' && <TasksView />}
       {currentView === 'habits' && <HabitsView />}
       {currentView === 'finance' && <FinanceView />}
-      {currentView === 'intel' && <IntelView />}
 
       {/* Modals & Dialogs */}
       <CommandPalette

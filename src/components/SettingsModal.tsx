@@ -165,12 +165,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold">{user?.name || 'Supabase User'}</h4>
+                        <h4 className="text-xs font-bold">{user?.name || 'User Account'}</h4>
                         <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 font-semibold border border-emerald-500/20">
-                          Supabase Auth
+                          Active Session
                         </span>
                       </div>
-                      <p className="text-[11px] text-ink-muted">{user?.email || 'Logged in via Supabase'}</p>
+                      <p className="text-[11px] text-ink-muted">{user?.email || 'Logged in'}</p>
                     </div>
                   </div>
 

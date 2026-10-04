@@ -13,7 +13,6 @@ import {
   ExternalLink,
   Calendar,
   Search,
-  Cloud,
   FileText,
   Layers,
   Sparkles,
@@ -82,7 +81,6 @@ export const WorkspacePanelsView: React.FC = () => {
     createEntry,
     updateEntry,
     deleteEntry,
-    supabaseSyncStatus,
   } = useVaultStore();
 
   const [subTab, setSubTab] = useState<'panels' | 'people' | 'companies' | 'projects' | 'technologies'>('panels');
@@ -468,10 +466,6 @@ export const WorkspacePanelsView: React.FC = () => {
               <h2 className="text-base md:text-lg font-bold text-ink-primary dark:text-ink-darkPrimary tracking-tight">
                 {activePanel ? activePanel.name : 'Workspace Columns'}
               </h2>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 capitalize">
-                <Cloud className="w-3 h-3" />
-                <span>Supabase: {supabaseSyncStatus}</span>
-              </span>
             </div>
             <p className="text-xs text-ink-muted dark:text-ink-darkMuted mt-0.5">
               {activePanel

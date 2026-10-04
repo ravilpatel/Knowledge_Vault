@@ -465,7 +465,7 @@ export const CompaniesView: React.FC = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Vercel, Supabase, Google"
+                  placeholder="e.g. Acme Corp, Microsoft, Google"
                   className="w-full px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20"
                 />
               </div>
@@ -889,7 +889,7 @@ export const TechnologiesView: React.FC = () => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Supabase, Docker, Vite"
+                  placeholder="e.g. React, PostgreSQL, Docker"
                   className="w-full px-3 py-1.5 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface-subtle dark:bg-surface-subtleDark outline-none focus:ring-2 focus:ring-brand-primary/20"
                 />
               </div>
