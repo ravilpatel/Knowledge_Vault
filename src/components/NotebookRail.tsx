@@ -13,14 +13,29 @@ import {
   Edit2,
   FolderPlus,
   Search,
+  Download,
+  FileText,
+  Printer,
 } from 'lucide-react';
+import {
+  buildNotebookMarkdown,
+  downloadMarkdownFile,
+  buildNotebookPrintHtml,
+  printHtmlDocument,
+} from '../lib/exportUtils';
 
 interface NotebookRailProps {
   onOpenSettings?: () => void;
   onOpenSearch?: () => void;
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
 }
 
-export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOpenSearch }) => {
+
+export const NotebookRail: React.FC<NotebookRailProps> = ({
+  onOpenSettings,
+  onOpenSearch,
+  onOpenExport,
+}) => {
   const {
     notebooks,
     sections,
@@ -85,6 +100,18 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
     }
   };
 
+  const handleQuickDownloadMd = (nb: (typeof notebooks)[0]) => {
+    const md = buildNotebookMarkdown(nb, sections, pages);
+    downloadMarkdownFile(nb.name, md);
+    setMenuOpenNbId(null);
+  };
+
+  const handleQuickDownloadPdf = (nb: (typeof notebooks)[0]) => {
+    const html = buildNotebookPrintHtml(nb, sections, pages);
+    printHtmlDocument(html, nb.name);
+    setMenuOpenNbId(null);
+  };
+
   // Collect all unique tags and counts
   const tagCounts = React.useMemo(() => {
     const counts: Record<string, number> = {};
@@ -111,13 +138,24 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
         <span className="text-xs font-bold uppercase tracking-wider text-ink-muted dark:text-ink-darkMuted">
           Notebooks
         </span>
-        <button
-          onClick={() => setShowNewNbModal(true)}
-          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-ink-secondary dark:text-ink-darkSecondary"
-          title="New Notebook"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {onOpenExport && (
+            <button
+              onClick={() => onOpenExport(activeNotebookId || undefined)}
+              className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-ink-secondary dark:text-ink-darkSecondary"
+              title="Export Notebook (MD / PDF)"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            onClick={() => setShowNewNbModal(true)}
+            className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition text-ink-secondary dark:text-ink-darkSecondary"
+            title="New Notebook"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Notebook List */}
@@ -189,7 +227,7 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
                     <div
                       ref={menuRef}
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute right-2 top-8 z-50 w-44 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs text-ink-primary dark:text-ink-darkPrimary animate-in fade-in zoom-in-95 duration-100"
+                      className="absolute right-2 top-8 z-50 w-52 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs text-ink-primary dark:text-ink-darkPrimary animate-in fade-in zoom-in-95 duration-100"
                     >
                       <button
                         onClick={() => handleStartRename(nb.id, nb.name)}
@@ -198,6 +236,40 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
                         <Edit2 className="w-3.5 h-3.5 text-ink-muted" />
                         <span>Rename Notebook</span>
                       </button>
+
+                      <div className="h-[1px] bg-border-subtle dark:border-border-darkSubtle my-1" />
+
+                      <button
+                        onClick={() => handleQuickDownloadMd(nb)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Download as MD</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleQuickDownloadPdf(nb)}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-rose-500" />
+                        <span>Download as PDF</span>
+                      </button>
+
+                      {onOpenExport && (
+                        <button
+                          onClick={() => {
+                            setMenuOpenNbId(null);
+                            onOpenExport(nb.id);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                        >
+                          <Download className="w-3.5 h-3.5 text-brand-primary" />
+                          <span>Export Options...</span>
+                        </button>
+                      )}
+
+                      <div className="h-[1px] bg-border-subtle dark:border-border-darkSubtle my-1" />
+
                       <button
                         onClick={() => {
                           trashNotebook(nb.id);
@@ -211,6 +283,7 @@ export const NotebookRail: React.FC<NotebookRailProps> = ({ onOpenSettings, onOp
                     </div>
                   )}
                 </div>
+
 
                 {/* Sub-tree of sections if expanded */}
                 {isExpanded && (

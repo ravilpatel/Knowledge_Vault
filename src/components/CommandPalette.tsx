@@ -14,30 +14,47 @@ import {
   Sparkles,
   ArrowRight,
   X,
+  Download,
+  Printer,
 } from 'lucide-react';
 import { syncEngine } from '../features/sync/syncEngine';
+import {
+  buildNotebookMarkdown,
+  downloadMarkdownFile,
+  buildNotebookPrintHtml,
+  printHtmlDocument,
+  buildPageMarkdown,
+  buildPagePrintHtml,
+} from '../lib/exportUtils';
 
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenSettings?: () => void;
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onClose,
   onOpenSettings,
+  onOpenExport,
 }) => {
+
   const {
     pages,
+    notebooks,
+    sections,
     activeNotebookId,
     activeSectionId,
+    activePageId,
     setActiveNotebook,
     setActiveSection,
     setActivePage,
     createPage,
     createNotebook,
   } = useNoteStore();
+
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResultItem[]>([]);
@@ -142,8 +159,85 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
     {
+      id: 'export_notebook_md',
+      title: 'Export Notebook as Markdown (.md)',
+      description: 'Download the active notebook and all its sections as a formatted .md document',
+      icon: FileText,
+      action: () => {
+        onClose();
+        const activeNb = useNoteStore.getState().notebooks.find(
+          (n) => n.id === activeNotebookId && !n.trashed
+        ) || useNoteStore.getState().notebooks.find((n) => !n.trashed);
+        if (activeNb) {
+          const { sections, pages } = useNoteStore.getState();
+          const md = buildNotebookMarkdown(activeNb, sections, pages);
+          downloadMarkdownFile(activeNb.name, md);
+        }
+      },
+    },
+    {
+      id: 'export_notebook_pdf',
+      title: 'Export Notebook as PDF (.pdf)',
+      description: 'Print or save the entire active notebook with table of contents as PDF',
+      icon: Printer,
+      action: () => {
+        onClose();
+        const activeNb = useNoteStore.getState().notebooks.find(
+          (n) => n.id === activeNotebookId && !n.trashed
+        ) || useNoteStore.getState().notebooks.find((n) => !n.trashed);
+        if (activeNb) {
+          const { sections, pages } = useNoteStore.getState();
+          const html = buildNotebookPrintHtml(activeNb, sections, pages);
+          printHtmlDocument(html, activeNb.name);
+        }
+      },
+    },
+    {
+      id: 'export_note_md',
+      title: 'Export Current Note as Markdown (.md)',
+      description: 'Download the currently active note as a .md file',
+      icon: FileText,
+      action: () => {
+        onClose();
+        const activePg = pages.find((p) => p.id === activePageId && !p.trashed);
+        if (activePg) {
+          const md = buildPageMarkdown(activePg);
+          downloadMarkdownFile(activePg.title || 'Note', md);
+        }
+      },
+    },
+    {
+      id: 'export_note_pdf',
+      title: 'Export Current Note as PDF (.pdf)',
+      description: 'Print or save the currently active note as PDF',
+      icon: Printer,
+      action: () => {
+        onClose();
+        const activePg = pages.find((p) => p.id === activePageId && !p.trashed);
+        if (activePg) {
+          const parentSec = sections.find((s) => s.id === activePg.sectionId);
+          const parentNb = notebooks.find((n) => n.id === activePg.notebookId);
+          const html = buildPagePrintHtml(activePg, parentNb?.name, parentSec?.name);
+          printHtmlDocument(html, activePg.title || 'Note');
+        }
+      },
+    },
+    {
+      id: 'open_export_modal',
+      title: 'Export Options & Customization',
+      description: 'Select notebook, choose sections, customize Table of Contents and download',
+      icon: Download,
+      action: () => {
+        onClose();
+        if (onOpenExport) {
+          onOpenExport(activeNotebookId || undefined, activePageId || undefined);
+        }
+      },
+    },
+
+    {
       id: 'force_sync',
-      title: 'Sync with Google Drive',
+      title: 'Sync with Supabase Cloud',
       description: 'Flush pending edits and pull latest changes',
       icon: RefreshCw,
       action: async () => {
@@ -162,6 +256,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       },
     },
   ];
+
 
   if (!isOpen) return null;
 

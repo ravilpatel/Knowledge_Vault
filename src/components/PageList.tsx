@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNoteStore } from '../features/notes/noteStore';
 import { formatRelativeTime } from '../lib/date';
 import { PageListSkeleton } from './SkeletonLoader';
@@ -10,11 +10,25 @@ import {
   MoreVertical,
   Trash2,
   FileText,
+  Download,
+  Printer,
 } from 'lucide-react';
+import {
+  buildNotebookMarkdown,
+  downloadMarkdownFile,
+  buildNotebookPrintHtml,
+  printHtmlDocument,
+  buildPageMarkdown,
+  buildPagePrintHtml,
+} from '../lib/exportUtils';
 
 type SortOption = 'updated' | 'created' | 'title';
 
-export const PageList: React.FC = () => {
+interface PageListProps {
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
+}
+
+export const PageList: React.FC<PageListProps> = ({ onOpenExport }) => {
   const {
     pages,
     sections,
@@ -34,7 +48,26 @@ export const PageList: React.FC = () => {
   const [filterText, setFilterText] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('updated');
   const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [menuPageId, setMenuPageId] = useState<string | null>(null);
+
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setIsExportMenuOpen(false);
+      }
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setIsSortMenuOpen(false);
+      }
+      setMenuPageId(null);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   const activeSection = sections.find((s) => s.id === activeSectionId && !s.trashed);
   const activeNotebook = notebooks.find((n) => n.id === activeNotebookId && !n.trashed);
@@ -124,8 +157,64 @@ export const PageList: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Export Menu Button */}
+            {activeNotebook && (
+
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                  className="p-1.5 rounded-lg text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                  title="Export Notebook"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+
+                {isExportMenuOpen && (
+                  <div className="absolute right-0 top-8 z-50 w-52 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1 text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                      Export Notebook
+                    </div>
+                    <button
+                      onClick={() => {
+                        const md = buildNotebookMarkdown(activeNotebook, sections, pages);
+                        downloadMarkdownFile(activeNotebook.name, md);
+                        setIsExportMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Download as MD</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const html = buildNotebookPrintHtml(activeNotebook, sections, pages);
+                        printHtmlDocument(html, activeNotebook.name);
+                        setIsExportMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Download as PDF</span>
+                    </button>
+                    {onOpenExport && (
+                      <button
+                        onClick={() => {
+                          setIsExportMenuOpen(false);
+                          onOpenExport(activeNotebook.id);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-brand-primary dark:text-brand-darkPrimary transition text-left font-medium"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Export Options...</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Sort Menu Button */}
-            <div className="relative">
+            <div className="relative" ref={sortMenuRef}>
               <button
                 onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
                 className="p-1.5 rounded-lg text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
@@ -190,6 +279,7 @@ export const PageList: React.FC = () => {
             </button>
           </div>
         </div>
+
 
         {/* Filter Input */}
         <div className="relative">
@@ -317,8 +407,37 @@ export const PageList: React.FC = () => {
                 {menuPageId === page.id && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute right-2 top-8 z-50 w-36 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs"
+                    className="absolute right-2 top-8 z-50 w-48 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs animate-in fade-in zoom-in-95 duration-100"
                   >
+                    <button
+                      onClick={() => {
+                        const md = buildPageMarkdown(page);
+                        downloadMarkdownFile(page.title || 'Note', md);
+                        setMenuPageId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Download Note (MD)</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const html = buildPagePrintHtml(
+                          page,
+                          activeNotebook?.name,
+                          activeSection?.name
+                        );
+                        printHtmlDocument(html, page.title || 'Note');
+                        setMenuPageId(null);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                    >
+                      <Printer className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Download Note (PDF)</span>
+                    </button>
+
+                    <div className="h-[1px] bg-border-subtle dark:border-border-darkSubtle my-1" />
+
                     <button
                       onClick={() => {
                         togglePageFavorite(page.id);
@@ -326,7 +445,7 @@ export const PageList: React.FC = () => {
                       }}
                       className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
                     >
-                      <Star className="w-3.5 h-3.5" />
+                      <Star className="w-3.5 h-3.5 text-amber-500" />
                       <span>{page.favorite ? 'Unfavorite' : 'Favorite'}</span>
                     </button>
                     <button
@@ -341,6 +460,7 @@ export const PageList: React.FC = () => {
                     </button>
                   </div>
                 )}
+
               </div>
             );
           })

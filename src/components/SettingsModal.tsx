@@ -16,12 +16,22 @@ import {
   Sun,
   ShieldCheck,
   X,
+  FileText,
+  Printer,
+  Book,
 } from 'lucide-react';
 import { getSupabaseConfig } from '../lib/supabaseClient';
+import {
+  buildNotebookMarkdown,
+  downloadMarkdownFile,
+  buildNotebookPrintHtml,
+  printHtmlDocument,
+} from '../lib/exportUtils';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
   isDark: boolean;
   onToggleTheme: () => void;
 }
@@ -29,9 +39,11 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
+  onOpenExport,
   isDark,
   onToggleTheme,
 }) => {
+
   const { user, supabaseUser, isGuest, signOut } = useAuthStore();
   const { notebooks, sections, pages, loadInitialData } = useNoteStore();
   const { todos, habits, expenses, news, panels, panelFields, panelEntries } = useVaultStore();
@@ -302,6 +314,86 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Notebook Markdown & PDF Export */}
+              <div className="space-y-3 p-4 rounded-xl bg-surface-subtle dark:bg-surface-subtleDark border border-border-subtle dark:border-border-darkSubtle">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-xs font-bold text-ink-primary dark:text-ink-darkPrimary">
+                      Notebook Export (Markdown & PDF)
+                    </h4>
+                    <p className="text-[11px] text-ink-muted dark:text-ink-darkMuted">
+                      Export structured .md or formatted .pdf files of any notebook
+                    </p>
+                  </div>
+                  {onOpenExport && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        onOpenExport();
+                      }}
+                      className="text-xs text-brand-primary dark:text-brand-darkPrimary font-bold hover:underline"
+                    >
+                      Advanced Export...
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {notebooks
+                    .filter((n) => !n.trashed)
+                    .map((nb) => {
+                      const nbPages = pages.filter((p) => p.notebookId === nb.id && !p.trashed);
+                      const nbSecs = sections.filter((s) => s.notebookId === nb.id && !s.trashed);
+
+                      return (
+                        <div
+                          key={nb.id}
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-surface dark:bg-surface-dark border border-border-subtle dark:border-border-darkSubtle text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 truncate max-w-[240px]">
+                            <Book className="w-4 h-4 text-brand-primary flex-shrink-0" />
+                            <div className="truncate">
+                              <span className="font-bold text-ink-primary dark:text-ink-darkPrimary block truncate">
+                                {nb.name}
+                              </span>
+                              <span className="text-[10px] text-ink-muted">
+                                {nbSecs.length} sections &bull; {nbPages.length} notes
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => {
+                                const md = buildNotebookMarkdown(nb, sections, pages);
+                                downloadMarkdownFile(nb.name, md);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-ink-primary dark:text-ink-darkPrimary text-[11px] font-semibold transition active:scale-95"
+                              title="Download as Markdown"
+                            >
+                              <FileText className="w-3 h-3 text-indigo-500" />
+                              <span>MD</span>
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                const html = buildNotebookPrintHtml(nb, sections, pages);
+                                printHtmlDocument(html, nb.name);
+                              }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-light hover:bg-brand-primary/20 dark:bg-brand-primary/15 dark:hover:bg-brand-primary/30 text-brand-primary dark:text-brand-darkPrimary text-[11px] font-semibold transition active:scale-95"
+                              title="Download as PDF"
+                            >
+                              <Printer className="w-3 h-3 text-rose-500" />
+                              <span>PDF</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
 
               {/* Local Storage Meter */}
               <div className="space-y-3">

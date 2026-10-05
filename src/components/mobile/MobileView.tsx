@@ -50,14 +50,26 @@ import {
   Sun,
   Moon,
   User,
+  Download,
+  Printer,
 } from 'lucide-react';
+import {
+  buildNotebookMarkdown,
+  downloadMarkdownFile,
+  buildNotebookPrintHtml,
+  printHtmlDocument,
+  buildPageMarkdown,
+  buildPagePrintHtml,
+} from '../../lib/exportUtils';
 
 interface MobileViewProps {
   onOpenSearch: () => void;
   onOpenSettings: () => void;
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
   isDark: boolean;
   onToggleTheme?: () => void;
 }
+
 
 type MobileLevel = 'notebooks' | 'sections' | 'pages' | 'editor';
 type SortOption = 'updated' | 'title' | 'favorites';
@@ -140,9 +152,11 @@ const COLOR_MAP: Record<
 export const MobileView: React.FC<MobileViewProps> = ({
   onOpenSearch,
   onOpenSettings,
+  onOpenExport,
   isDark,
   onToggleTheme,
 }) => {
+
   const {
     notebooks,
     sections,
@@ -1424,11 +1438,53 @@ export const MobileView: React.FC<MobileViewProps> = ({
                         </div>
                       </div>
 
-                      {isCurrent && <CheckCircle2 className="w-5 h-5 text-brand-primary" />}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const md = buildNotebookMarkdown(nb, sections, pages);
+                            downloadMarkdownFile(nb.name, md);
+                          }}
+                          className="p-1.5 rounded-lg text-ink-muted hover:text-indigo-600 hover:bg-slate-200/60 dark:hover:bg-slate-700 transition active:scale-90"
+                          title="Download as MD"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const html = buildNotebookPrintHtml(nb, sections, pages);
+                            printHtmlDocument(html, nb.name);
+                          }}
+                          className="p-1.5 rounded-lg text-ink-muted hover:text-rose-600 hover:bg-slate-200/60 dark:hover:bg-slate-700 transition active:scale-90"
+                          title="Download as PDF"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-rose-500" />
+                        </button>
+                        {onOpenExport && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsNotebookDrawerOpen(false);
+                              onOpenExport(nb.id);
+                            }}
+                            className="p-1.5 rounded-lg text-ink-muted hover:text-brand-primary hover:bg-slate-200/60 dark:hover:bg-slate-700 transition active:scale-90"
+                            title="Export Options"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {isCurrent && <CheckCircle2 className="w-5 h-5 text-brand-primary flex-shrink-0" />}
+                      </div>
                     </div>
                   );
                 })}
             </div>
+
+
           </div>
         </div>
       )}
@@ -1651,6 +1707,47 @@ export const MobileView: React.FC<MobileViewProps> = ({
             </button>
 
             <button
+              onClick={() => {
+                const md = buildPageMarkdown(activePage);
+                downloadMarkdownFile(activePage.title || 'Note', md);
+                setIsEditorMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary text-left"
+            >
+              <FileText className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Download Note (MD)</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const parentSec = sections.find((s) => s.id === activePage.sectionId);
+                const parentNb = notebooks.find((n) => n.id === activePage.notebookId);
+                const html = buildPagePrintHtml(activePage, parentNb?.name, parentSec?.name);
+                printHtmlDocument(html, activePage.title || 'Note');
+                setIsEditorMenuOpen(false);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary text-left"
+            >
+              <Printer className="w-3.5 h-3.5 text-rose-500" />
+              <span>Download Note (PDF)</span>
+            </button>
+
+            {onOpenExport && (
+              <button
+                onClick={() => {
+                  setIsEditorMenuOpen(false);
+                  onOpenExport(activePage.notebookId, activePage.id);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-brand-primary dark:text-brand-darkPrimary text-left font-medium"
+              >
+                <Book className="w-3.5 h-3.5" />
+                <span>Export Notebook...</span>
+              </button>
+            )}
+
+            <div className="h-[1px] bg-border-subtle dark:border-border-darkSubtle my-1" />
+
+            <button
               onClick={async () => {
                 setIsEditorMenuOpen(false);
                 await trashPage(activePage.id);
@@ -1661,6 +1758,7 @@ export const MobileView: React.FC<MobileViewProps> = ({
               <Trash2 className="w-3.5 h-3.5" />
               <span>Move to Trash</span>
             </button>
+
           </div>
         </div>
       )}

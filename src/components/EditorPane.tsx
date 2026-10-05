@@ -16,15 +16,28 @@ import {
   CheckCircle2,
   CloudUpload,
   Trash2,
+  Download,
+  FileText,
+  Printer,
+  Book,
 } from 'lucide-react';
+import {
+  buildPageMarkdown,
+  downloadMarkdownFile,
+  buildPagePrintHtml,
+  printHtmlDocument,
+} from '../lib/exportUtils';
 
 interface EditorPaneProps {
   isDark?: boolean;
+  onOpenExport?: (notebookId?: string, pageId?: string) => void;
 }
 
-export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
+export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false, onOpenExport }) => {
   const {
     pages,
+    notebooks,
+    sections,
     activePageId,
     viewMode,
     setViewMode,
@@ -38,6 +51,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
     activeSectionId,
   } = useNoteStore();
 
+
   const activePage = pages.find((p) => p.id === activePageId && !p.trashed);
 
   const editorRef = useRef<MarkdownEditorRef>(null);
@@ -49,6 +63,19 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
     filename?: string;
     progress?: number;
   }>({ uploading: false });
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   // Keep local title in sync when active page switches
   useEffect(() => {
@@ -206,6 +233,64 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
               </button>
             </div>
 
+            {/* Export Note & Notebook Dropdown */}
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                className="p-1.5 rounded-lg text-ink-muted hover:text-ink-primary dark:text-ink-darkMuted dark:hover:text-ink-darkPrimary hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                title="Export Note or Notebook"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+
+              {isExportMenuOpen && (
+                <div className="absolute right-0 top-8 z-50 w-52 rounded-xl border border-border-subtle dark:border-border-darkSubtle bg-surface dark:bg-surface-dark shadow-lg py-1 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-3 py-1 text-[10px] font-bold text-ink-muted uppercase tracking-wider">
+                    Export Note
+                  </div>
+                  <button
+                    onClick={() => {
+                      const md = buildPageMarkdown(activePage);
+                      downloadMarkdownFile(activePage.title || 'Note', md);
+                      setIsExportMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>Download as MD</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      const parentSec = sections.find((s) => s.id === activePage.sectionId);
+                      const parentNb = notebooks.find((n) => n.id === activePage.notebookId);
+                      const html = buildPagePrintHtml(activePage, parentNb?.name, parentSec?.name);
+                      printHtmlDocument(html, activePage.title || 'Note');
+                      setIsExportMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-ink-primary dark:text-ink-darkPrimary transition text-left"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Download as PDF</span>
+                  </button>
+
+                  <div className="h-[1px] bg-border-subtle dark:border-border-darkSubtle my-1" />
+
+                  {onOpenExport && (
+                    <button
+                      onClick={() => {
+                        setIsExportMenuOpen(false);
+                        onOpenExport(activePage.notebookId, activePage.id);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-brand-primary dark:text-brand-darkPrimary transition text-left font-medium"
+                    >
+                      <Book className="w-3.5 h-3.5" />
+                      <span>Export Notebook...</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Trash Note button */}
             <button
               onClick={() => trashPage(activePage.id)}
@@ -214,6 +299,7 @@ export const EditorPane: React.FC<EditorPaneProps> = ({ isDark = false }) => {
             >
               <Trash2 className="w-4 h-4" />
             </button>
+
           </div>
         </div>
 

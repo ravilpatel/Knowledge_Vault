@@ -12,6 +12,7 @@ import { OfflineBanner } from '../components/OfflineBanner';
 import { CommandPalette } from '../components/CommandPalette';
 import { ConflictModal } from '../components/ConflictModal';
 import { SettingsModal } from '../components/SettingsModal';
+import { ExportModal } from '../components/ExportModal';
 import { SignInModal } from '../features/auth/SignInModal';
 import { MobileView } from '../components/mobile/MobileView';
 import { TasksView } from '../features/vault/TasksView';
@@ -46,11 +47,21 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportNotebookId, setExportNotebookId] = useState<string | null>(null);
+  const [exportPageId, setExportPageId] = useState<string | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isRailCollapsed, setIsRailCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
+
+  const handleOpenExport = (notebookId?: string, pageId?: string) => {
+    setExportNotebookId(notebookId || null);
+    setExportPageId(pageId || null);
+    setIsExportModalOpen(true);
+  };
+
 
   // Responsive resize listener
   useEffect(() => {
@@ -80,6 +91,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         <MobileView
           onOpenSearch={() => setIsSearchOpen(true)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenExport={handleOpenExport}
           isDark={isDark}
           onToggleTheme={onToggleTheme}
         />
@@ -87,17 +99,26 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
           isOpen={isSearchOpen}
           onClose={() => setIsSearchOpen(false)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenExport={handleOpenExport}
         />
         <SettingsModal
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
+          onOpenExport={handleOpenExport}
           isDark={isDark}
           onToggleTheme={onToggleTheme}
+        />
+        <ExportModal
+          isOpen={isExportModalOpen}
+          onClose={() => setIsExportModalOpen(false)}
+          initialNotebookId={exportNotebookId}
+          initialPageId={exportPageId}
         />
         <ConflictModal />
       </div>
     );
   }
+
 
   return (
     <div className="h-full min-h-[100dvh] w-full flex flex-col bg-canvas-light dark:bg-canvas-dark text-ink-primary dark:text-ink-darkPrimary overflow-hidden font-sans">
@@ -275,10 +296,11 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
                   <NotebookRail
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     onOpenSearch={() => setIsSearchOpen(true)}
+                    onOpenExport={handleOpenExport}
                   />
                 )}
-                <PageList />
-                <EditorPane isDark={isDark} />
+                <PageList onOpenExport={handleOpenExport} />
+                <EditorPane isDark={isDark} onOpenExport={handleOpenExport} />
               </div>
             </>
           )}
@@ -295,13 +317,22 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenExport={handleOpenExport}
       />
 
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        onOpenExport={handleOpenExport}
         isDark={isDark}
         onToggleTheme={onToggleTheme}
+      />
+
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        initialNotebookId={exportNotebookId}
+        initialPageId={exportPageId}
       />
 
       <SignInModal
@@ -312,5 +343,6 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({ isDark, onTogg
       {/* Conflict Resolution Dialog (triggered automatically when conflict is active) */}
       <ConflictModal />
     </div>
+
   );
 };
